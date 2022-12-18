@@ -19,8 +19,26 @@ enum { P, N, B, R, Q, K, p, n, b, r, q, k };
 constexpr char ascii_pieces[] = "PNBRQKpnbrqk";
 
 //convert ascii char pieces to encoded constants
-int char_pieces(const char piece);
-
+static constexpr int char_pieces(const char piece) {
+	switch (piece) {
+	case 'P':return P;
+	case 'N':return N;
+	case 'B':return B;
+	case 'R':return R;
+	case 'Q':return Q;
+	case 'K':return K;
+	case 'p':return p;
+	case 'n':return n;
+	case 'b':return b;
+	case 'r':return r;
+	case 'q':return q;
+	case 'k':return k;
+	default:return -1;
+	}
+};
+static constexpr U64 get_queen_attacks(U64& occ, const int sq) {
+	return get_bishop_attacks(occ, sq) | get_rook_attacks(occ, sq);
+};
 class Position {
 	std::array<U64, 12> bitboards;
 	std::array<U64, 3> occupancies;
@@ -35,15 +53,49 @@ class Position {
 	std::vector<int> castling_rights_history;
 	std::vector<int> no_pawns_or_captures_history;
 	std::vector<U64> hash_history;
+	bool is_attacked_by_side(const int sq, const bool color);
+	U64 get_attacks_by(const bool color);
+	int get_piece_type_on(const int sq);
+
+	void legal_move_generator(std::vector<int>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks);
+	void legal_in_check_move_generator(std::vector<int>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks);
+
+	void get_legal_captures(std::vector<int>& ret);
+	void legal_capture_gen(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks);
+	void legal_in_check_capture_gen(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks);
+	inline void get_pawn_captures(std::vector<int>& ptr, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
+	inline void in_check_get_pawn_captures(std::vector<int>& ptr, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets);
+
+	U64 get_pinned_pieces(const int kingpos, const U64 enemy_attacks);
+	U64 get_moves_for_pinned_pieces(std::vector<int>& ret, const int kingpos, const U64 enemy_attacks);
+	U64 get_captures_for_pinned_pieces(std::vector<int>& ret, const int kingpos, const U64 enemy_attacks);
+	U64 get_checkers(const int kingpos);
+	U64 get_checking_rays(const int kingpos);
+	void try_out_move(std::vector<int>& ret, int& move);
+
+	void get_legal_pawn_moves(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
+	void legal_bpawn_pushes(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
+	void legal_wpawn_pushes(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
+	void legal_bpawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
+	void legal_wpawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
+
+	 void in_check_get_legal_pawn_moves(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid);
+	void in_check_legal_bpawn_pushes(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid);
+	void in_check_legal_wpawn_pushes(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid);
+	void in_check_legal_bpawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets);
+	void in_check_legal_wpawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets);
+
+	void get_castles(std::vector<int>& const ptr);
 public:
 	Position();
-	Position(std::string fen);
+	Position(const std::string& fen);
 	void parse_fen(std::string fen);
 	void print() const;
 	U64 get_hash() const;
-	void update_hash();
+	void update_hash(const int move);
 	void make_move(const int move);
 	void unmake_move();
 	void make_nullmove();
 	void unmake_nullmove();
+	void get_legal_moves(std::vector<int>& ret);
 };
