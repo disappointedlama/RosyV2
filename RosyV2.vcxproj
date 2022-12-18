@@ -132,11 +132,13 @@
     <ClCompile Include="RosyV2.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="bishopAttacks.h" />
     <ClInclude Include="bitboard.h" />
     <ClInclude Include="kingAttacks.h" />
     <ClInclude Include="knightAttacks.h" />
     <ClInclude Include="move.h" />
     <ClInclude Include="pawnAttacks.h" />
+    <ClInclude Include="rookAttacks.h" />
     <ClInclude Include="RosyV2.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -44,5 +44,11 @@
     <ClInclude Include="pawnAttacks.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="bishopAttacks.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="rookAttacks.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
