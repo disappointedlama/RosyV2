@@ -1,5 +1,5 @@
 #pragma once
-#include "bitboard.h"
+#include "bitboard.hpp"
 #define encode_move(from,to,piece,capture,promotion,capture_flag,double_push,castling,enpassant) ((from)|((to)<<6)|((piece)<<12)|((capture)<<16)|((promotion)<<20)|((capture_flag)<<24)|((double_push)<<25)|((castling)<<26)|((enpassant)<<27))
 #define get_from_square(move) ((move)&0x3f)
 #define get_to_square(move) (((move)>>6)&0x3f)

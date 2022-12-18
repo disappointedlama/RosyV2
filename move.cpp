@@ -1,4 +1,4 @@
-#include "move.h"
+#include "move.hpp"
 std::string uci(const int move) {
 	const int from_square = get_from_square(move);
 	const int to_square = get_to_square(move);
