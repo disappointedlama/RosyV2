@@ -139,7 +139,7 @@ void Position::parse_fen(std::string fen) {
 	hash_history.reserve(256);
 
 	no_pawns_or_captures = stoi(strList[4]);
-	ply = stoi(fen);
+	ply = 2* stoi(fen) - (side == white);
 	occupancies[0] = bitboards[0] | bitboards[1] | bitboards[2] | bitboards[3] | bitboards[4] | bitboards[5];
 	occupancies[1] = bitboards[6] | bitboards[7] | bitboards[8] | bitboards[9] | bitboards[10] | bitboards[11];
 	occupancies[2] = occupancies[0] | occupancies[1];
@@ -208,5 +208,6 @@ void Position::print()const {
 
 	printf("    halfmoves since last pawn move or capture: %d\n", no_pawns_or_captures);
 	printf("    current halfclock turn: %d\n", ply);
+	printf("    current game turn: %d\n", (int)ply/2 + (side==white));
 	std::cout << "    current hash: " << current_hash << "\n";
 }
