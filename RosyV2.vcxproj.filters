@@ -35,5 +35,14 @@
     <ClInclude Include="bitboard.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="kingAttacks.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="knightAttacks.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="pawnAttacks.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
