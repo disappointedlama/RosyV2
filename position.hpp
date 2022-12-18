@@ -36,7 +36,7 @@ static constexpr int char_pieces(const char piece) {
 	default:return -1;
 	}
 };
-static constexpr U64 get_queen_attacks(U64& occ, const int sq) {
+static constexpr U64 get_queen_attacks(U64 occ, const int sq) {
 	return get_bishop_attacks(occ, sq) | get_rook_attacks(occ, sq);
 };
 class Position {
@@ -61,17 +61,17 @@ class Position {
 	void legal_in_check_move_generator(std::vector<int>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks);
 
 	void get_legal_captures(std::vector<int>& ret);
-	void legal_capture_gen(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks);
-	void legal_in_check_capture_gen(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks);
-	inline void get_pawn_captures(std::vector<int>& ptr, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
-	inline void in_check_get_pawn_captures(std::vector<int>& ptr, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets);
+	void legal_capture_gen(std::vector<int>& ret, const U64 kings_queen_scope, const U64& enemy_attacks);
+	void legal_in_check_capture_gen(std::vector<int>& ret, const U64 kings_queen_scope, const U64& enemy_attacks);
+	void in_check_get_pawn_captures(std::vector<int>& ptr, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets);
+	void get_pawn_captures(std::vector<int>& ptr, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
 
-	U64 get_pinned_pieces(const int kingpos, const U64 enemy_attacks);
+	U64 get_pinned_pieces(const int& kingpos, const U64& enemy_attacks);
 	U64 get_moves_for_pinned_pieces(std::vector<int>& ret, const int kingpos, const U64 enemy_attacks);
 	U64 get_captures_for_pinned_pieces(std::vector<int>& ret, const int kingpos, const U64 enemy_attacks);
 	U64 get_checkers(const int kingpos);
 	U64 get_checking_rays(const int kingpos);
-	void try_out_move(std::vector<int>& ret, int& move);
+	void try_out_move(std::vector<int>& ret, int move);
 
 	void get_legal_pawn_moves(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
 	void legal_bpawn_pushes(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
@@ -79,7 +79,7 @@ class Position {
 	void legal_bpawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
 	void legal_wpawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
 
-	 void in_check_get_legal_pawn_moves(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid);
+	void in_check_get_legal_pawn_moves(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid);
 	void in_check_legal_bpawn_pushes(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid);
 	void in_check_legal_wpawn_pushes(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid);
 	void in_check_legal_bpawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets);
