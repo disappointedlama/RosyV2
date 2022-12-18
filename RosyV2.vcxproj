@@ -129,17 +129,20 @@
   <ItemGroup>
     <ClCompile Include="bitboard.cpp" />
     <ClCompile Include="move.cpp" />
+    <ClCompile Include="position.cpp" />
     <ClCompile Include="RosyV2.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="bishopAttacks.h" />
-    <ClInclude Include="bitboard.h" />
-    <ClInclude Include="kingAttacks.h" />
-    <ClInclude Include="knightAttacks.h" />
-    <ClInclude Include="move.h" />
-    <ClInclude Include="pawnAttacks.h" />
-    <ClInclude Include="rookAttacks.h" />
-    <ClInclude Include="RosyV2.h" />
+    <ClInclude Include="bishopAttacks.hpp" />
+    <ClInclude Include="bitboard.hpp" />
+    <ClInclude Include="hashKeys.hpp" />
+    <ClInclude Include="kingAttacks.hpp" />
+    <ClInclude Include="knightAttacks.hpp" />
+    <ClInclude Include="move.hpp" />
+    <ClInclude Include="pawnAttacks.hpp" />
+    <ClInclude Include="position.hpp" />
+    <ClInclude Include="rookAttacks.hpp" />
+    <ClInclude Include="RosyV2.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

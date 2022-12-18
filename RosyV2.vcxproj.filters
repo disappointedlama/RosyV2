@@ -24,30 +24,39 @@
     <ClCompile Include="bitboard.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="position.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="RosyV2.h">
+    <ClInclude Include="RosyV2.hpp">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="move.h">
+    <ClInclude Include="move.hpp">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="bitboard.h">
+    <ClInclude Include="bitboard.hpp">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="kingAttacks.h">
+    <ClInclude Include="kingAttacks.hpp">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="knightAttacks.h">
+    <ClInclude Include="knightAttacks.hpp">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="pawnAttacks.h">
+    <ClInclude Include="pawnAttacks.hpp">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="bishopAttacks.h">
+    <ClInclude Include="bishopAttacks.hpp">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="rookAttacks.h">
+    <ClInclude Include="rookAttacks.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="position.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="hashKeys.hpp">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>

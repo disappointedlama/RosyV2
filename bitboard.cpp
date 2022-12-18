@@ -1,4 +1,4 @@
-#include "bitboard.h"
+#include "bitboard.hpp"
 void print_bitboard(const U64 bitboard) {
 	printf("\n");
 	for (int rank = 0; rank < 8; rank++) {
