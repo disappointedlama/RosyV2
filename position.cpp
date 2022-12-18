@@ -1021,9 +1021,9 @@ void Position::get_castles(std::vector<int>& const ptr) {
 
 	const int king_index = 5 + (side) * 6;
 	const int kingpos = bitscan(bitboards[king_index]);
-	const bool king_on_valid_square = ((side) && (kingpos == e8)) || ((!side) && (kingpos == e1));
+	const bool king_on_valid_square = (side) ? (kingpos == e8) : (kingpos == e1);
 
-	const int enemy_color = (side)*white + (!side) * black;
+	const int enemy_color = (side) ? white : black;
 
 	const bool king_in_valid_state = king_on_valid_square && (!is_attacked_by_side(kingpos, enemy_color));
 	bool queenside = king_in_valid_state && (get_bit(castling_rights, 1 + 2 * (side)));
@@ -1075,31 +1075,37 @@ U64 Position::get_pinned_pieces(const int& kingpos, const U64& enemy_attacks) {
 }
 U64 Position::get_moves_for_pinned_pieces(std::vector<int>& ret, const int kingpos, const U64 enemy_attacks) {
 	const int piece_offset = 6 * (side);
-	U64 bishops_pot_pinned_by_bishops = enemy_attacks & get_bishop_attacks(occupancies[both], kingpos) & bitboards[B + piece_offset];
-	U64 bishops_pot_pinned_by_rooks = enemy_attacks & get_rook_attacks(occupancies[both], kingpos) & bitboards[B + piece_offset];
+	const U64 bishop_attacks = get_bishop_attacks(occupancies[both], kingpos);
+	const U64 rook_attacks = get_rook_attacks(occupancies[both], kingpos);
+	U64 bishops_pot_pinned_by_bishops = enemy_attacks & bishop_attacks & bitboards[B + piece_offset];
+	U64 bishops_pot_pinned_by_rooks = enemy_attacks & rook_attacks & bitboards[B + piece_offset];
 
-	U64 queens_pot_pinned_by_bishops = enemy_attacks & get_bishop_attacks(occupancies[both], kingpos) & bitboards[Q + piece_offset];
-	U64 queens_pot_pinned_by_rooks = enemy_attacks & get_rook_attacks(occupancies[both], kingpos) & bitboards[Q + piece_offset];
+	U64 queens_pot_pinned_by_bishops = enemy_attacks & bishop_attacks & bitboards[Q + piece_offset];
+	U64 queens_pot_pinned_by_rooks = enemy_attacks & rook_attacks & bitboards[Q + piece_offset];
 
-	U64 rooks_pot_pinned_by_bishops = enemy_attacks & get_bishop_attacks(occupancies[both], kingpos) & bitboards[R + piece_offset];
-	U64 rooks_pot_pinned_by_rooks = enemy_attacks & get_rook_attacks(occupancies[both], kingpos) & bitboards[R + piece_offset];
+	U64 rooks_pot_pinned_by_bishops = enemy_attacks & bishop_attacks & bitboards[R + piece_offset];
+	U64 rooks_pot_pinned_by_rooks = enemy_attacks & rook_attacks & bitboards[R + piece_offset];
 
-	U64 pawns_pot_pinned_by_bishops = enemy_attacks & get_bishop_attacks(occupancies[both], kingpos) & bitboards[P + piece_offset];
-	U64 pawns_pot_pinned_by_rooks = enemy_attacks & get_rook_attacks(occupancies[both], kingpos) & bitboards[P + piece_offset];
+	U64 pawns_pot_pinned_by_bishops = enemy_attacks & bishop_attacks & bitboards[P + piece_offset];
+	U64 pawns_pot_pinned_by_rooks = enemy_attacks & rook_attacks & bitboards[P + piece_offset];
 
-	U64 knights_pot_pinned_by_bishops = enemy_attacks & get_bishop_attacks(occupancies[both], kingpos) & bitboards[N + piece_offset];
-	U64 knights_pot_pinned_by_rooks = enemy_attacks & get_rook_attacks(occupancies[both], kingpos) & bitboards[N + piece_offset];
+	U64 knights_pot_pinned_by_bishops = enemy_attacks & bishop_attacks & bitboards[N + piece_offset];
+	U64 knights_pot_pinned_by_rooks = enemy_attacks & rook_attacks & bitboards[N + piece_offset];
 
 	U64 pinned_pieces = 0ULL;
 
 	const int offset = 6 * (!side);
+
+	const U64 rook_and_queen_mask=bitboards[R + offset] | bitboards[Q + offset];
+	const U64 bishop_and_queen_mask= bitboards[B + offset] | bitboards[Q + offset];
+
 	int type = B + piece_offset;
 	while (bishops_pot_pinned_by_bishops) {
 		const U64 isolated = bishops_pot_pinned_by_bishops & twos_complement(bishops_pot_pinned_by_bishops);
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_bishop_attacks(occupancies[both], kingpos);
-		const U64 pinner = pot_attacks & (bitboards[B + offset] | bitboards[Q + offset]);
+		const U64 pinner = pot_attacks & bishop_and_queen_mask;
 		pinned_pieces |= ((bool)(pinner)) * isolated;
 		if (pinner) {
 			const int from = bitscan(isolated);
@@ -1120,7 +1126,7 @@ U64 Position::get_moves_for_pinned_pieces(std::vector<int>& ret, const int kingp
 	while (bishops_pot_pinned_by_rooks) {
 		const U64 isolated = bishops_pot_pinned_by_rooks & twos_complement(bishops_pot_pinned_by_rooks);
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancies
-		pinned_pieces |= ((bool)(get_rook_attacks(occupancies[both], kingpos) & (bitboards[R + offset] | bitboards[Q + offset]))) * isolated;
+		pinned_pieces |= ((bool)(get_rook_attacks(occupancies[both], kingpos) & rook_and_queen_mask)) * isolated;
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
 		bishops_pot_pinned_by_rooks = bishops_pot_pinned_by_rooks & ones_decrement(bishops_pot_pinned_by_rooks);
 	}
@@ -1131,7 +1137,7 @@ U64 Position::get_moves_for_pinned_pieces(std::vector<int>& ret, const int kingp
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_bishop_attacks(occupancies[both], kingpos);
-		const U64 pinner = pot_attacks & (bitboards[B + offset] | bitboards[Q + offset]);
+		const U64 pinner = pot_attacks & bishop_and_queen_mask;
 		pinned_pieces |= ((bool)(pinner)) * isolated;
 		if (pinner) {
 			const int from = bitscan(isolated);
@@ -1149,12 +1155,13 @@ U64 Position::get_moves_for_pinned_pieces(std::vector<int>& ret, const int kingp
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
 		queens_pot_pinned_by_bishops = queens_pot_pinned_by_bishops & ones_decrement(queens_pot_pinned_by_bishops);
 	}
+
 	while (queens_pot_pinned_by_rooks) {
 		const U64 isolated = queens_pot_pinned_by_rooks & twos_complement(queens_pot_pinned_by_rooks);
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_rook_attacks(occupancies[both], kingpos);
-		const U64 pinner = pot_attacks & (bitboards[R + offset] | bitboards[Q + offset]);
+		const U64 pinner = pot_attacks & rook_and_queen_mask;
 		pinned_pieces |= ((bool)(pinner)) * isolated;
 		if (pinner) {
 			const int from = bitscan(isolated);
@@ -1178,7 +1185,7 @@ U64 Position::get_moves_for_pinned_pieces(std::vector<int>& ret, const int kingp
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_rook_attacks(occupancies[both], kingpos);
-		const U64 pinner = pot_attacks & (bitboards[R + offset] | bitboards[Q + offset]);
+		const U64 pinner = pot_attacks & rook_and_queen_mask;
 		pinned_pieces |= ((bool)(pinner)) * isolated;
 		if (pinner) {
 			const int from = bitscan(isolated);
@@ -1196,10 +1203,11 @@ U64 Position::get_moves_for_pinned_pieces(std::vector<int>& ret, const int kingp
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
 		rooks_pot_pinned_by_rooks = rooks_pot_pinned_by_rooks & ones_decrement(rooks_pot_pinned_by_rooks);
 	}
+
 	while (rooks_pot_pinned_by_bishops) {
 		const U64 isolated = rooks_pot_pinned_by_bishops & twos_complement(rooks_pot_pinned_by_bishops);
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancies
-		pinned_pieces |= ((bool)(get_bishop_attacks(occupancies[both], kingpos) & (bitboards[B + offset] | bitboards[Q + offset]))) * isolated;
+		pinned_pieces |= ((bool)(get_bishop_attacks(occupancies[both], kingpos) & bishop_and_queen_mask)) * isolated;
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
 		rooks_pot_pinned_by_bishops = rooks_pot_pinned_by_bishops & ones_decrement(rooks_pot_pinned_by_bishops);
 	}
@@ -1210,7 +1218,7 @@ U64 Position::get_moves_for_pinned_pieces(std::vector<int>& ret, const int kingp
 		const U64 isolated = pawns_pot_pinned_by_bishops & twos_complement(pawns_pot_pinned_by_bishops);
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_bishop_attacks(occupancies[both], kingpos);
-		const U64 pinner = pot_attacks & (bitboards[B + offset] | bitboards[Q + offset]);
+		const U64 pinner = pot_attacks & bishop_and_queen_mask;
 		pinned_pieces |= ((bool)(pinner)) * isolated;
 		if (pinner) {
 			const int from = bitscan(isolated);
@@ -1239,11 +1247,12 @@ U64 Position::get_moves_for_pinned_pieces(std::vector<int>& ret, const int kingp
 
 		pawns_pot_pinned_by_bishops = pawns_pot_pinned_by_bishops & ones_decrement(pawns_pot_pinned_by_bishops);
 	}
+
 	while (pawns_pot_pinned_by_rooks) {
 		const U64 isolated = pawns_pot_pinned_by_rooks & twos_complement(pawns_pot_pinned_by_rooks);
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_rook_attacks(occupancies[both], kingpos);
-		const U64 pinner = pot_attacks & (bitboards[R + offset] | bitboards[Q + offset]);
+		const U64 pinner = pot_attacks & rook_and_queen_mask;
 		pinned_pieces |= ((bool)(pinner)) * isolated;
 		if (pinner) {
 			const int from = bitscan(isolated);
@@ -1276,21 +1285,21 @@ U64 Position::get_moves_for_pinned_pieces(std::vector<int>& ret, const int kingp
 		pawns_pot_pinned_by_rooks = pawns_pot_pinned_by_rooks & ones_decrement(pawns_pot_pinned_by_rooks);
 	}
 
-
 	while (knights_pot_pinned_by_bishops) {
 		const U64 isolated = knights_pot_pinned_by_bishops & twos_complement(knights_pot_pinned_by_bishops);
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
-		pinned_pieces |= ((bool)(get_bishop_attacks(occupancies[both], kingpos) & (bitboards[B + offset] | bitboards[Q + offset]))) * isolated;
+		pinned_pieces |= ((bool)(get_bishop_attacks(occupancies[both], kingpos) & bishop_and_queen_mask)) * isolated;
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
 
 		knights_pot_pinned_by_bishops = knights_pot_pinned_by_bishops & ones_decrement(knights_pot_pinned_by_bishops);
 	}
+
 	while (knights_pot_pinned_by_rooks) {
 		const U64 isolated = knights_pot_pinned_by_rooks & twos_complement(knights_pot_pinned_by_rooks);
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancies
-		pinned_pieces |= ((bool)(get_rook_attacks(occupancies[both], kingpos) & (bitboards[R + offset] | bitboards[Q + offset]))) * isolated;
+		pinned_pieces |= ((bool)(get_rook_attacks(occupancies[both], kingpos) & rook_and_queen_mask)) * isolated;
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
 
 		knights_pot_pinned_by_rooks = knights_pot_pinned_by_rooks & ones_decrement(knights_pot_pinned_by_rooks);
@@ -1299,31 +1308,35 @@ U64 Position::get_moves_for_pinned_pieces(std::vector<int>& ret, const int kingp
 }
 U64 Position::get_captures_for_pinned_pieces(std::vector<int>& ret, const int kingpos, const U64 enemy_attacks) {
 	const int piece_offset = 6 * (side);
-	U64 bishops_pot_pinned_by_bishops = enemy_attacks & get_bishop_attacks(occupancies[both], kingpos) & bitboards[B + piece_offset];
-	U64 bishops_pot_pinned_by_rooks = enemy_attacks & get_rook_attacks(occupancies[both], kingpos) & bitboards[B + piece_offset];
+	const U64 bishop_attacks = get_bishop_attacks(occupancies[both], kingpos);
+	const U64 rook_attacks = get_rook_attacks(occupancies[both], kingpos);
+	U64 bishops_pot_pinned_by_bishops = enemy_attacks & bishop_attacks & bitboards[B + piece_offset];
+	U64 bishops_pot_pinned_by_rooks = enemy_attacks & rook_attacks & bitboards[B + piece_offset];
 
-	U64 queens_pot_pinned_by_bishops = enemy_attacks & get_bishop_attacks(occupancies[both], kingpos) & bitboards[Q + piece_offset];
-	U64 queens_pot_pinned_by_rooks = enemy_attacks & get_rook_attacks(occupancies[both], kingpos) & bitboards[Q + piece_offset];
+	U64 queens_pot_pinned_by_bishops = enemy_attacks & bishop_attacks & bitboards[Q + piece_offset];
+	U64 queens_pot_pinned_by_rooks = enemy_attacks & rook_attacks & bitboards[Q + piece_offset];
 
-	U64 rooks_pot_pinned_by_bishops = enemy_attacks & get_bishop_attacks(occupancies[both], kingpos) & bitboards[R + piece_offset];
-	U64 rooks_pot_pinned_by_rooks = enemy_attacks & get_rook_attacks(occupancies[both], kingpos) & bitboards[R + piece_offset];
+	U64 rooks_pot_pinned_by_bishops = enemy_attacks & bishop_attacks & bitboards[R + piece_offset];
+	U64 rooks_pot_pinned_by_rooks = enemy_attacks & rook_attacks & bitboards[R + piece_offset];
 
-	U64 pawns_pot_pinned_by_bishops = enemy_attacks & get_bishop_attacks(occupancies[both], kingpos) & bitboards[P + piece_offset];
-	U64 pawns_pot_pinned_by_rooks = enemy_attacks & get_rook_attacks(occupancies[both], kingpos) & bitboards[P + piece_offset];
+	U64 pawns_pot_pinned_by_bishops = enemy_attacks & bishop_attacks & bitboards[P + piece_offset];
+	U64 pawns_pot_pinned_by_rooks = enemy_attacks & rook_attacks & bitboards[P + piece_offset];
 
-	U64 knights_pot_pinned_by_bishops = enemy_attacks & get_bishop_attacks(occupancies[both], kingpos) & bitboards[N + piece_offset];
-	U64 knights_pot_pinned_by_rooks = enemy_attacks & get_rook_attacks(occupancies[both], kingpos) & bitboards[N + piece_offset];
+	U64 knights_pot_pinned_by_bishops = enemy_attacks & bishop_attacks & bitboards[N + piece_offset];
+	U64 knights_pot_pinned_by_rooks = enemy_attacks & rook_attacks & bitboards[N + piece_offset];
 
 	U64 pinned_pieces = 0ULL;
 
 	const int offset = 6 * (!side);
+	const U64 bishop_and_queen_mask = bitboards[B + offset] | bitboards[Q + offset];
+	const U64 rook_and_queen_mask = bitboards[R + offset] | bitboards[Q + offset];
 	int type = B + piece_offset;
 	while (bishops_pot_pinned_by_bishops) {
 		const U64 isolated = bishops_pot_pinned_by_bishops & twos_complement(bishops_pot_pinned_by_bishops);
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_bishop_attacks(occupancies[both], kingpos);
-		const U64 pinner = pot_attacks & (bitboards[B + offset] | bitboards[Q + offset]);
+		const U64 pinner = pot_attacks & bishop_and_queen_mask;
 		pinned_pieces |= ((bool)(pinner)) * isolated;
 		if (pinner) {
 			const int from = bitscan(isolated);
@@ -1337,7 +1350,7 @@ U64 Position::get_captures_for_pinned_pieces(std::vector<int>& ret, const int ki
 	while (bishops_pot_pinned_by_rooks) {
 		const U64 isolated = bishops_pot_pinned_by_rooks & twos_complement(bishops_pot_pinned_by_rooks);
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancies
-		pinned_pieces |= ((bool)(get_rook_attacks(occupancies[both], kingpos) & (bitboards[R + offset] | bitboards[Q + offset]))) * isolated;
+		pinned_pieces |= ((bool)(get_rook_attacks(occupancies[both], kingpos) & rook_and_queen_mask)) * isolated;
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
 		bishops_pot_pinned_by_rooks = bishops_pot_pinned_by_rooks & ones_decrement(bishops_pot_pinned_by_rooks);
 	}
@@ -1348,7 +1361,7 @@ U64 Position::get_captures_for_pinned_pieces(std::vector<int>& ret, const int ki
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_bishop_attacks(occupancies[both], kingpos);
-		const U64 pinner = pot_attacks & (bitboards[B + offset] | bitboards[Q + offset]);
+		const U64 pinner = pot_attacks & bishop_and_queen_mask;
 		pinned_pieces |= ((bool)(pinner)) * isolated;
 		if (pinner) {
 			const int from = bitscan(isolated);
@@ -1364,7 +1377,7 @@ U64 Position::get_captures_for_pinned_pieces(std::vector<int>& ret, const int ki
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_rook_attacks(occupancies[both], kingpos);
-		const U64 pinner = pot_attacks & (bitboards[R + offset] | bitboards[Q + offset]);
+		const U64 pinner = pot_attacks & rook_and_queen_mask;
 		pinned_pieces |= ((bool)(pinner)) * isolated;
 		if (pinner) {
 			const int from = bitscan(isolated);
@@ -1381,7 +1394,7 @@ U64 Position::get_captures_for_pinned_pieces(std::vector<int>& ret, const int ki
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_rook_attacks(occupancies[both], kingpos);
-		const U64 pinner = pot_attacks & (bitboards[R + offset] | bitboards[Q + offset]);
+		const U64 pinner = pot_attacks & rook_and_queen_mask;
 		pinned_pieces |= ((bool)(pinner)) * isolated;
 		if (pinner) {
 			const int from = bitscan(isolated);
@@ -1395,7 +1408,7 @@ U64 Position::get_captures_for_pinned_pieces(std::vector<int>& ret, const int ki
 	while (rooks_pot_pinned_by_bishops) {
 		const U64 isolated = rooks_pot_pinned_by_bishops & twos_complement(rooks_pot_pinned_by_bishops);
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancies
-		pinned_pieces |= ((bool)(get_bishop_attacks(occupancies[both], kingpos) & (bitboards[B + offset] | bitboards[Q + offset]))) * isolated;
+		pinned_pieces |= ((bool)(get_bishop_attacks(occupancies[both], kingpos) & bishop_and_queen_mask)) * isolated;
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
 		rooks_pot_pinned_by_bishops = rooks_pot_pinned_by_bishops & ones_decrement(rooks_pot_pinned_by_bishops);
 	}
@@ -1406,7 +1419,7 @@ U64 Position::get_captures_for_pinned_pieces(std::vector<int>& ret, const int ki
 		const U64 isolated = pawns_pot_pinned_by_bishops & twos_complement(pawns_pot_pinned_by_bishops);
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_bishop_attacks(occupancies[both], kingpos);
-		const U64 pinner = pot_attacks & (bitboards[B + offset] | bitboards[Q + offset]);
+		const U64 pinner = pot_attacks & bishop_and_queen_mask;
 		pinned_pieces |= ((bool)(pinner)) * isolated;
 		if (pinner) {
 			const int from = bitscan(isolated);
@@ -1439,7 +1452,7 @@ U64 Position::get_captures_for_pinned_pieces(std::vector<int>& ret, const int ki
 		const U64 isolated = pawns_pot_pinned_by_rooks & twos_complement(pawns_pot_pinned_by_rooks);
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_rook_attacks(occupancies[both], kingpos);
-		const U64 pinner = pot_attacks & (bitboards[R + offset] | bitboards[Q + offset]);
+		const U64 pinner = pot_attacks & rook_and_queen_mask;
 		pinned_pieces |= ((bool)(pinner)) * isolated;
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
 
@@ -1451,7 +1464,7 @@ U64 Position::get_captures_for_pinned_pieces(std::vector<int>& ret, const int ki
 		const U64 isolated = knights_pot_pinned_by_bishops & twos_complement(knights_pot_pinned_by_bishops);
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
-		pinned_pieces |= ((bool)(get_bishop_attacks(occupancies[both], kingpos) & (bitboards[B + offset] | bitboards[Q + offset]))) * isolated;
+		pinned_pieces |= ((bool)(get_bishop_attacks(occupancies[both], kingpos) & bishop_and_queen_mask)) * isolated;
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
 
 		knights_pot_pinned_by_bishops = knights_pot_pinned_by_bishops & ones_decrement(knights_pot_pinned_by_bishops);
@@ -1460,7 +1473,7 @@ U64 Position::get_captures_for_pinned_pieces(std::vector<int>& ret, const int ki
 		const U64 isolated = knights_pot_pinned_by_rooks & twos_complement(knights_pot_pinned_by_rooks);
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancies
-		pinned_pieces |= ((bool)(get_rook_attacks(occupancies[both], kingpos) & (bitboards[R + offset] | bitboards[Q + offset]))) * isolated;
+		pinned_pieces |= ((bool)(get_rook_attacks(occupancies[both], kingpos) & rook_and_queen_mask)) * isolated;
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
 
 		knights_pot_pinned_by_rooks = knights_pot_pinned_by_rooks & ones_decrement(knights_pot_pinned_by_rooks);
@@ -1694,13 +1707,13 @@ void Position::update_hash(const int move) {
 	const int offset = piece_type * 64;
 
 	current_hash ^= keys[offset + from_square];
-	current_hash ^= (capture) * ((!is_enpassant) * keys[captured_type * 64 + to_square] + (is_enpassant)*keys[to_square + (side) * (6 * 64 + 8) + (!side) * (-8)]);
+	current_hash ^= (capture) * ((is_enpassant) ? keys[to_square + (side) * (6 * 64 + 8) + (!side) * (-8)] : keys[captured_type * 64 + to_square]);
 	current_hash ^= keys[offset + to_square];
 
 	const int rook_source = (is_castle) * ((piece_type == k) * ((to_square == g8) * h8 + (to_square == c8) * a8) + (piece_type == K) * ((to_square == g1) * h1 + (to_square == c1) * a1));
 	const int rook_target = (is_castle) * (from_square + ((to_square == g8) | (to_square == g1)) - ((to_square == c8) | (to_square == c1)));
-	current_hash ^= (is_castle)*keys[(is_castle) * (offset - 128 + rook_source)];
-	current_hash ^= (is_castle)*keys[(is_castle) * (offset - 128 + rook_target)];
+	current_hash ^= (is_castle) ? keys[offset - 128 + rook_source] : 0;
+	current_hash ^= (is_castle) ? keys[offset - 128 + rook_target] : 0;
 
 	//const auto size = static_cast<std::vector<int, std::allocator<int>>::size_type>(enpassant_history.size() - 2);
 	const int different_rights = castling_rights ^ castling_rights_history.back();
@@ -1756,17 +1769,17 @@ void Position::make_move(const int move) {
 	//make move of piece
 	const bool bK = (piece_type == k);
 	const bool bR = (piece_type == r);
-	pop_bit(castling_rights, 4 - (bK || (bR && (from_square == a8)) || (to_square == a8)));
-	pop_bit(castling_rights, 4 - 2 * (bK || (bR && (from_square == h8)) || (to_square == h8)));
+	pop_bit(castling_rights, (bK || (bR && (from_square == a8)) || (to_square == a8)) ? 3 : 4);
+	pop_bit(castling_rights, (bK || (bR && (from_square == h8)) || (to_square == h8)) ? 2 : 4);
 	const bool wK = (piece_type == K);
 	const bool wR = (piece_type == R);
-	pop_bit(castling_rights, 4 - 3 * (wK || (wR && (from_square == a1)) || (to_square == a1)));
-	pop_bit(castling_rights, 4 - 4 * (wK || (wR && (from_square == h1)) || (to_square == h1)));
+	pop_bit(castling_rights, (wK || (wR && (from_square == a1)) || (to_square == a1)) ? 1 : 4);
+	pop_bit(castling_rights, (wK || (wR && (from_square == h1)) || (to_square == h1)) ? 0 : 4);
 	//branchlessly pop castle right bits
 
 	const int square_offset = 56 * (side);
 	const bool is_kingside = to_square > from_square;
-	const int rook_source = (is_kingside) * (h1 - square_offset) + (!is_kingside) * (a1 - square_offset);
+	const int rook_source = (is_kingside) ? (h1 - square_offset) : (a1 - square_offset);
 	const int rook_target = from_square + (to_square == g1 - square_offset) - (to_square == c1 - square_offset);
 	pop_bit(bitboards[(is_castle) * (piece_type - 2)], (is_castle)*rook_source);
 	//pop rooks if move is castling
@@ -1818,8 +1831,8 @@ void Position::unmake_move() {
 	//branchlessly set the captured piece. if there was no captured piece the white pawn board is or'ed with 0 (not changed)
 	const int square_offset = 56 * (side);
 	const bool is_kingside = to_square > from_square;
-	bitboards[(9 - 6 * (side))] |= (((is_castle) * 1ULL) << ((is_kingside) * (h8 + square_offset) + (!(is_kingside) * (a8 + square_offset))));
-	bitboards[(9 - 6 * (side))] &= ~(((is_castle) * 1ULL) << ((is_kingside) * (f8 + square_offset) + (!(is_kingside)) * (d8 + square_offset)));
+	bitboards[(9 - 6 * (side))] |= (((is_castle) * 1ULL) << ((is_kingside) ? (h8 + square_offset) : (a8 + square_offset)));
+	bitboards[(9 - 6 * (side))] &= ~(((is_castle) * 1ULL) << ((is_kingside) ? (f8 + square_offset) : (d8 + square_offset)));
 	//branchlessly set and pop rook bits if move was castling
 
 	occupancies[0] = bitboards[0] | bitboards[1] | bitboards[2] | bitboards[3] | bitboards[4] | bitboards[5];
