@@ -1,7 +1,6 @@
 #pragma once
 
 #include <iostream>
-#include <stdio.h>
 #include <string>
 #define U64 unsigned long long
 #define get_bit(bitboard, square) ((bitboard) & (1ULL << (square)))
