@@ -20,7 +20,7 @@ Position::Position() {
 	bitboards = std::array<U64, 12>{ { 71776119061217280ULL, 4755801206503243776ULL, 2594073385365405696ULL, 9295429630892703744ULL, 576460752303423488ULL, 1152921504606846976ULL, 65280ULL, 66ULL, 36ULL, 129ULL, 8ULL, 16ULL } };
 	occupancies = std::array<U64, 3>{ { 18446462598732840960ULL, 65535ULL, 18446462598732906495ULL} };
 	side = white;
-	ply = 0;
+	ply = 1;
 	enpassant_square = a8;
 	castling_rights = 15;
 	no_pawns_or_captures = 0;
@@ -174,6 +174,9 @@ U64 Position::get_hash() const{
 	ret ^= ((enpassant_square != a8) && (enpassant_square != 64)) * keys[773 + (enpassant_square % 8)];
 	return ret % 4294967296;
 }
+void Position::update_hash() {
+
+}
 void Position::print()const {
 	printf("\n");
 	for (int rank = 0; rank < 8; rank++) {
@@ -210,4 +213,140 @@ void Position::print()const {
 	printf("    current halfclock turn: %d\n", ply);
 	printf("    current game turn: %d\n", (int)ply/2 + (side==white));
 	std::cout << "    current hash: " << current_hash << "\n";
+}
+void Position::make_move(const int move) {
+	no_pawns_or_captures_history.push_back(no_pawns_or_captures);
+	enpassant_history.push_back(enpassant_square);
+	move_history.push_back(move);
+	castling_rights_history.push_back(castling_rights);
+	hash_history.push_back(current_hash);
+	ply++;
+
+	const int piece_type = get_piece_type(move);
+	const int from_square = get_from_square(move);
+	const int to_square = get_to_square(move);
+	const int captured_type = get_captured_type(move);
+	const int promoted_type = get_promotion_type(move);
+
+	const bool double_pawn_push = get_double_push_flag(move);
+	const bool capture = get_capture_flag(move);
+	const bool is_enpassant = get_enpassant_flag(move);
+	const bool is_castle = get_castling_flag(move);
+
+
+	const bool is_white_pawn = (piece_type == P);
+	const bool is_black_pawn = (piece_type == p);
+	no_pawns_or_captures = (!(is_white_pawn || is_black_pawn || capture)) * (no_pawns_or_captures + 1);
+	//branchlessly increment the counter if move was not a pawn move^or a capture
+
+	enpassant_square = (double_pawn_push) * ((is_black_pawn) * (to_square - 8) + (is_white_pawn) * (to_square + 8));
+	//branchlessly set enpassant square
+
+	const int offset = 6 * (side);
+
+	pop_bit(bitboards[(capture)*captured_type], (capture) * (!is_enpassant) * to_square + (is_enpassant) * (to_square + 8 * ((!side) - (side))));
+	//pop bit on captured square. if move was not a capture the a8 bit of the white pawn is poped. however white pawns should never be on the 8th rank anyway
+	const bool is_promotion = promoted_type != 15;
+	const int true_piece_type = (!(is_promotion)) * piece_type + (is_promotion) * (promoted_type);
+	pop_bit(bitboards[piece_type], from_square);
+	set_bit(bitboards[true_piece_type], to_square);
+	//make move of piece
+	const bool bK = (piece_type == k);
+	const bool bR = (piece_type == r);
+	pop_bit(castling_rights, 4 - (bK || (bR && (from_square == a8)) || (to_square == a8)));
+	pop_bit(castling_rights, 4 - 2 * (bK || (bR && (from_square == h8)) || (to_square == h8)));
+	const bool wK = (piece_type == K);
+	const bool wR = (piece_type == R);
+	pop_bit(castling_rights, 4 - 3 * (wK || (wR && (from_square == a1)) || (to_square == a1)));
+	pop_bit(castling_rights, 4 - 4 * (wK || (wR && (from_square == h1)) || (to_square == h1)));
+	//branchlessly pop castle right bits
+
+	const int square_offset = 56 * (side);
+	const bool is_kingside = to_square > from_square;
+	const int rook_source = (is_kingside) * (h1 - square_offset) + (!is_kingside) * (a1 - square_offset);
+	const int rook_target = from_square + (to_square == g1 - square_offset) - (to_square == c1 - square_offset);
+	pop_bit(bitboards[(is_castle) * (piece_type - 2)], (is_castle)*rook_source);
+	//pop rooks if move is castling
+	bitboards[(is_castle) * (piece_type - 2)] |= ((is_castle) * (1ULL) << (rook_target));
+	//set rook if move is castling
+	castling_rights &= ~(((is_castle) * 1ULL) << (2 * (piece_type == k)));
+	castling_rights &= ~(((is_castle) * 1ULL) << (1 + 2 * (piece_type == k)));
+	//pop castle right bits if move is castling
+
+	side = !side;
+	occupancies[0] = (bitboards[0] | bitboards[1]) | (bitboards[2] | bitboards[3]) | (bitboards[4] | bitboards[5]);
+	occupancies[1] = bitboards[6] | bitboards[7] | bitboards[8] | bitboards[9] | bitboards[10] | bitboards[11];
+	occupancies[2] = occupancies[0] | occupancies[1];
+
+	update_hash();
+}
+void Position::unmake_move() {
+	const int move = move_history.back();
+	move_history.pop_back();
+	no_pawns_or_captures = no_pawns_or_captures_history.back();
+	no_pawns_or_captures_history.pop_back();
+	enpassant_square = enpassant_history.back();
+	enpassant_history.pop_back();
+	castling_rights = castling_rights_history.back();
+	castling_rights_history.pop_back();
+	current_hash = hash_history.back();
+	hash_history.pop_back();
+	ply--;
+
+	const int piece_type = get_piece_type(move);
+	const int from_square = get_from_square(move);
+	const int to_square = get_to_square(move);
+	const int captured_type = get_captured_type(move);
+	const int promoted_type = get_promotion_type(move);
+
+	const bool double_pawn_push = get_double_push_flag(move);
+	const bool capture = get_capture_flag(move);
+	const bool is_enpassant = get_enpassant_flag(move);
+	const bool is_castle = get_castling_flag(move);
+
+	set_bit(bitboards[piece_type], from_square);
+	pop_bit(bitboards[piece_type], to_square);
+
+	const bool is_promotion = promoted_type != 15;
+	bitboards[(is_promotion)*promoted_type] &= ~(((is_promotion) * 1ULL) << (to_square));
+	//branchlessly pop the piece that was promoted. if move was not a promotion the white pawns are and'ed with a bitboard of ones, thus it would not change
+
+	bitboards[(capture)*captured_type] |= (capture) * (1ULL << (to_square + 8 * (is_enpassant) * ((side)-(!side))));
+	//branchlessly set the captured piece. if there was no captured piece the white pawn board is or'ed with 0 (not changed)
+	const int square_offset = 56 * (side);
+	const bool is_kingside = to_square > from_square;
+	bitboards[(9 - 6 * (side))] |= (((is_castle) * 1ULL) << ((is_kingside) * (h8 + square_offset) + (!(is_kingside) * (a8 + square_offset))));
+	bitboards[(9 - 6 * (side))] &= ~(((is_castle) * 1ULL) << ((is_kingside) * (f8 + square_offset) + (!(is_kingside)) * (d8 + square_offset)));
+	//branchlessly set and pop rook bits if move was castling
+
+	occupancies[0] = bitboards[0] | bitboards[1] | bitboards[2] | bitboards[3] | bitboards[4] | bitboards[5];
+	occupancies[1] = bitboards[6] | bitboards[7] | bitboards[8] | bitboards[9] | bitboards[10] | bitboards[11];
+	occupancies[2] = occupancies[0] | occupancies[1];
+	side = !side;
+}
+void Position::make_nullmove() {
+	hash_history.push_back(current_hash);
+	no_pawns_or_captures++;
+	ply++;
+	current_hash ^= (enpassant_square != a8) * keys[773 + (enpassant_square % 8)];
+	current_hash ^= keys[772];
+	enpassant_square = a8;
+	side = !side;
+	move_history.push_back(0);
+	enpassant_history.push_back(enpassant_square);
+	castling_rights_history.push_back(castling_rights);
+	no_pawns_or_captures_history.push_back(no_pawns_or_captures);
+}
+void Position::unmake_nullmove() {
+	no_pawns_or_captures_history.pop_back();
+	no_pawns_or_captures = no_pawns_or_captures_history.back();
+	enpassant_history.pop_back();
+	enpassant_square = enpassant_history.back();
+	castling_rights_history.pop_back();
+	castling_rights = castling_rights_history.back();
+	current_hash = hash_history.back();
+	hash_history.pop_back();
+	move_history.pop_back();
+	ply--;
+	side = !side;
 }

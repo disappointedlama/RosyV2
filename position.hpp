@@ -41,4 +41,9 @@ public:
 	void parse_fen(std::string fen);
 	void print() const;
 	U64 get_hash() const;
+	void update_hash();
+	void make_move(const int move);
+	void unmake_move();
+	void make_nullmove();
+	void unmake_nullmove();
 };
