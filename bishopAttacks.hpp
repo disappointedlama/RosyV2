@@ -1695,6 +1695,6 @@ std::array<unsigned long long,512>{ 18049651735527937ULL,18014398509481984ULL,18
 static constexpr unsigned long long get_bishop_attacks(unsigned long long occ, const int square) {
     occ &= bishop_masks[square];
     occ *= bishop_magics[square];
-    occ >>= 64 - bishopShifts[square];
+    occ >>= 64ULL - bishopShifts[square];
     return bishop_attacks[square][occ];
 }

@@ -13152,6 +13152,6 @@ std::array<unsigned long long, 4096>{9187484529235886208ULL,6953698562148401152U
 static constexpr unsigned long long get_rook_attacks(unsigned long long occ, const int square) {
     occ &= rook_masks[square];
     occ *= rook_magics[square];
-    occ >>= 64 - rookShifts[square];
+    occ >>= 64ULL - rookShifts[square];
     return rook_attacks[square][occ];
 }
