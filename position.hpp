@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <chrono>
 
 #include "hashKeys.hpp"
 #include "move.hpp"
@@ -53,17 +54,17 @@ class Position {
 	std::vector<int> castling_rights_history;
 	std::vector<int> no_pawns_or_captures_history;
 	std::vector<U64> hash_history;
-	bool is_attacked_by_side(const int sq, const bool color);
-	U64 get_attacks_by(const bool color);
-	int get_piece_type_on(const int sq);
+	inline bool is_attacked_by_side(const int sq, const bool color);
+	inline U64 get_attacks_by(const bool color);
+	inline int get_piece_type_on(const int sq);
 
 	void legal_move_generator(std::vector<int>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks);
 	void legal_in_check_move_generator(std::vector<int>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks);
 
 	void legal_capture_gen(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks);
 	void legal_in_check_capture_gen(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks);
-	void in_check_get_pawn_captures(std::vector<int>& ptr, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets);
-	void get_pawn_captures(std::vector<int>& ptr, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
+	void in_check_get_pawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets);
+	void get_pawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
 
 	U64 get_pinned_pieces(const int& kingpos, const U64 enemy_attacks);
 	U64 get_moves_for_pinned_pieces(std::vector<int>& ret, const int kingpos, const U64 enemy_attacks);

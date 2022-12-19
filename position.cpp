@@ -1,10 +1,10 @@
 #include "position.hpp"
 
-bool Position::is_attacked_by_side(const int sq, const bool color) {
+inline bool Position::is_attacked_by_side(const int sq, const bool color) {
 	return (color) ? ((get_rook_attacks(occupancies[both], sq) & (bitboards[9] | bitboards[10])) | (get_bishop_attacks(occupancies[both], sq) & (bitboards[8] | bitboards[10])) | (pawn_attacks[!color][sq] & bitboards[6]) | (king_attacks[sq] & bitboards[11]) | (knight_attacks[sq] & bitboards[7])) :
 		((get_rook_attacks(occupancies[both], sq) & (bitboards[3] | bitboards[4])) | (get_bishop_attacks(occupancies[both], sq) & (bitboards[2] | bitboards[4])) | (pawn_attacks[!color][sq] & bitboards[0]) | (king_attacks[sq] & bitboards[5]) | (knight_attacks[sq] & bitboards[1]));
 }
-U64 Position::get_attacks_by(const bool color) {
+inline U64 Position::get_attacks_by(const bool color) {
 
 	int offset = (color) * 6;
 	U64 attacks = ((bool)(bitboards[K + offset])) * king_attacks[bitscan(bitboards[K + offset])];
@@ -17,99 +17,25 @@ U64 Position::get_attacks_by(const bool color) {
 		tempKnights = tempKnights & ones_decrement(tempKnights);
 	}
 	//knight attacks individually
-
-	attacks |= (!color) * (((bitboards[0] >> 7) & notAFile) | ((bitboards[0] >> 9) & notHFile)) + (color) * (((bitboards[6] << 7) & notHFile) | ((bitboards[6] << 9) & notAFile));
+	attacks |= (color) ? (((bitboards[p] << 7) & notHFile) | ((bitboards[p] << 9) & notAFile)) : (((bitboards[P] >> 7) & notAFile) | ((bitboards[P] >> 9) & notHFile));
 	//setwise pawn attacks
 
-	const U64 rooks_w_queens = bitboards[R + offset] | bitboards[Q + offset];
-	U64 rooks = rooks_w_queens;
-	U64 flood = rooks_w_queens;
-	U64 empty = ~occupancies[both];
-	flood |= rooks = (rooks >> 8) & empty;
-	flood |= rooks = (rooks >> 8) & empty;
-	flood |= rooks = (rooks >> 8) & empty;
-	flood |= rooks = (rooks >> 8) & empty;
-	flood |= rooks = (rooks >> 8) & empty;
-	flood |= (rooks >> 8) & empty;
-	attacks |= flood >> 8;
-
-	rooks = rooks_w_queens;
-	flood = rooks_w_queens;
-	flood |= rooks = (rooks << 8) & empty;
-	flood |= rooks = (rooks << 8) & empty;
-	flood |= rooks = (rooks << 8) & empty;
-	flood |= rooks = (rooks << 8) & empty;
-	flood |= rooks = (rooks << 8) & empty;
-	flood |= (rooks << 8) & empty;
-	attacks |= flood << 8;
-
-	rooks = rooks_w_queens;
-	flood = rooks_w_queens;
-	empty &= notAFile;
-	flood |= rooks = (rooks << 1) & empty;
-	flood |= rooks = (rooks << 1) & empty;
-	flood |= rooks = (rooks << 1) & empty;
-	flood |= rooks = (rooks << 1) & empty;
-	flood |= rooks = (rooks << 1) & empty;
-	flood |= (rooks << 1) & empty;
-	attacks |= (flood << 1) & notAFile;
-
-	const U64 bishops_w_queens = bitboards[B + offset] | bitboards[Q + offset];
-	U64 bishops = bishops_w_queens;
-	flood = bishops_w_queens;
-	flood |= bishops = (bishops >> 7) & empty;
-	flood |= bishops = (bishops >> 7) & empty;
-	flood |= bishops = (bishops >> 7) & empty;
-	flood |= bishops = (bishops >> 7) & empty;
-	flood |= bishops = (bishops >> 7) & empty;
-	flood |= (bishops >> 7) & empty;
-	attacks |= (flood >> 7) & notAFile;
-
-	bishops = bishops_w_queens;
-	flood = bishops_w_queens;
-	flood |= bishops = (bishops << 9) & empty;
-	flood |= bishops = (bishops << 9) & empty;
-	flood |= bishops = (bishops << 9) & empty;
-	flood |= bishops = (bishops << 9) & empty;
-	flood |= bishops = (bishops << 9) & empty;
-	flood |= (bishops << 9) & empty;
-	attacks |= (flood << 9) & notAFile;
-
-
-	rooks = rooks_w_queens;
-	flood = rooks_w_queens;
-	empty = ~occupancies[both] & notHFile;
-	flood |= rooks = (rooks >> 1) & empty;
-	flood |= rooks = (rooks >> 1) & empty;
-	flood |= rooks = (rooks >> 1) & empty;
-	flood |= rooks = (rooks >> 1) & empty;
-	flood |= rooks = (rooks >> 1) & empty;
-	flood |= (rooks >> 1) & empty;
-	attacks |= (flood >> 1) & notHFile;
-
-	bishops = bishops_w_queens;
-	flood = bishops_w_queens;
-	flood |= bishops = (bishops >> 9) & empty;
-	flood |= bishops = (bishops >> 9) & empty;
-	flood |= bishops = (bishops >> 9) & empty;
-	flood |= bishops = (bishops >> 9) & empty;
-	flood |= bishops = (bishops >> 9) & empty;
-	flood |= (bishops >> 9) & empty;
-	attacks |= (flood >> 9) & notHFile;
-
-	bishops = bishops_w_queens;
-	flood = bishops_w_queens;
-	flood |= bishops = (bishops << 7) & empty;
-	flood |= bishops = (bishops << 7) & empty;
-	flood |= bishops = (bishops << 7) & empty;
-	flood |= bishops = (bishops << 7) & empty;
-	flood |= bishops = (bishops << 7) & empty;
-	flood |= (bishops << 7) & empty;
-	attacks |= (flood << 7) & notHFile;
+	U64 rooks_w_queens = bitboards[R + offset] | bitboards[Q + offset];
+	while (rooks_w_queens) {
+		U64 isolated = rooks_w_queens & twos_complement(rooks_w_queens);
+		attacks |= get_rook_attacks(occupancies[both], bitscan(isolated));
+		rooks_w_queens = rooks_w_queens & ones_decrement(rooks_w_queens);
+	}
+	U64 bishops_w_queens = bitboards[B + offset] | bitboards[Q + offset];
+	while (bishops_w_queens) {
+		U64 isolated = bishops_w_queens & twos_complement(bishops_w_queens);
+		attacks |= get_bishop_attacks(occupancies[both], bitscan(isolated));
+		bishops_w_queens = bishops_w_queens & ones_decrement(bishops_w_queens);
+	}
 
 	return attacks;
 }
-int Position::get_piece_type_on(const int sq) {
+inline int Position::get_piece_type_on(const int sq) {
 	const int offset = (!side) * 6;
 	bool found_piece = false;
 	int piece_type = 0;
@@ -138,12 +64,7 @@ void Position::get_legal_moves(std::vector<int>& ret) {
 	const bool in_check = is_attacked_by_side(kingpos, !side);
 	const U64 kings_queen_scope = get_queen_attacks(occupancies[both], kingpos);
 	const U64 enemy_attacks = get_attacks_by(!side);
-
-	if (in_check) {
-		legal_in_check_move_generator(ret, kingpos, kings_queen_scope, enemy_attacks);
-		return;
-	}
-	legal_move_generator(ret, kingpos, kings_queen_scope, enemy_attacks);
+	(in_check) ? (legal_in_check_move_generator(ret, kingpos, kings_queen_scope, enemy_attacks)) : (legal_move_generator(ret, kingpos, kings_queen_scope, enemy_attacks));
 }
 void Position::legal_move_generator(std::vector<int>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks) {
 	get_castles(ret);
@@ -364,11 +285,7 @@ void Position::get_legal_captures(std::vector<int>& ret) {
 	const bool in_check = is_attacked_by_side(kingpos, !side);
 	const U64 kings_queen_scope = get_queen_attacks(occupancies[both], kingpos);
 	const U64 enemy_attacks = get_attacks_by(!side);
-	if (in_check) {
-		legal_in_check_capture_gen(ret, kings_queen_scope, enemy_attacks);
-		return;
-	}
-	legal_capture_gen(ret, kings_queen_scope, enemy_attacks);
+	(in_check) ? (legal_in_check_capture_gen(ret, kings_queen_scope, enemy_attacks)) : (legal_capture_gen(ret, kings_queen_scope, enemy_attacks));
 }
 void Position::legal_capture_gen(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks) {
 	const int offset = (side) * 6;
@@ -587,29 +504,16 @@ void Position::legal_in_check_capture_gen(std::vector<int>& ret, const U64 kings
 	in_check_get_pawn_captures(ret, kings_queen_scope, enemy_attacks,pinned, (not_double_check)*checkers);
 }
 
-void Position::get_pawn_captures(std::vector<int>& ptr, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned) {
-	if (side) {
-		legal_bpawn_captures(ptr, kings_queen_scope, enemy_attacks, pinned);
-		return;
-	}
-	legal_wpawn_captures(ptr, kings_queen_scope, enemy_attacks, pinned);
+void Position::get_pawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned) {
+	(side) ? (legal_bpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned)) : (legal_wpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned));
 }
-void Position::in_check_get_pawn_captures(std::vector<int>& ptr, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets) {
-	if (side) {
-		in_check_legal_bpawn_captures(ptr, kings_queen_scope, enemy_attacks,pinned, targets);
-		return;
-	}
-	in_check_legal_wpawn_captures(ptr, kings_queen_scope, enemy_attacks, pinned, targets);
+void Position::in_check_get_pawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets) {
+	(side) ? (in_check_legal_bpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, targets)) : (in_check_legal_wpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, targets));
 }
 
 inline void Position::get_legal_pawn_moves(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned) {
-	if (side) {
-		legal_bpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned);
-		legal_bpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned);
-		return;
-	}
-	legal_wpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned);
-	legal_wpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned);
+	(side) ? (legal_bpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned)) : (legal_wpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned));
+	(side) ? (legal_bpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned)) : (legal_wpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned));
 }
 inline void Position::legal_bpawn_pushes(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned) {
 	U64 valid_targets = ~occupancies[both];
@@ -810,13 +714,8 @@ inline void Position::legal_wpawn_captures(std::vector<int>& ret, const U64 king
 }
 
 inline void Position::in_check_get_legal_pawn_moves(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid) {
-	if (side) {
-		in_check_legal_bpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned, targets, in_check_valid);
-		in_check_legal_bpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, targets);
-		return;
-	}
-	in_check_legal_wpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned, targets, in_check_valid);
-	in_check_legal_wpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, targets);
+	(side) ? (in_check_legal_bpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned, targets, in_check_valid)) : (in_check_legal_wpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned, targets, in_check_valid));
+	(side) ? (in_check_legal_bpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, targets)) : (in_check_legal_wpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, targets));
 }
 inline void Position::in_check_legal_bpawn_pushes(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid) {
 	const U64 valid_targets = ~occupancies[both];
