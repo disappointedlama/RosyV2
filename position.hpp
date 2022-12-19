@@ -41,7 +41,7 @@ static constexpr U64 get_queen_attacks(U64 occ, const int sq) {
 	return get_bishop_attacks(occ, sq) | get_rook_attacks(occ, sq);
 };
 class Position {
-	std::array<U64, 12> bitboards;
+	std::array<U64, 12> bitboards; // P, N, B, R, Q, K, p, n, b, r, q, k
 	std::array<U64, 3> occupancies;
 	bool side;
 	int ply;
