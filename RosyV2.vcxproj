@@ -134,6 +134,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="bitboard.cpp" />
+    <ClCompile Include="engine.cpp" />
     <ClCompile Include="move.cpp" />
     <ClCompile Include="position.cpp" />
     <ClCompile Include="RosyV2.cpp" />
@@ -141,9 +142,12 @@
   <ItemGroup>
     <ClInclude Include="bishopAttacks.hpp" />
     <ClInclude Include="bitboard.hpp" />
+    <ClInclude Include="engine.hpp" />
+    <ClInclude Include="evaluationTables.hpp" />
     <ClInclude Include="hashKeys.hpp" />
     <ClInclude Include="kingAttacks.hpp" />
     <ClInclude Include="knightAttacks.hpp" />
+    <ClInclude Include="masks.hpp" />
     <ClInclude Include="move.hpp" />
     <ClInclude Include="pawnAttacks.hpp" />
     <ClInclude Include="position.hpp" />

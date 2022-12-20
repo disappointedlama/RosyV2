@@ -27,6 +27,9 @@
     <ClCompile Include="position.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="engine.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RosyV2.hpp">
@@ -57,6 +60,15 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="hashKeys.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="engine.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="evaluationTables.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="masks.hpp">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>

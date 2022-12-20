@@ -66,7 +66,11 @@ void test() {
 }
 int main()
 {
-    test();
-	return 0;
+    Engine rosy{};
+    rosy.set_max_depth(7);
+    rosy.set_debug(true);
+    rosy.bestMove();
+    //test();
+    return 0;
 }
 //1648673 1/s is current move gen speed

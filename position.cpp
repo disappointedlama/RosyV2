@@ -947,7 +947,7 @@ inline void Position::get_castles(std::vector<int>& ptr) {
 		ptr.push_back(move);
 	}
 }
-U64 Position::get_pinned_pieces(const int& kingpos, const U64 enemy_attacks) {
+U64 Position::get_pinned_pieces(const int kingpos, const U64 enemy_attacks) {
 	U64 potentially_pinned_by_bishops = enemy_attacks & get_bishop_attacks(occupancies[both], kingpos) & occupancies[(side)];
 	U64 potentially_pinned_by_rooks = enemy_attacks & get_rook_attacks(occupancies[both], kingpos) & occupancies[(side)];
 	U64 pinned_pieces = 0ULL;
@@ -1531,6 +1531,79 @@ void Position::parse_fen(std::string fen) {
 	enpassant_history.push_back(enpassant_square);
 	current_hash = get_hash();
 	hash_history.push_back(current_hash);
+}
+
+std::string Position::fen() {
+	std::string ret = "";
+	const int arr[8] = { 7,6,5,4,3,2,1,0 };
+	for (int i = 0; i < 8; i++) {
+		int empty_spaces = 0;
+		for (int j = 0; j < 8; j++) {
+			const int ind = 8 * i + j;
+			int piece = get_piece_type_on(ind);
+			if (piece == 15) {
+				side = !side;
+				piece = get_piece_type_on(ind);
+				side = !side;
+			}
+			if ((piece == 15) || ((ind == enpassant_square) && (enpassant_square != a8))) {
+				empty_spaces++;
+			}
+			else {
+				if (empty_spaces) {
+					ret += std::to_string(empty_spaces);
+				}
+				empty_spaces = 0;
+				ret += ascii_pieces[piece];
+			}
+		}
+		if (empty_spaces) {
+			ret += std::to_string(empty_spaces);
+		}
+		if (i < 7) {
+			ret += "/";
+		}
+	}
+	ret += " ";
+	if (side) {
+		ret += "b";
+	}
+	else {
+		ret += "w";
+	}
+	ret += " ";
+	if (get_bit(castling_rights, 0)) {
+		ret += "K";
+	}
+	if (get_bit(castling_rights, 1)) {
+		ret += "Q";
+	}
+	if (get_bit(castling_rights, 2)) {
+		ret += "k";
+	}
+	if (get_bit(castling_rights, 3)) {
+		ret += "q";
+	}
+	if (!(get_bit(castling_rights, 0) || get_bit(castling_rights, 1) || get_bit(castling_rights, 2) || get_bit(castling_rights, 3))) {
+		ret += "-";
+	}
+	ret += " ";
+	if ((enpassant_square == a8) || (enpassant_square == 64)) {
+		ret += "-";
+	}
+	else {
+		ret += square_coordinates[enpassant_square];
+	}
+	ret += " ";
+	ret += std::to_string(no_pawns_or_captures);
+	ret += " ";
+	if (ply % 2) {
+		ret += std::to_string((ply + 1) / 2);
+	}
+	else {
+		ret += std::to_string(ply / 2 + 1);
+	}
+	return ret;
 }
 void Position::print() const {
 	printf("\n");
