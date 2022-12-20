@@ -69,6 +69,7 @@ int main()
     Engine rosy{};
     rosy.set_max_depth(7);
     rosy.set_debug(true);
+    rosy.set_position("2k3r1/8/1q6/8/8/8/5PBP/7K b - - 0 1");
     rosy.bestMove();
     //test();
     return 0;

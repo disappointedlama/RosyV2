@@ -254,6 +254,7 @@ class Engine {
 	int infinity;
 	KillerTable killer_table;
 	std::unordered_map<U64, TableEntry> hash_map;
+	U64 nodes;
 	MoveWEval pv_root_call(const int depth, int alpha, int beta);
 	int pv_search(const int depth, int alpha, int beta);
 	int quiescence(int alpha, int beta);
@@ -290,26 +291,12 @@ class Engine {
 			});
 	}
 	TableEntry lookUp();
+	void print_info(const int depth, const int eval, const U64 time);
 public:
 	Engine();
 	Engine(const bool t_debug);
 	int bestMove();
 	void set_debug(const bool t_debug);
 	void set_max_depth(const int depth);
+	void set_position(std::string fen);
 };
-
-constexpr int int_power(int base, int exp)
-{
-	int result = 1;
-	for (;;)
-	{
-		if (exp & 1)
-			result *= base;
-		exp >>= 1;
-		if (!exp)
-			break;
-		base *= base;
-	}
-
-	return result;
-}

@@ -15,6 +15,7 @@ Engine::Engine() {
 	infinity = pos.infinity;
 	killer_table = KillerTable{};
 	hash_map = std::unordered_map<U64, TableEntry>{};
+	nodes = 0ULL;
 }
 Engine::Engine(const bool t_debug) {
 	pos = Position{};
@@ -24,6 +25,7 @@ Engine::Engine(const bool t_debug) {
 	infinity = pos.infinity;
 	killer_table = KillerTable{};
 	hash_map = std::unordered_map<U64, TableEntry>{};
+	nodes = 0ULL;
 }
 int Engine::bestMove() {
 	const int aspiration_window = 200;
@@ -34,11 +36,17 @@ int Engine::bestMove() {
 	int alpha = -infinity;
 	int beta = infinity;
 	for (current_desired_depth = 1; current_desired_depth < max_depth + 1; current_desired_depth++) {
+		nodes = 0;
+		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 		MoveWEval result = pv_root_call(current_desired_depth,alpha,beta);
 		const bool fell_outside_window = (result.eval <= alpha) || (result.eval >= beta);
 		if (fell_outside_window) {
+			nodes = 0;
 			result = pv_root_call(current_desired_depth, -infinity, infinity);
 		}
+		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+		const U64 time = (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+		print_info(current_desired_depth, result.eval, time);
 		old_best = best;
 		best = result;
 		alpha = result.eval - aspiration_window;
@@ -64,7 +72,7 @@ MoveWEval Engine::pv_root_call(const int depth, int alpha, int beta) {
 	order(moves, entry);
 	const int number_of_moves = moves.size();
 	int current_best_move = -1;
-	int current_best_eval = -infinity;
+	int current_best_eval = -infinity-1;
 	for (int i = 0; i < number_of_moves; i++) {
 		pos.make_move(moves[i]);
 		int value = -pv_search(depth - 1, -beta, -alpha);
@@ -91,23 +99,10 @@ MoveWEval Engine::pv_root_call(const int depth, int alpha, int beta) {
 		}
 	}
 	hash_map[pos.current_hash] = TableEntry{ current_best_move, current_best_eval, EXACT, depth };
-	int j = 0;
-	std::cout << "pv ";
-	for (int i = 0; i < current_desired_depth; i++) {
-		TableEntry entry = lookUp();
-		//if (entry.flag != EXACT) break;
-		j++;
-		std::cout << uci(entry.move) << " ";
-		pos.make_move(entry.move);
-	}
-	for (int i = 0; i < j; i++) {
-		pos.unmake_move();
-	}
-	std::cout << std::endl;
 	return MoveWEval{ current_best_move, current_best_eval };
 }
 int Engine::pv_search(const int depth, int alpha, int beta) {
-
+	nodes++;
 	const int alphaOrigin = alpha;
 	TableEntry entry = lookUp();
 
@@ -150,7 +145,7 @@ int Engine::pv_search(const int depth, int alpha, int beta) {
 	}
 	order(moves, entry);
 	int current_best_move = -1;
-	int current_best_eval = -infinity;
+	int current_best_eval = -infinity-1;
 	for (int i = 0; i < number_of_moves; i++) {
 		pos.make_move(moves[i]);
 		int value = -pv_search(depth - 1, -beta, -alpha);
@@ -163,7 +158,7 @@ int Engine::pv_search(const int depth, int alpha, int beta) {
 				const bool not_capture = !get_capture_flag(moves[0]);
 				if (not_capture) {
 					killer_table.push_move(moves[0], pos.get_ply());
-					history[pos.get_side()][(int)get_piece_type(moves[0])][(int)get_to_square(moves[0])] += (!get_capture_flag(moves[0])) * (unsigned long long)(int_power(2, depth));
+					history[pos.get_side()][(int)get_piece_type(moves[0])][(int)get_to_square(moves[0])] += (!get_capture_flag(moves[0])) * (unsigned long long)(2<<depth);
 				}
 				if (depth >= entry.depth) {
 					hash_map[pos.current_hash] = TableEntry{ moves[i],value,LOWER,depth };
@@ -179,6 +174,7 @@ int Engine::pv_search(const int depth, int alpha, int beta) {
 	return alpha;
 }
 int Engine::quiescence(int alpha, int beta) {
+	nodes++;
 	const int alphaOrigin = alpha;
 	std::vector<int> captures{};
 	pos.get_legal_captures(captures);
@@ -244,4 +240,22 @@ void Engine::set_max_depth(const int depth) {
 }
 void Engine::set_debug(const bool t_debug) {
 	debug = t_debug;
+}
+void Engine::set_position(std::string fen) {
+	pos = Position(fen);
+}
+void Engine::print_info(const int depth, const int eval, const U64 time) {
+	std::cout << "info score cp " << eval << " depth " << depth << " nodes " << nodes << " nps " << 1000000000 * nodes / time << " pv ";
+	int j = 0;
+	for (int i = 0; i < depth; i++) {
+		TableEntry entry = lookUp();
+		//if (entry.flag != EXACT) break;
+		j++;
+		std::cout << uci(entry.move) << " ";
+		pos.make_move(entry.move);
+	}
+	for (int i = 0; i < j; i++) {
+		pos.unmake_move();
+	}
+	std::cout << std::endl;
 }
