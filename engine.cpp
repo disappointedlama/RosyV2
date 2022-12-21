@@ -199,6 +199,9 @@ int Engine::pv_search(const int depth, int alpha, int beta) {
 	return alpha;
 }
 int Engine::quiescence(int alpha, int beta) {
+	if (!run) {
+		throw stop_exception("pv search");
+	}
 	nodes++;
 	const int alphaOrigin = alpha;
 	std::vector<int> captures{};

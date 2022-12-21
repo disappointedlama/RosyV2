@@ -64,6 +64,15 @@ void test() {
     perf(pos, 6);
     std::cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
 }
+void simd_tests() {
+    U64 a = 123123ULL;
+    __m256i values = _mm256_setr_epi64x(a,a,a,a);
+    __m256i arg = _mm256_setr_epi64x(123123ULL, ~123123ULL, 123123ULL + 1ULL, ~(123123ULL + 1ULL));
+    values = _mm256_and_si256(values, arg);
+    U64 arr[4];
+    _mm256_storeu_si256((__m256i*)arr, values);
+    std::cout << arr[0] << arr[1] << arr[2] << arr[3] << std::endl;
+}
 int main()
 {
     Engine rosy{};
@@ -73,6 +82,7 @@ int main()
     //rosy.parse_position("2k3r1/8/1q6/8/8/8/5PBP/7K b - - 0 1");
     //rosy.bestMove();
     //test();
+    //simd_tests();
     return 0;
 }
 //1648673 1/s is current move gen speed

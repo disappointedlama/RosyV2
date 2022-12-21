@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 #include <chrono>
+#include <emmintrin.h>
+#include "immintrin.h"
 
 #include "hashKeys.hpp"
 #include "move.hpp"
