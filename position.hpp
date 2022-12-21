@@ -42,6 +42,7 @@ static constexpr int char_pieces(const char piece) {
 static constexpr U64 get_queen_attacks(U64 occ, const int sq) {
 	return get_bishop_attacks(occ, sq) | get_rook_attacks(occ, sq);
 };
+static const std::string start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 class Position {
 	std::array<U64, 12> bitboards; // P, N, B, R, Q, K, p, n, b, r, q, k
 	std::array<U64, 3> occupancies;

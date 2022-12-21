@@ -8,8 +8,15 @@
 #define LOWER 2
 struct invalid_move_exception : std::exception {
 	int move;
+	std::string move_str;
 	Position pos;
 	invalid_move_exception(const Position t_pos, const int t_move);
+	invalid_move_exception(const Position t_pos, const std::string t_move);
+	const std::string what() throw();
+};
+struct stop_exception : std::exception {
+	std::string source;
+	stop_exception(std::string t_source);
 	const std::string what() throw();
 };
 struct MoveWEval {
@@ -39,7 +46,7 @@ struct TableEntry {
 	}
 };
 struct KillerTable {
-	int table[10000][3];
+	int table[512][3];
 	void push_move(const int move, const int depth) {
 		table[depth][2] = table[depth][1];
 		table[depth][1] = table[depth][0];
@@ -290,13 +297,17 @@ class Engine {
 				return (history[index][(size_t)(lhs_piece)][(size_t)(get_to_square(lhs))] > history[index][(size_t)(rhs_piece)][(size_t)(get_to_square(rhs))]);
 			});
 	}
-	TableEntry lookUp();
+	inline TableEntry lookUp();
 	void print_info(const int depth, const int eval, const U64 time);
+	void track_time(const U64 max_time);
 public:
 	Engine();
 	Engine(const bool t_debug);
 	int bestMove();
 	void set_debug(const bool t_debug);
 	void set_max_depth(const int depth);
-	void set_position(std::string fen);
+	void parse_position(std::string fen);
+	void parse_go(std::string str);
+	void reset_position();
+	void uci_loop();
 };

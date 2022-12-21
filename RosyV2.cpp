@@ -69,9 +69,11 @@ int main()
     Engine rosy{};
     rosy.set_max_depth(7);
     rosy.set_debug(true);
-    rosy.set_position("2k3r1/8/1q6/8/8/8/5PBP/7K b - - 0 1");
-    rosy.bestMove();
+    rosy.uci_loop();
+    //rosy.parse_position("2k3r1/8/1q6/8/8/8/5PBP/7K b - - 0 1");
+    //rosy.bestMove();
     //test();
     return 0;
 }
 //1648673 1/s is current move gen speed
+//position fen 2k3r1/8/1q6/8/8/8/5PBP/7K b - - 0 1 moves b6b1 g2f1 b1f1

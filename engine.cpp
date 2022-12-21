@@ -3,9 +3,21 @@
 invalid_move_exception::invalid_move_exception(const Position t_pos, const int t_move) {
 	pos = t_pos;
 	move = t_move;
+	move_str = uci(t_move);
+}
+invalid_move_exception::invalid_move_exception(const Position t_pos, const std::string t_move) {
+	pos = t_pos;
+	move = -1;
+	move_str = t_move;
 }
 const std::string invalid_move_exception::what() throw() {
-	return std::format("Found invalid move %s in position %s", uci(move), pos.fen());
+	return std::format("Found invalid move %s in position %s", move_str, pos.fen());
+}
+stop_exception::stop_exception(std::string t_source) {
+	source = t_source;
+}
+const std::string stop_exception::what() {
+	return "Stop exception thrown by " + source;
 }
 Engine::Engine() {
 	pos = Position{};
@@ -35,35 +47,45 @@ int Engine::bestMove() {
 	MoveWEval old_best = best;
 	int alpha = -infinity;
 	int beta = infinity;
-	for (current_desired_depth = 1; current_desired_depth < max_depth + 1; current_desired_depth++) {
-		nodes = 0;
-		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-		MoveWEval result = pv_root_call(current_desired_depth,alpha,beta);
-		const bool fell_outside_window = (result.eval <= alpha) || (result.eval >= beta);
-		if (fell_outside_window) {
+	try {
+		for (current_desired_depth = 1; current_desired_depth < max_depth + 1; current_desired_depth++) {
 			nodes = 0;
-			result = pv_root_call(current_desired_depth, -infinity, infinity);
-		}
-		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-		const U64 time = (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-		print_info(current_desired_depth, result.eval, time);
-		old_best = best;
-		best = result;
-		alpha = result.eval - aspiration_window;
-		beta = result.eval + aspiration_window;
-		if (result.eval == infinity) {
-			std::cout << "\nbestmove " << uci(best.move) << std::endl;
-			return result.eval;
-		}
-		if (result.eval == -infinity) {
-			std::cout << "\nbestmove " << uci(old_best.move) << std::endl;
-			return old_best.move;
+			std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+			MoveWEval result = pv_root_call(current_desired_depth, alpha, beta);
+			const bool fell_outside_window = (result.eval <= alpha) || (result.eval >= beta);
+			if (fell_outside_window) {
+				nodes = 0;
+				result = pv_root_call(current_desired_depth, -infinity, infinity);
+			}
+			std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+			const U64 time = (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+			print_info(current_desired_depth, result.eval, time);
+			old_best = best;
+			best = result;
+			alpha = result.eval - aspiration_window;
+			beta = result.eval + aspiration_window;
+			if (result.eval == infinity) {
+				std::cout << "\nbestmove " << uci(best.move) << std::endl;
+				run = false;
+				return result.eval;
+			}
+			if (result.eval == -infinity) {
+				std::cout << "\nbestmove " << uci(old_best.move) << std::endl;
+				run = false;
+				return old_best.move;
+			}
 		}
 	}
+	catch (stop_exception e) {
+		std::cout << "caught \"" << e.what() << "\"" << std::endl;
+	}
+	reset_position();
 	if (best.move == -1) {
 		throw invalid_move_exception(pos, best.move);
 	}
 	std::cout << "\nbestmove: " << uci(best.move) << std::endl;
+	run = false;
+	return best.move;
 }
 MoveWEval Engine::pv_root_call(const int depth, int alpha, int beta) {
 	TableEntry entry = lookUp();
@@ -102,6 +124,9 @@ MoveWEval Engine::pv_root_call(const int depth, int alpha, int beta) {
 	return MoveWEval{ current_best_move, current_best_eval };
 }
 int Engine::pv_search(const int depth, int alpha, int beta) {
+	if (!run) {
+		throw stop_exception("pv search");
+	}
 	nodes++;
 	const int alphaOrigin = alpha;
 	TableEntry entry = lookUp();
@@ -158,7 +183,7 @@ int Engine::pv_search(const int depth, int alpha, int beta) {
 				const bool not_capture = !get_capture_flag(moves[0]);
 				if (not_capture) {
 					killer_table.push_move(moves[0], pos.get_ply());
-					history[pos.get_side()][(int)get_piece_type(moves[0])][(int)get_to_square(moves[0])] += (!get_capture_flag(moves[0])) * (unsigned long long)(2<<depth);
+					history[pos.get_side()][(int)get_piece_type(moves[0])][(int)get_to_square(moves[0])] += (!get_capture_flag(moves[0])) * (2ULL<<depth);
 				}
 				if (depth >= entry.depth) {
 					hash_map[pos.current_hash] = TableEntry{ moves[i],value,LOWER,depth };
@@ -207,7 +232,7 @@ int Engine::quiescence(int alpha, int beta) {
 		});
 
 	int current_best_move = -1;
-	int current_best_eval = -1000000;
+	int current_best_eval = -infinity - 1;
 	for (int i = 0; i < number_of_captures; i++) {
 		pos.make_move(captures[i]);
 		const int value = -quiescence(-beta, -alpha);
@@ -228,7 +253,7 @@ int Engine::quiescence(int alpha, int beta) {
 	hash_map[pos.current_hash] = TableEntry{ current_best_move, alpha, (current_best_eval <= alphaOrigin) * LOWER, 0 };
 	return alpha;
 }
-TableEntry Engine::lookUp() {
+inline TableEntry Engine::lookUp() {
 	auto yield = hash_map.find(pos.current_hash);
 	if (yield != hash_map.end()) {
 		return yield->second;
@@ -241,15 +266,95 @@ void Engine::set_max_depth(const int depth) {
 void Engine::set_debug(const bool t_debug) {
 	debug = t_debug;
 }
-void Engine::set_position(std::string fen) {
+void Engine::parse_position(std::string fen) {
+	std::string moves="";
+	std::string str = " moves ";
+	auto substr_pos = fen.find(str);
+	if (substr_pos != std::string::npos) {
+		moves = fen.substr(substr_pos + str.size(), fen.size());
+		fen = fen.substr(0, substr_pos);
+	}
+	str = "startpos";
+	substr_pos = fen.find(str);
+	if (substr_pos != std::string::npos) {
+		fen = start_position;
+	}
+	str = "fen ";
+	substr_pos = fen.find(str);
+	if (substr_pos != std::string::npos) {
+		fen = fen.substr(substr_pos + str.size(), fen.size());
+	}
 	pos = Position(fen);
+	while (moves != "") {
+		std::vector<int> move_list{};
+		pos.get_legal_moves(move_list);
+		std::string move_string = moves.substr(0,moves.find_first_of(' '));
+		if (move_string.size() > 4) {
+			const int last = move_string.size() - 1;
+			if ((move_string[last] != 'n') && (move_string[last] != 'b') && (move_string[last] != 'r') && (move_string[last] != 'q')) {
+				move_string = move_string.substr(0, last);
+			}
+		}
+		bool matching_move_found = false;
+		for (int i = 0; i < move_list.size(); i++) {
+			if (uci(move_list[i])==move_string) {
+				pos.make_move(move_list[i]);
+				matching_move_found = true;
+				break;
+			}
+		}
+		if (!matching_move_found) {
+			throw invalid_move_exception(pos, move_string);
+		}
+		if (move_string.size() + 1 < moves.size()) {
+			moves = moves.substr(move_string.size() + 1, moves.size());
+		}
+		else { moves = ""; }
+	}
+	pos.print();
+	run = false;
+}
+void Engine::reset_position() {
+	pos = Position{ start_position };
+}
+void Engine::parse_go(std::string str){
+	std::string command = "depth ";
+	auto substr_pos = str.find(command);
+	if (substr_pos != std::string::npos) {
+		str = str.substr(substr_pos + command.size(), str.size());
+		max_depth = stoi(str);
+		bestMove();
+		return;
+	}
+	command = "infinite";
+	substr_pos = str.find(command);
+	if (substr_pos != std::string::npos) {
+		str = str.substr(substr_pos + command.size(), str.size());
+		max_depth = infinity;
+		bestMove();
+		return;
+	}
+	command = "movetime ";
+	substr_pos = str.find(command);
+	if (substr_pos != std::string::npos) {
+		str = str.substr(substr_pos + command.size(), str.size());
+		std::thread time_tracker = std::thread(&Engine::track_time, this, stoull(str)*1000000ULL);
+		max_depth = infinity;
+		bestMove();
+		while (true) {
+			if (time_tracker.joinable()) {
+				time_tracker.join();
+				break;
+			}
+		}
+		return;
+	}
 }
 void Engine::print_info(const int depth, const int eval, const U64 time) {
 	std::cout << "info score cp " << eval << " depth " << depth << " nodes " << nodes << " nps " << 1000000000 * nodes / time << " pv ";
 	int j = 0;
 	for (int i = 0; i < depth; i++) {
 		TableEntry entry = lookUp();
-		//if (entry.flag != EXACT) break;
 		j++;
 		std::cout << uci(entry.move) << " ";
 		pos.make_move(entry.move);
@@ -258,4 +363,149 @@ void Engine::print_info(const int depth, const int eval, const U64 time) {
 		pos.unmake_move();
 	}
 	std::cout << std::endl;
+}
+void Engine::track_time(const U64 max_time) {
+	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	while (run) {
+		end = std::chrono::steady_clock::now();
+		if ((U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() >= max_time) {
+			std::cout << "stopping execution" << std::endl;
+			run = false;
+		}
+	}
+}
+void Engine::uci_loop(){
+
+	fflush(stdin);
+	fflush(stdout);
+	char input[2000];
+
+	std::vector<std::thread> workers{};
+	std::thread parse_runner{};
+	run = false;
+	char* command = nullptr;
+	std::cout << "option name Move Overhead type spin default 100 min 0 max 20000\noption name Threads type spin default 2 min 2 max 2\noption name Hash type spin default 512 min 256" << std::endl;
+	while (true) {
+		memset(input, 0, sizeof(input));
+		fflush(stdout);
+		if (!fgets(input, 2000, stdin)) {
+			continue;
+		}
+		if (!run) {
+			if (parse_runner.joinable()) {
+				parse_runner.join();
+			}
+		}
+		/*
+		if (!run) {
+			for (int i = 0; i < workers.size(); i++) {
+				if (workers[i].joinable()) {
+					workers[i].join();
+					workers.erase(workers.begin() + i);
+				}
+			}
+			//pondering = false;
+		}//if no thread is running join all threads and delete joined threads from workers
+		*/
+		if (input[0] == '\n') {
+			continue;
+		}
+		if (strncmp(input, "isready", 7) == 0) {
+			std::cout << "readyok\n";
+		}
+		else if (strncmp(input, "position", 8) == 0) {
+			run = true;
+			std::cout << "Launching thread" << std::endl;
+			parse_runner = std::thread(&Engine::parse_position, this, std::string{ input });
+		}
+		else if (strncmp(input, "ucinewgame", 10) == 0) {
+			reset_position();
+		}
+		else if (strncmp(input, "go", 2) == 0) {
+			if (!run) {
+				run = true;
+				parse_runner = std::thread(&Engine::parse_go, this, std::string{ input });
+			}
+
+			using namespace std::literals::chrono_literals;
+			std::this_thread::sleep_for(500us);
+		}
+		else if (strncmp(input, "quit", 4) == 0) {
+			//pondering = false;
+			run = false;
+			if (parse_runner.joinable()) {
+				parse_runner.join();
+			}
+			/*
+			run = false;
+			for (int i = 0; i < workers.size(); i++) {
+				if (workers[i].joinable()) {
+					workers[i].join();
+					workers.erase(workers.begin() + i);
+				}
+			}
+			*/
+			break;
+		}
+		else if (strncmp(input, "stop", 4) == 0) {
+			/*
+			if (pondering) {
+				pondering = false;
+				run = false;
+				for (int i = 0; i < workers.size(); i++) {
+					if (workers[i].joinable()) {
+						workers[i].join();
+						workers.erase(workers.begin() + i);
+					}
+				}
+				if (!run) {
+					run = true;
+					workers.push_back(std::thread(&Engine::parse_go, this, (char*)("go depth 7"), &run));
+				}
+
+				using namespace std::literals::chrono_literals;
+				std::this_thread::sleep_for(500us);
+			}
+			else {
+			*/
+				run = false;
+				if (parse_runner.joinable()) {
+					parse_runner.join();
+				}
+				/*
+				for (int i = 0; i < workers.size(); i++) {
+					if (workers[i].joinable()) {
+						workers[i].join();
+						workers.erase(workers.begin() + i);
+					}
+				}
+				*/
+				reset_position();
+				//pos = Position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
+			//}
+		}
+		else if (strncmp(input, "uci", 3) == 0) {
+			std::cout << "id name Rosy\n";
+			std::cout << "id author name disappointed_lama \n";
+			std::cout << "uciok\n";
+		}
+		/*
+		else if (strncmp(input, "ponderhit", 9) == 0) {
+			run = false;
+			for (int i = 0; i < workers.size(); i++) {
+				if (workers[i].joinable()) {
+					workers[i].join();
+					workers.erase(workers.begin() + i);
+				}
+			}
+			if (!run) {
+				run = true;
+				workers.push_back(std::thread(&Engine::parse_go, this, input, &run));
+			}
+			using namespace std::literals::chrono_literals;
+			std::this_thread::sleep_for(500us);
+		}
+		*/
+	}
 }
