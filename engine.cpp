@@ -11,7 +11,7 @@ invalid_move_exception::invalid_move_exception(const Position t_pos, const std::
 	move_str = t_move;
 }
 const std::string invalid_move_exception::what() throw() {
-	return std::format("Found invalid move %s in position %s", move_str, pos.fen());
+	return std::format("Found invalid move {} in position {}", move_str, pos.fen());
 }
 stop_exception::stop_exception(std::string t_source) {
 	source = t_source;
@@ -229,6 +229,15 @@ int Engine::quiescence(int alpha, int beta) {
 		return eval;
 	}
 	int eval = pos.evaluate(false, false);
+	if (eval < alpha - 950) {
+		return alpha;
+	}
+	if (eval > alpha) {
+		if (eval >= beta) {
+			return eval;
+		}
+		alpha = eval;
+	}
 	std::sort(captures.begin(), captures.end(), [&](const int& lhs, const int& rhs)
 		{
 			return (get_captured_type(lhs) - get_piece_type(lhs)) > (get_captured_type(rhs) - get_piece_type(rhs));
@@ -288,31 +297,36 @@ void Engine::parse_position(std::string fen) {
 		fen = fen.substr(substr_pos + str.size(), fen.size());
 	}
 	pos = Position(fen);
-	while (moves != "") {
-		std::vector<int> move_list{};
-		pos.get_legal_moves(move_list);
-		std::string move_string = moves.substr(0,moves.find_first_of(' '));
-		if (move_string.size() > 4) {
-			const int last = move_string.size() - 1;
-			if ((move_string[last] != 'n') && (move_string[last] != 'b') && (move_string[last] != 'r') && (move_string[last] != 'q')) {
-				move_string = move_string.substr(0, last);
+	try {
+		while (moves != "") {
+			std::vector<int> move_list{};
+			pos.get_legal_moves(move_list);
+			std::string move_string = moves.substr(0, moves.find_first_of(' '));
+			if (move_string.size() > 4) {
+				const int last = move_string.size() - 1;
+				if ((move_string[last] != 'n') && (move_string[last] != 'b') && (move_string[last] != 'r') && (move_string[last] != 'q')) {
+					move_string = move_string.substr(0, last);
+				}
 			}
-		}
-		bool matching_move_found = false;
-		for (int i = 0; i < move_list.size(); i++) {
-			if (uci(move_list[i])==move_string) {
-				pos.make_move(move_list[i]);
-				matching_move_found = true;
-				break;
+			bool matching_move_found = false;
+			for (int i = 0; i < move_list.size(); i++) {
+				if (uci(move_list[i]) == move_string) {
+					pos.make_move(move_list[i]);
+					matching_move_found = true;
+					break;
+				}
 			}
+			if (!matching_move_found) {
+				throw invalid_move_exception(pos, move_string);
+			}
+			if (move_string.size() + 1 < moves.size()) {
+				moves = moves.substr(move_string.size() + 1, moves.size());
+			}
+			else { moves = ""; }
 		}
-		if (!matching_move_found) {
-			throw invalid_move_exception(pos, move_string);
-		}
-		if (move_string.size() + 1 < moves.size()) {
-			moves = moves.substr(move_string.size() + 1, moves.size());
-		}
-		else { moves = ""; }
+	}
+	catch (invalid_move_exception e) {
+		std::cout << e.what() << std::endl;
 	}
 	pos.print();
 	run = false;
@@ -388,7 +402,6 @@ void Engine::uci_loop(){
 	std::thread parse_runner{};
 	run = false;
 	char* command = nullptr;
-	std::cout << "option name Move Overhead type spin default 100 min 0 max 20000\noption name Threads type spin default 2 min 2 max 2\noption name Hash type spin default 512 min 256" << std::endl;
 	while (true) {
 		memset(input, 0, sizeof(input));
 		fflush(stdout);
@@ -489,8 +502,8 @@ void Engine::uci_loop(){
 			//}
 		}
 		else if (strncmp(input, "uci", 3) == 0) {
-			std::cout << "id name Rosy\n";
-			std::cout << "id author name disappointed_lama \n";
+			std::cout << "id name Rosy author disappointed_lama\n";
+			std::cout << "option name Move Overhead type spin default 100 min 0 max 20000\noption name Threads type spin default 2 min 2 max 2\noption name Hash type spin default 512 min 256" << std::endl;
 			std::cout << "uciok\n";
 		}
 		/*

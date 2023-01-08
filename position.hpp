@@ -3,6 +3,7 @@
 #include <chrono>
 #include <emmintrin.h>
 #include "immintrin.h"
+#include "intrin.h"
 
 #include "hashKeys.hpp"
 #include "move.hpp"

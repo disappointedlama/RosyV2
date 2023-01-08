@@ -66,13 +66,18 @@ void test() {
 }
 int main()
 {
-    Engine rosy{};
-    rosy.set_max_depth(7);
-    rosy.set_debug(true);
-    rosy.uci_loop();
+    test();
+    /*
+    U64 test = 1ULL + 16ULL;
+    int ind = 5;
+    std::cout << (int)_bittest64((long long*)&test, ind) << std::endl;
+    */
+    //Engine rosy{};
+    //rosy.set_max_depth(7);
+    //rosy.set_debug(true);
+    //rosy.uci_loop();
     //rosy.parse_position("2k3r1/8/1q6/8/8/8/5PBP/7K b - - 0 1");
     //rosy.bestMove();
-    //test();
     //simd_tests();
     return 0;
 }
