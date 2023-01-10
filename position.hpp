@@ -1,7 +1,6 @@
 #pragma once
 #include <vector>
 #include <chrono>
-#include <emmintrin.h>
 #include "immintrin.h"
 #include "intrin.h"
 
