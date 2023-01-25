@@ -16,7 +16,7 @@ const std::string invalid_move_exception::what() throw() {
 stop_exception::stop_exception(std::string t_source) {
 	source = t_source;
 }
-const std::string stop_exception::what() {
+const std::string stop_exception::what() throw(){
 	return "Stop exception thrown by " + source;
 }
 Engine::Engine() {

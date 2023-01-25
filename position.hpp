@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <chrono>
+#include <cassert>
 #include "immintrin.h"
 #include "intrin.h"
 
@@ -88,7 +89,7 @@ class Position {
 	inline void in_check_legal_bpawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets);
 	inline void in_check_legal_wpawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets);
 
-	inline void get_castles(std::vector<int>& ptr);
+	inline void get_castles(std::vector<int>& ptr, const U64 enemy_attacks);
 	inline int get_phase() {
 		int ret = count_bits(bitboards[P] | bitboards[p]);
 		ret += 3 * count_bits(bitboards[N] | bitboards[n] | bitboards[B] | bitboards[b]);

@@ -294,6 +294,8 @@ class Engine {
 					return lhs_is_capture;
 				}
 				const size_t index = (size_t)pos.get_side();
+				assert(get_to_square(lhs) < 12);
+				assert(get_to_square(rhs) < 12);
 				return (history[index][(size_t)(lhs_piece)][(size_t)(get_to_square(lhs))] > history[index][(size_t)(rhs_piece)][(size_t)(get_to_square(rhs))]);
 			});
 	}

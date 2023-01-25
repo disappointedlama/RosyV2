@@ -67,11 +67,6 @@ void test() {
 int main()
 {
     test();
-    /*
-    U64 test = 1ULL + 16ULL;
-    int ind = 5;
-    std::cout << (int)_bittest64((long long*)&test, ind) << std::endl;
-    */
     //Engine rosy{};
     //rosy.set_max_depth(7);
     //rosy.set_debug(true);
