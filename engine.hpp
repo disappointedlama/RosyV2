@@ -3,9 +3,9 @@
 #include <unordered_map>
 
 #include "position.hpp"
-#define EXACT 1
-#define UPPER 1
-#define LOWER 2
+constexpr short EXACT = 0;
+constexpr short UPPER = 1;
+constexpr short LOWER = 2;
 struct invalid_move_exception : std::exception {
 	int move;
 	std::string move_str;
@@ -257,20 +257,21 @@ class Engine {
 	int current_desired_depth;
 	int max_depth;
 	std::atomic<bool> run;
+	std::atomic<bool> pondering;
 	bool debug;
 	int infinity;
 	KillerTable killer_table;
 	std::unordered_map<U64, TableEntry> hash_map;
 	U64 nodes;
-	MoveWEval pv_root_call(const int depth, int alpha, int beta);
-	int pv_search(const int depth, int alpha, int beta);
-	int quiescence(int alpha, int beta);
-	inline void order(std::vector<int>& moves, TableEntry& entry) {
+	MoveWEval pv_root_call(std::array<std::array<int, 128>, 40>& moves, int move_index, const int depth, int alpha, int beta);
+	int pv_search(std::array<std::array<int, 128>, 40>& moves, int move_index, const int depth, int alpha, int beta);
+	int quiescence(std::array<std::array<int, 128>, 40>& moves, int move_index, int alpha, int beta);
+	inline void order(std::array<int,128>& moves, TableEntry& entry, int number_of_moves) {
 		int hash_move = 0;
 		if (((bool)(entry.move)) && (std::find(moves.begin(), moves.end(), entry.move) != moves.end())) {
 			hash_move = entry.move;
 		}
-		std::sort(moves.begin(), moves.end(), [&](const int& lhs, const int& rhs)
+		std::sort(moves.begin(), (std::array<int, 128>::iterator)(moves.begin() + number_of_moves), [&](const int& lhs, const int& rhs)
 			{
 				if (lhs == hash_move) { return true; }
 				else if (rhs == hash_move) { return false; }
@@ -294,11 +295,19 @@ class Engine {
 					return lhs_is_capture;
 				}
 				const size_t index = (size_t)pos.get_side();
-				assert(get_to_square(lhs) < 12);
-				assert(get_to_square(rhs) < 12);
+				__assume(get_to_square(lhs) < 64);
+				__assume(get_to_square(rhs) < 64);
+				__assume(get_to_square(lhs) > -1);
+				__assume(get_to_square(rhs) > -1);
 				return (history[index][(size_t)(lhs_piece)][(size_t)(get_to_square(lhs))] > history[index][(size_t)(rhs_piece)][(size_t)(get_to_square(rhs))]);
 			});
 	}
+	inline void quiescence_order(std::array<int, 128>& moves, int number_of_moves) {
+		std::sort(moves.begin(), (std::array<int,128>::iterator)(moves.begin()+number_of_moves), [&](const int& lhs, const int& rhs)
+			{
+				return (get_captured_type(lhs) - get_piece_type(lhs)) > (get_captured_type(rhs) - get_piece_type(rhs));
+			});
+	};
 	inline TableEntry lookUp();
 	void print_info(const int depth, const int eval, const U64 time);
 	void track_time(const U64 max_time);

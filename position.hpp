@@ -14,7 +14,16 @@
 #include "kingAttacks.hpp"
 #include "masks.hpp"
 #include "evaluationTables.hpp"
-
+enum {
+	a8, b8, c8, d8, e8, f8, g8, h8,
+	a7, b7, c7, d7, e7, f7, g7, h7,
+	a6, b6, c6, d6, e6, f6, g6, h6,
+	a5, b5, c5, d5, e5, f5, g5, h5,
+	a4, b4, c4, d4, e4, f4, g4, h4,
+	a3, b3, c3, d3, e3, f3, g3, h3,
+	a2, b2, c2, d2, e2, f2, g2, h2,
+	a1, b1, c1, d1, e1, f1, g1, h1
+};
 //sides to move
 enum { white, black, both };
 //castling bits
@@ -63,33 +72,33 @@ class Position {
 	inline U64 get_attacks_by(const bool color);
 	inline int get_piece_type_on(const int sq);
 
-	void legal_move_generator(std::vector<int>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks);
-	void legal_in_check_move_generator(std::vector<int>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks);
+	void legal_move_generator(std::array<int,128>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind);
+	void legal_in_check_move_generator(std::array<int,128>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind);
 
-	void legal_capture_gen(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks);
-	void legal_in_check_capture_gen(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks);
-	void in_check_get_pawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets);
-	void get_pawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
+	void legal_capture_gen(std::array<int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind);
+	void legal_in_check_capture_gen(std::array<int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind);
+	void in_check_get_pawn_captures(std::array<int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, int& ind);
+	void get_pawn_captures(std::array<int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind);
 
 	U64 get_pinned_pieces(const int kingpos, const U64 enemy_attacks);
-	U64 get_moves_for_pinned_pieces(std::vector<int>& ret, const int kingpos, const U64 enemy_attacks);
-	U64 get_captures_for_pinned_pieces(std::vector<int>& ret, const int kingpos, const U64 enemy_attacks);
+	U64 get_moves_for_pinned_pieces(std::array<int,128>& ret, const int kingpos, const U64 enemy_attacks,int &ind);
+	U64 get_captures_for_pinned_pieces(std::array<int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind);
 	U64 get_checkers(const int kingpos);
 	U64 get_checking_rays(const int kingpos);
-	void try_out_move(std::vector<int>& ret, int move);
-	inline void get_legal_pawn_moves(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
-	inline void legal_bpawn_pushes(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
-	inline void legal_wpawn_pushes(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
-	inline void legal_bpawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
-	inline void legal_wpawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned);
+	void try_out_move(std::array<int,128>& ret, int move, int& ind);
+	inline void get_legal_pawn_moves(std::array<int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind);
+	inline void legal_bpawn_pushes(std::array<int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind);
+	inline void legal_wpawn_pushes(std::array<int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind);
+	inline void legal_bpawn_captures(std::array<int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind);
+	inline void legal_wpawn_captures(std::array<int, 128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind);
 
-	inline void in_check_get_legal_pawn_moves(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid);
-	inline void in_check_legal_bpawn_pushes(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid);
-	inline void in_check_legal_wpawn_pushes(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid);
-	inline void in_check_legal_bpawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets);
-	inline void in_check_legal_wpawn_captures(std::vector<int>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets);
+	inline void in_check_get_legal_pawn_moves(std::array<int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind);
+	inline void in_check_legal_bpawn_pushes(std::array<int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind);
+	inline void in_check_legal_wpawn_pushes(std::array<int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind);
+	inline void in_check_legal_bpawn_captures(std::array<int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, int& ind);
+	inline void in_check_legal_wpawn_captures(std::array<int, 128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, int& ind);
 
-	inline void get_castles(std::vector<int>& ptr, const U64 enemy_attacks);
+	inline void get_castles(std::array<int,128>& ptr, const U64 enemy_attacks, int& ind);
 	inline int get_phase() {
 		int ret = count_bits(bitboards[P] | bitboards[p]);
 		ret += 3 * count_bits(bitboards[N] | bitboards[n] | bitboards[B] | bitboards[b]);
@@ -183,8 +192,8 @@ public:
 	inline void unmake_move();
 	inline void make_nullmove();
 	inline void unmake_nullmove();
-	void get_legal_moves(std::vector<int>& ret);
-	void get_legal_captures(std::vector<int>& ret);
+	int get_legal_moves(std::array<int,128>& ret);
+	int get_legal_captures(std::array<int,128>& ret);
 	constexpr bool is_draw_by_repetition() {
 		return (std::count(hash_history.begin(), hash_history.end(), current_hash)) >= 3;
 	}
@@ -204,5 +213,73 @@ public:
 		const int phase = get_phase();
 		const bool is_endgame = (phase < 30);
 		return raw_material(is_endgame);
+	}
+	inline int get_kind_of_piece_on(const int sq) {
+		bool found_piece;
+		int piece_type;
+		bool bit;
+		for (int ind = 0; ind < 12; ind++) {
+			bit = get_bit(bitboards[ind], sq);
+			found_piece = bit;
+			piece_type = (bit)*ind;
+			if (bit) { break; }
+		}
+		const bool is_enpassant = (sq == enpassant_square);
+		return 15 * (!(found_piece || is_enpassant)) + (found_piece)*piece_type;
+	}
+	inline int get_smallest_attack(const int sq, const bool color) {
+		if (get_bit(occupancies[both], sq)) {
+			int move = 0;
+			set_promotion_type(move, 15);
+			set_to_square(move, sq);
+			set_captured_type(move, get_kind_of_piece_on(sq));
+			set_capture_flag(move, true);
+			const int offset = 6 * (color);
+			U64 pot_pawns = pawn_attacks[(color)][sq] & bitboards[offset];
+			if (pot_pawns) {
+				set_piece_type(move, P + offset);
+				set_from_square(move, bitscan(pot_pawns));
+				return move;
+			}
+			U64 pot_knights = knight_attacks[sq] & bitboards[N + offset];
+			if (pot_knights) {
+				set_piece_type(move, N + offset);
+				set_from_square(move, bitscan(pot_knights));
+				return move;
+			}
+			const U64 bishop_attacks = get_bishop_attacks(occupancies[both], sq);
+			U64 pot_bishops = bishop_attacks & bitboards[B + offset];
+			if (pot_bishops) {
+				set_piece_type(move, B + offset);
+				set_from_square(move, bitscan(pot_bishops));
+				return move;
+			}
+			const U64 rook_attacks = get_rook_attacks(occupancies[both], sq);
+			U64 pot_rooks = rook_attacks & bitboards[R + offset];
+			if (pot_rooks) {
+				set_piece_type(move, R + offset);
+				set_from_square(move, bitscan(pot_rooks));
+				return move;
+			}
+			U64 pot_queens = (rook_attacks | bishop_attacks) & bitboards[Q + offset];
+			if (pot_queens) {
+				set_piece_type(move, Q + offset);
+				set_from_square(move, bitscan(pot_queens));
+				return move;
+			}
+		}
+		return 0;
+	}
+	inline int see(const int square) {
+		int value = 0;
+		int move = get_smallest_attack(square, side);
+		/* skip if the square isn't attacked anymore by this side */
+		if (move) {
+			make_move(move);
+			/* Do not consider captures if they lose material, therefor max zero */
+			value = std::max(-1000000, basePieceValue[basePiece[get_captured_type(move)]] - see(square));
+			unmake_move();
+		}
+		return value;
 	}
 };

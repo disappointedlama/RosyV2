@@ -152,4 +152,5 @@ static constexpr int endgamePawnTableBlack[64] = {
 	100,100,100,100,100,100,100,100,
 	0,0,0,0,0,0,0,0,
 };
-static constexpr int basePieceValue[5] = { 100,305,333,563,950 };
+static constexpr int basePieceValue[6] = { 100,305,333,563,950,0 };
+static constexpr int basePiece[16] = { 0,1,2,3,4,5,0,1,2,3,4,5,0,0,0,0 };
