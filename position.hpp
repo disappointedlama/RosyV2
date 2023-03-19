@@ -190,8 +190,32 @@ public:
 	inline void update_hash(const int move);
 	inline void make_move(const int move);
 	inline void unmake_move();
-	inline void make_nullmove();
-	inline void unmake_nullmove();
+	inline void make_nullmove() {
+		hash_history.push_back(current_hash);
+		no_pawns_or_captures++;
+		ply++;
+		current_hash ^= (enpassant_square != a8) * keys[773 + (enpassant_square % 8)];
+		current_hash ^= keys[772];
+		enpassant_square = a8;
+		side = !side;
+		move_history.push_back(0);
+		enpassant_history.push_back(enpassant_square);
+		castling_rights_history.push_back(castling_rights);
+		no_pawns_or_captures_history.push_back(no_pawns_or_captures);
+	}
+	inline void unmake_nullmove() {
+		no_pawns_or_captures_history.pop_back();
+		no_pawns_or_captures = no_pawns_or_captures_history.back();
+		enpassant_history.pop_back();
+		enpassant_square = enpassant_history.back();
+		castling_rights_history.pop_back();
+		castling_rights = castling_rights_history.back();
+		current_hash = hash_history.back();
+		hash_history.pop_back();
+		move_history.pop_back();
+		ply--;
+		side = !side;
+	}
 	int get_legal_moves(std::array<int,128>& ret);
 	int get_legal_captures(std::array<int,128>& ret);
 	constexpr bool is_draw_by_repetition() {
@@ -232,7 +256,7 @@ public:
 			int move = 0;
 			set_promotion_type(move, 15);
 			set_to_square(move, sq);
-			set_captured_type(move, get_kind_of_piece_on(sq));
+			set_captured_type(move, get_piece_type_on(sq));
 			set_capture_flag(move, true);
 			const int offset = 6 * (color);
 			U64 pot_pawns = pawn_attacks[(color)][sq] & bitboards[offset];

@@ -90,25 +90,25 @@ int Engine::bestMove() {
 }
 MoveWEval Engine::pv_root_call(std::array<std::array<int, 128>, 40>& moves, int move_index, const int depth, int alpha, int beta) {
 	TableEntry entry = lookUp();
-	const int number_of_moves = pos.get_legal_moves(moves[depth]);
-	order(moves[depth], entry, number_of_moves);
+	const int number_of_moves = pos.get_legal_moves(moves[move_index]);
+	order(moves[move_index], entry, number_of_moves);
 	int current_best_move = -1;
 	int current_best_eval = -infinity-1;
 	for (int i = 0; i < number_of_moves; i++) {
-		pos.make_move(moves[depth][i]);
+		pos.make_move(moves[move_index][i]);
 		int value = -pv_search(moves, move_index+1, depth - 1, -beta, -alpha);
 		pos.unmake_move();
 		const bool is_best_move = (value > current_best_eval);
-		current_best_move = (is_best_move)*moves[depth][i] + (!is_best_move) * current_best_move;
+		current_best_move = (is_best_move)*moves[move_index][i] + (!is_best_move) * current_best_move;
 		current_best_eval = (is_best_move)*value + (!is_best_move) * current_best_eval;
 		if (debug) {
 			if (depth == max_depth) {
 			}
 			if (is_best_move) {
-				std::cout << "Found new best move in: " << uci(moves[depth][i]) << " (" << value << ")" << std::endl;
+				std::cout << "Found new best move in: " << uci(moves[move_index][i]) << " (" << value << ")" << std::endl;
 			}
 			else {
-				std::cout << "finished " << uci(moves[depth][i]) << std::endl;
+				std::cout << "finished " << uci(moves[move_index][i]) << std::endl;
 			}
 		}
 		if (value > alpha) {
@@ -130,7 +130,7 @@ int Engine::pv_search(std::array<std::array<int, 128>, 40>& moves, int move_inde
 	const int alphaOrigin = alpha;
 	TableEntry entry = lookUp();
 
-	if ((entry.depth > depth)) {
+	if ((entry.depth >= depth)) {
 		if (entry.flag == EXACT) {
 			if (entry.eval > alpha) {
 			}
@@ -147,7 +147,7 @@ int Engine::pv_search(std::array<std::array<int, 128>, 40>& moves, int move_inde
 		}
 	}
 
-	const int number_of_moves = pos.get_legal_moves(moves[depth]);
+	const int number_of_moves = pos.get_legal_moves(moves[move_index]);
 
 	const bool draw_by_repetition = pos.is_draw_by_repetition();
 	const bool draw_by_fifty_move_rule = pos.is_draw_by_fifty_moves();
@@ -162,28 +162,74 @@ int Engine::pv_search(std::array<std::array<int, 128>, 40>& moves, int move_inde
 		hash_map[pos.current_hash] = TableEntry{ 0,eval,EXACT,depth };
 		return eval;
 	}
-	if (depth == 0) {
+	if (depth <= 0) {
 		return quiescence(moves, move_index+1,alpha, beta);
 	}
-	order(moves[depth], entry,number_of_moves);
+	/* TODO fix nullmoves
+	if ((depth >= 1 + Red) && (!in_check)) {
+		pos.make_nullmove();
+		int nm_value = -pv_search(moves, move_index+1, depth - 1 - Red, -beta, -beta + 1);
+		pos.unmake_nullmove();
+		if (nm_value >= beta) {
+			return beta;
+		}
+	}
+	*/
+	order(moves[move_index], entry,number_of_moves);
 	int current_best_move = -1;
 	int current_best_eval = -infinity-1;
-	for (int i = 0; i < number_of_moves; i++) {
-		pos.make_move(moves[depth][i]);
-		int value = -pv_search(moves, move_index+1, depth - 1, -beta, -alpha);
+
+	pos.make_move(moves[move_index][0]);
+	bool in_check_now = pos.currently_in_check();
+	int value = -pv_search(moves, move_index + 1, depth - 1, -beta, -alpha);
+	pos.unmake_move();
+	const bool is_best_move = (value > current_best_eval);
+	current_best_move = (is_best_move)*moves[move_index][0] + (!is_best_move) * current_best_move;
+	current_best_eval = (is_best_move)*value + (!is_best_move) * current_best_eval;
+	if (value > alpha) {
+		if (value >= beta) {
+			const bool not_capture = !get_capture_flag(moves[move_index][0]);
+			if (not_capture) {
+				killer_table.push_move(moves[move_index][0], pos.get_ply());
+				__assume(get_piece_type(moves[move_index][0]) > -1);
+				__assume(get_piece_type(moves[move_index][0]) < 12);
+				__assume(get_to_square(moves[move_index][0]) > -1);
+				__assume(get_to_square(moves[move_index][0]) < 64);
+				history[pos.get_side()][get_piece_type(moves[move_index][0])][get_to_square(moves[move_index][0])] += (U64)(!get_capture_flag(moves[move_index][0])) << depth;
+			}
+			if (depth >= entry.depth) {
+				hash_map[pos.current_hash] = TableEntry{ moves[move_index][0],value,LOWER,depth };
+			}
+			return beta;
+		}
+		alpha = value;
+	}
+
+	for (int i = 1; i < number_of_moves; i++) {
+		pos.make_move(moves[move_index][i]);
+		in_check_now = pos.currently_in_check();
+		int value = -pv_search(moves, move_index+1, depth - 1, -alpha - 1, -alpha);
+		if ((value > alpha) && (value < beta)) {
+			value = -pv_search(moves, move_index + 1, depth - 1, -beta, -alpha);
+		}
 		pos.unmake_move();
 		const bool is_best_move = (value > current_best_eval);
-		current_best_move = (is_best_move)*moves[depth][i] + (!is_best_move) * current_best_move;
+		current_best_move = (is_best_move)*moves[move_index][i] + (!is_best_move) * current_best_move;
 		current_best_eval = (is_best_move)*value + (!is_best_move) * current_best_eval;
 		if (value > alpha) {
 			if (value >= beta) {
-				const bool not_capture = !get_capture_flag(moves[depth][0]);
+				const bool not_capture = !get_capture_flag(moves[move_index][i]);
 				if (not_capture) {
-					killer_table.push_move(moves[depth][0], pos.get_ply());
-					history[pos.get_side()][get_piece_type(moves[depth][0])][get_to_square(moves[depth][0])] += (!get_capture_flag(moves[depth][0])) * (2ULL<<depth);
+					killer_table.push_move(moves[move_index][i], pos.get_ply());
+					__assume(get_piece_type(moves[move_index][i]) > -1);
+					__assume(get_piece_type(moves[move_index][i]) < 12);
+					__assume(get_to_square(moves[move_index][i]) > -1);
+					__assume(get_to_square(moves[move_index][i]) < 64);
+					__assume(pos.get_side()==0 || pos.get_side()==1);
+					history[pos.get_side()][get_piece_type(moves[move_index][i])][get_to_square(moves[move_index][i])] += (U64)(!get_capture_flag(moves[move_index][i])) << depth;
 				}
 				if (depth >= entry.depth) {
-					hash_map[pos.current_hash] = TableEntry{ moves[depth][i],value,LOWER,depth };
+					hash_map[pos.current_hash] = TableEntry{ moves[move_index][i],value,LOWER,depth };
 				}
 				return beta;
 			}
@@ -237,6 +283,7 @@ int Engine::quiescence(std::array<std::array<int, 128>, 40>& moves, int move_ind
 	int current_best_eval = -infinity - 1;
 	for (int i = 0; i < number_of_captures; i++) {
 		const int static_exchange_eval = pos.see(get_to_square(moves[move_index][i]));
+		if (static_exchange_eval <= 0) break;
 		if (eval + 200 + static_exchange_eval < alpha) continue;
 		pos.make_move(moves[move_index][i]);
 		const int value = -quiescence(moves, move_index+1, -beta, -alpha);

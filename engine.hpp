@@ -6,6 +6,10 @@
 constexpr short EXACT = 0;
 constexpr short UPPER = 1;
 constexpr short LOWER = 2;
+
+constexpr short Red = 1;
+static constexpr int full_depth_moves = 8;
+static constexpr int reduction_limit = 3;
 struct invalid_move_exception : std::exception {
 	int move;
 	std::string move_str;

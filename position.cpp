@@ -1850,7 +1850,7 @@ U64 Position::get_hash() const {
 
 	ret ^= side * keys[772];
 
-	ret ^= ((enpassant_square != a8) && (enpassant_square != 64)) * keys[static_cast<std::array<size_t, 781Ui64>::size_type>(773) + enpassant_square % 8];
+	ret ^= ((enpassant_square != a8) && (enpassant_square != 64)) * keys[static_cast<std::array<size_t, 781Ui64>::size_type>(773 + enpassant_square % 8)];
 	return ret % 4294967296;
 }
 inline void Position::update_hash(const int move) {
@@ -2004,31 +2004,5 @@ inline void Position::unmake_move() {
 	occupancies[0] = bitboards[0] | bitboards[1] | bitboards[2] | bitboards[3] | bitboards[4] | bitboards[5];
 	occupancies[1] = bitboards[6] | bitboards[7] | bitboards[8] | bitboards[9] | bitboards[10] | bitboards[11];
 	occupancies[2] = occupancies[0] | occupancies[1];
-	side = !side;
-}
-inline void Position::make_nullmove() {
-	hash_history.push_back(current_hash);
-	no_pawns_or_captures++;
-	ply++;
-	current_hash ^= (enpassant_square != a8) * keys[773 + (enpassant_square % 8)];
-	current_hash ^= keys[772];
-	enpassant_square = a8;
-	side = !side;
-	move_history.push_back(0);
-	enpassant_history.push_back(enpassant_square);
-	castling_rights_history.push_back(castling_rights);
-	no_pawns_or_captures_history.push_back(no_pawns_or_captures);
-}
-inline void Position::unmake_nullmove() {
-	no_pawns_or_captures_history.pop_back();
-	no_pawns_or_captures = no_pawns_or_captures_history.back();
-	enpassant_history.pop_back();
-	enpassant_square = enpassant_history.back();
-	castling_rights_history.pop_back();
-	castling_rights = castling_rights_history.back();
-	current_hash = hash_history.back();
-	hash_history.pop_back();
-	move_history.pop_back();
-	ply--;
 	side = !side;
 }
