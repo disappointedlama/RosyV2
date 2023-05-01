@@ -1,6 +1,6 @@
 #pragma once
 
-static constexpr int SafetyTable[100] = {
+static constexpr short SafetyTable[100] = {
 	0,  0,   1,   2,   3,   5,   7,   9,  12,  15,
   18,  22,  26,  30,  35,  39,  44,  50,  56,  62,
   68,  75,  82,  85,  89,  97, 105, 113, 122, 131,
@@ -12,7 +12,7 @@ static constexpr int SafetyTable[100] = {
  500, 500, 500, 500, 500, 500, 500, 500, 500, 500,
  500, 500, 500, 500, 500, 500, 500, 500, 500, 500
 };
-static constexpr int openingKingTableBlack[64] = {
+static constexpr short openingKingTableBlack[64] = {
 	7,20,10,0,0,0,20,7,
 	0,2,0,0,0,0,2,0,
 	-10,-10,-10,-10,-10,-10,-10,-10,
@@ -22,7 +22,7 @@ static constexpr int openingKingTableBlack[64] = {
 	-10,-10,-10,-10,-10,-10,-10,-10,
 	-10,-10,-10,-10,-10,-10,-10,-10,
 };
-static constexpr int openingKingTableWhite[64] = {
+static constexpr short openingKingTableWhite[64] = {
 	-10,-10,-10,-10,-10,-10,-10,-10,
 	-10,-10,-10,-10,-10,-10,-10,-10,
 	-10,-10,-10,-10,-10,-10,-10,-10,
@@ -32,7 +32,7 @@ static constexpr int openingKingTableWhite[64] = {
 	0,2,0,0,0,0,2,0,
 	7,20,10,0,0,0,20,7,
 };
-static constexpr int openingRookTableWhite[64] = {
+static constexpr short openingRookTableWhite[64] = {
 	0,0,0,0,0,0,0,0,
 	0,0,0,0,0,0,0,0,
 	0,0,0,0,0,0,0,0,
@@ -42,7 +42,7 @@ static constexpr int openingRookTableWhite[64] = {
 	0,0,5,5,5,5,0,0,
 	10,0,20,30,30,20,0,10,
 };
-static constexpr int openingRookTableBlack[64] = {
+static constexpr short openingRookTableBlack[64] = {
 	10,0,20,30,30,20,0,10,
 	0,0,5,5,5,5,0,0,
 	0,0,0,0,0,0,0,0,
@@ -52,7 +52,7 @@ static constexpr int openingRookTableBlack[64] = {
 	0,0,0,0,0,0,0,0,
 	0,0,0,0,0,0,0,0,
 };
-static constexpr int openingKnightsTable[64] = {
+static constexpr short openingKnightsTable[64] = {
 	-50,-40,-30,-30,-30,-30,-40,-50,
 	-40,-20,0,0,0,0,-20,-40,
 	-30,0,10,15,15,10,0,-30,
@@ -62,7 +62,7 @@ static constexpr int openingKnightsTable[64] = {
 	-40,-20,0,0,0,0,-20,-40,
 	-50,-30,-30,-30,-30,-30,-40,-50,
 };
-static constexpr int openingBishopTableWhite[64] = {
+static constexpr short openingBishopTableWhite[64] = {
 	-20,-10,-10,-10,-10,-10,-10,-20,
 	-10,  0,  0,  0,  0,  0,  0,-10,
 	-10,  0,  5, 10, 10,  5,  0,-10,
@@ -72,7 +72,7 @@ static constexpr int openingBishopTableWhite[64] = {
 	-10,  5,  0,  0,  0,  0,  5,-10,
 	-20,-10,-10,-10,-10,-10,-10,-20
 };
-static constexpr int openingBishopTableBlack[64] = {
+static constexpr short openingBishopTableBlack[64] = {
 	-20,-10,-10,-10,-10,-10,-10,-20
 	- 10,  5,  0,  0,  0,  0,  5,-10,
 	-10, 10, 10, 10, 10, 10, 10,-10,
@@ -82,7 +82,7 @@ static constexpr int openingBishopTableBlack[64] = {
 	-10,  0,  0,  0,  0,  0,  0,-10,
 	-20,-10,-10,-10,-10,-10,-10,-20,
 };
-static constexpr int openingPawnTableWhite[64] = {
+static constexpr short openingPawnTableWhite[64] = {
 	0,  0,  0,  0,  0,  0,  0,  0,
 	50, 50, 50, 50, 50, 50, 50, 50,
 	10, 10, 20, 30, 30, 20, 10, 10,
@@ -92,7 +92,7 @@ static constexpr int openingPawnTableWhite[64] = {
 	5, 10, 10,-20,-20, 10, 10,  5,
 	0,  0,  0,  0,  0,  0,  0,  0
 };
-static constexpr int openingPawnTableBlack[64] = {
+static constexpr short openingPawnTableBlack[64] = {
 	0,  0,  0,  0,  0,  0,  0,  0,
 	5, 10, 10,-20,-20, 10, 10,  5,
 	5, -5,-10,  0,  0,-10, -5,  5,
@@ -102,7 +102,7 @@ static constexpr int openingPawnTableBlack[64] = {
 	50, 50, 50, 50, 50, 50, 50, 50,
 	0,  0,  0,  0,  0,  0,  0,  0
 };
-static constexpr int openingQueenTableWhite[64] = {
+static constexpr short openingQueenTableWhite[64] = {
 	-20,-10,-10, -5, -5,-10,-10,-20,
 	-10,  0,  0,  0,  0,  0,  0,-10,
 	-10,  0,  5,  5,  5,  5,  0,-10,
@@ -112,7 +112,7 @@ static constexpr int openingQueenTableWhite[64] = {
 	-10,  0,  5,  0,  0,  0,  0,-10,
 	-20,-10,-10, -5, -5,-10,-10,-20
 };
-static constexpr int openingQueenTableBlack[64] = {
+static constexpr short openingQueenTableBlack[64] = {
 	-20,-10,-10, -5, -5,-10,-10,-20,
 	-10,  0,  5,  0,  0,  0,  0,-10,
 	-10,  0,  5,  5,  5,  5,  5,-10,
@@ -122,7 +122,7 @@ static constexpr int openingQueenTableBlack[64] = {
 	-10,  0,  0,  0,  0,  0,  0,-10,
 	-20,-10,-10, -5, -5,-10,-10,-20
 };
-static constexpr int endgameKingTable[64] = {
+static constexpr short endgameKingTable[64] = {
 	-20,-15,-15,-15,-15,-15,-15,-20,
 	-15,-5,-5,-5,-5,-5,-5,-15,
 	-15,-5,5,5,5,5,-5,-15,
@@ -132,7 +132,7 @@ static constexpr int endgameKingTable[64] = {
 	-15,-5,-5,-5,-5,-5,-5,-15,
 	-20,-15,-15,-15,-15,-15,-15,-20
 };
-static constexpr int endgamePawnTableWhite[64] = {
+static constexpr short endgamePawnTableWhite[64] = {
 	0,0,0,0,0,0,0,0,
 	100,100,100,100,100,100,100,100,
 	80,80,80,80,80,80,80,80,
@@ -142,7 +142,7 @@ static constexpr int endgamePawnTableWhite[64] = {
 	0,0,0,0,0,0,0,0,
 	0,0,0,0,0,0,0,0,
 };
-static constexpr int endgamePawnTableBlack[64] = {
+static constexpr short endgamePawnTableBlack[64] = {
 	0,0,0,0,0,0,0,0,
 	0,0,0,0,0,0,0,0,
 	20,20,20,20,20,20,20,20,
@@ -152,5 +152,5 @@ static constexpr int endgamePawnTableBlack[64] = {
 	100,100,100,100,100,100,100,100,
 	0,0,0,0,0,0,0,0,
 };
-static constexpr int basePieceValue[6] = { 100,305,333,563,950,0 };
-static constexpr int basePiece[16] = { 0,1,2,3,4,5,0,1,2,3,4,5,0,0,0,0 };
+static constexpr short basePieceValue[6] = { 100,305,333,563,950,0 };
+static constexpr short basePiece[16] = { 0,1,2,3,4,5,0,1,2,3,4,5,0,0,0,0 };

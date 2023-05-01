@@ -11,7 +11,7 @@ constexpr short Red = 1;
 static constexpr int full_depth_moves = 8;
 static constexpr int reduction_limit = 3;
 struct invalid_move_exception : std::exception {
-	int move;
+	unsigned int move;
 	std::string move_str;
 	Position pos;
 	invalid_move_exception(const Position t_pos, const int t_move);
@@ -24,39 +24,50 @@ struct stop_exception : std::exception {
 	const std::string what() throw();
 };
 struct MoveWEval {
-	int move;
+	unsigned int move;
 	int eval;
-	MoveWEval(const int t_move, const int t_eval) {
+	MoveWEval(const unsigned int t_move, const int t_eval) {
 		move = t_move;
 		eval = t_eval;
 	}
 };
 struct TableEntry {
-	int move;
-	int eval;
-	int flag;
-	int depth;
+	const static short EXACT = 0;
+	const static short UPPER = 1;
+	const static short LOWER = 2;
+	unsigned int move_and_flag;
+	unsigned int eval_and_depth;
+	//28 bits are used in the move int thus two bits can be used to encode the flag
+	//eval and depth can also be saved in a single int, with eval getting the first and depth getting the last 16 bits
 	TableEntry() {
-		move = 0;
-		eval = 0;
-		flag = 0;
-		depth = -9999;
+		move_and_flag = 0;
+		eval_and_depth = (int)(Position::infinity) << 16;
 	}
-	TableEntry(const int t_move, const int t_eval, const int t_flag, const int t_depth) {
-		move = t_move;
-		eval = t_eval;
-		flag = t_flag;
-		depth = t_depth;
+	TableEntry(const unsigned int t_move, const short t_eval, const int t_flag, const short t_depth) {
+		move_and_flag = t_move | ((int)(t_flag) << 28);
+		eval_and_depth = ((int)t_eval) | ((int)t_depth << 16);
+	}
+	inline unsigned int get_move() {
+		return move_and_flag & 0xfffffff;
+	}
+	inline short get_flag() {
+		return (move_and_flag & 0xf0000000) >> 28;
+	}
+	inline short get_depth() {
+		return (eval_and_depth & 0xffff0000) >> 16;
+	}
+	inline short get_eval() {
+		return eval_and_depth & 0xffff;
 	}
 };
 struct KillerTable {
 	int table[512][3];
-	void push_move(const int move, const int depth) {
+	void push_move(const unsigned int move, const short depth) {
 		table[depth][2] = table[depth][1];
 		table[depth][1] = table[depth][0];
 		table[depth][0] = move;
 	}
-	bool find(const int move, const int depth) {
+	bool find(const unsigned int move, const short depth) {
 		return (table[depth][0] == move) || (table[depth][1] == move) || (table[depth][2] == move);
 	}
 };
@@ -263,19 +274,19 @@ class Engine {
 	std::atomic<bool> run;
 	std::atomic<bool> pondering;
 	bool debug;
-	int infinity;
+	const static short infinity=Position::infinity;
 	KillerTable killer_table;
 	std::unordered_map<U64, TableEntry> hash_map;
 	U64 nodes;
-	MoveWEval pv_root_call(std::array<std::array<int, 128>, 40>& moves, int move_index, const int depth, int alpha, int beta);
-	int pv_search(std::array<std::array<int, 128>, 40>& moves, int move_index, const int depth, int alpha, int beta);
-	int quiescence(std::array<std::array<int, 128>, 40>& moves, int move_index, int alpha, int beta);
-	inline void order(std::array<int,128>& moves, TableEntry& entry, int number_of_moves) {
+	MoveWEval pv_root_call(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta);
+	short pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta);
+	short quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, short alpha, short beta);
+	inline void order(std::array<unsigned int,128>& moves, TableEntry& entry, int number_of_moves) {
 		int hash_move = 0;
-		if (((bool)(entry.move)) && (std::find(moves.begin(), moves.end(), entry.move) != moves.end())) {
-			hash_move = entry.move;
+		if (((bool)(entry.get_move())) && (std::find(moves.begin(), moves.end(), entry.get_move()) != moves.end())&&entry.get_move()!=0) {
+			hash_move = entry.get_move();
 		}
-		std::sort(moves.begin(), (std::array<int, 128>::iterator)(moves.begin() + number_of_moves), [&](const int& lhs, const int& rhs)
+		std::sort(moves.begin(), (std::array<unsigned int, 128>::iterator)(moves.begin() + number_of_moves), [&](const int& lhs, const int& rhs)
 			{
 				if (lhs == hash_move) { return true; }
 				else if (rhs == hash_move) { return false; }
@@ -306,21 +317,21 @@ class Engine {
 				return (history[index][(size_t)(lhs_piece)][(size_t)(get_to_square(lhs))] > history[index][(size_t)(rhs_piece)][(size_t)(get_to_square(rhs))]);
 			});
 	}
-	inline void quiescence_order(std::array<int, 128>& moves, int number_of_moves) {
-		std::sort(moves.begin(), (std::array<int,128>::iterator)(moves.begin()+number_of_moves), [&](const int& lhs, const int& rhs)
+	inline void quiescence_order(std::array<unsigned int, 128>& moves, int number_of_moves) {
+		std::sort(moves.begin(), (std::array<unsigned int,128>::iterator)(moves.begin()+number_of_moves), [&](const int& lhs, const int& rhs)
 			{
 				return (get_captured_type(lhs) - get_piece_type(lhs)) > (get_captured_type(rhs) - get_piece_type(rhs));
 			});
 	};
 	inline TableEntry lookUp();
-	void print_info(const int depth, const int eval, const U64 time);
+	void print_info(const short depth, const int eval, const U64 time);
 	void track_time(const U64 max_time);
 public:
 	Engine();
 	Engine(const bool t_debug);
 	int bestMove();
 	void set_debug(const bool t_debug);
-	void set_max_depth(const int depth);
+	void set_max_depth(const short depth);
 	void parse_position(std::string fen);
 	void parse_go(std::string str);
 	void reset_position();

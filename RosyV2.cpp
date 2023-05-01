@@ -5,7 +5,7 @@ U64 captures = 0ULL;
 U64 en_passant = 0ULL;
 U64 castles = 0ULL;
 U64 promotions = 0ULL;
-void tree(std::array<std::array<int, 128>, 40>& moves, int move_index, Position& pos, const int depth, const int ind, std::vector<unsigned long long>* nodes_ptr) {
+void tree(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, Position& pos, const int depth, const int ind, std::vector<unsigned long long>* nodes_ptr) {
 
     const int number_of_moves = pos.get_legal_moves(moves[move_index]); 
     if (depth == 0) {
@@ -36,7 +36,7 @@ void tree(std::array<std::array<int, 128>, 40>& moves, int move_index, Position&
         }
     }
 }
-void perf(std::array<std::array<int, 128>, 40>& moves, int move_index, Position& pos, const int depth) {
+void perf(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, Position& pos, const int depth) {
     pos.print();
     std::cout << "\tNodes from different branches:\n";
     std::vector<unsigned long long> nodes_from_branches{};
@@ -61,7 +61,7 @@ void perf(std::array<std::array<int, 128>, 40>& moves, int move_index, Position&
 void test() {
     Position pos;
     pos = Position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
-    std::array<std::array<int, 128>, 40> moves{};
+    std::array<std::array<unsigned int, 128>, 40> moves{};
     perf(moves, 0, pos, 3);
     std::cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
     lookedAt = 0;
@@ -82,7 +82,7 @@ void test() {
 }
 void position_test() {
     Position pos{ "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0" };
-    std::array<std::array<int, 128>, 40> moves{};
+    std::array<std::array<unsigned int, 128>, 40> moves{};
     /*
     */
     std::array<int, 6> first_nodes{ 48,2039,97862 ,4085603,193690690,8031647685 };
@@ -149,6 +149,7 @@ int main()
     //rosy.parse_position("2k3r1/8/1q6/8/8/8/5PBP/7K b - - 0 1");
     //rosy.bestMove();
     //simd_tests();
+    //print_bitboard(Position::infinity);
     try {
         Engine rosy{};
         rosy.set_max_depth(7);
@@ -162,3 +163,4 @@ int main()
 }
 //1648673 1/s is current move gen speed
 //position fen 2k3r1/8/1q6/8/8/8/5PBP/7K b - - 0 1 moves b6b1 g2f1 b1f1
+//position startpos moves e2e4
