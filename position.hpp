@@ -56,18 +56,6 @@ static constexpr U64 get_queen_attacks(U64 occ, const int sq) {
 };
 static const std::string start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 class Position {
-	std::array<U64, 12> bitboards; // P, N, B, R, Q, K, p, n, b, r, q, k
-	std::array<U64, 3> occupancies;
-	bool side;
-	int ply;
-	int enpassant_square;
-	int castling_rights;//wk,wq,bk,bq
-	int no_pawns_or_captures;
-	std::vector<unsigned int> move_history;
-	std::vector<int> enpassant_history;
-	std::vector<int> castling_rights_history;
-	std::vector<int> no_pawns_or_captures_history;
-	std::vector<U64> hash_history;
 	inline bool is_attacked_by_side(const int sq, const bool color);
 	inline U64 get_attacks_by(const bool color);
 	inline int get_piece_type_on(const int sq);
@@ -177,6 +165,18 @@ class Position {
 		return ret;
 	}
 public:
+	std::array<U64, 12> bitboards; // P, N, B, R, Q, K, p, n, b, r, q, k
+	std::array<U64, 3> occupancies;
+	bool side;//white: false, black: true
+	int ply;
+	short enpassant_square;
+	short castling_rights;//wk,wq,bk,bq
+	short no_pawns_or_captures;
+	std::vector<unsigned int> move_history;
+	std::vector<short> enpassant_history;
+	std::vector<short> castling_rights_history;
+	std::vector<short> no_pawns_or_captures_history;
+	std::vector<U64> hash_history;
 	const static short infinity = 32767 - 1;//one less than max(short)
 	U64 current_hash;
 	Position();
@@ -191,25 +191,24 @@ public:
 	inline void make_move(const unsigned int move);
 	inline void unmake_move();
 	inline void make_nullmove() {
-		hash_history.push_back(current_hash);
-		no_pawns_or_captures++;
-		ply++;
-		current_hash ^= (enpassant_square != a8) * keys[773 + (enpassant_square % 8)];
-		current_hash ^= keys[772];
-		enpassant_square = a8;
-		side = !side;
 		move_history.push_back(0);
 		enpassant_history.push_back(enpassant_square);
 		castling_rights_history.push_back(castling_rights);
 		no_pawns_or_captures_history.push_back(no_pawns_or_captures);
+		hash_history.push_back(current_hash);
+		no_pawns_or_captures++;
+		ply++;
+		current_hash = get_hash();
+		enpassant_square = a8;
+		side = !side;
 	}
 	inline void unmake_nullmove() {
-		no_pawns_or_captures_history.pop_back();
 		no_pawns_or_captures = no_pawns_or_captures_history.back();
-		enpassant_history.pop_back();
+		no_pawns_or_captures_history.pop_back();
 		enpassant_square = enpassant_history.back();
-		castling_rights_history.pop_back();
+		enpassant_history.pop_back();
 		castling_rights = castling_rights_history.back();
+		castling_rights_history.pop_back();
 		current_hash = hash_history.back();
 		hash_history.pop_back();
 		move_history.pop_back();
@@ -234,9 +233,10 @@ public:
 		if (is_lost) {
 			return -infinity;
 		}
+		const int sign = (side) ? (-1) : (1);
 		const int phase = get_phase();
 		const bool is_endgame = (phase < 30);
-		return raw_material(is_endgame);
+		return sign * raw_material(is_endgame);
 	}
 	inline int get_kind_of_piece_on(const int sq) {
 		bool found_piece;

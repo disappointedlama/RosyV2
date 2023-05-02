@@ -28,6 +28,7 @@ Engine::Engine() {
 	killer_table = KillerTable{};
 	hash_map = std::unordered_map<U64, TableEntry>{};
 	nodes = 0ULL;
+	last_search_time = 0ULL;
 }
 Engine::Engine(const bool t_debug) {
 	pos = Position{};
@@ -37,6 +38,7 @@ Engine::Engine(const bool t_debug) {
 	killer_table = KillerTable{};
 	hash_map = std::unordered_map<U64, TableEntry>{};
 	nodes = 0ULL;
+	last_search_time = 0ULL;
 }
 int Engine::bestMove() {
 	const int aspiration_window = 200;
@@ -100,8 +102,6 @@ MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& mo
 		current_best_move = (is_best_move)*moves[move_index][i] + (!is_best_move) * current_best_move;
 		current_best_eval = (is_best_move)*value + (!is_best_move) * current_best_eval;
 		if (debug) {
-			if (depth == max_depth) {
-			}
 			if (is_best_move) {
 				std::cout << "Found new best move in: " << uci(moves[move_index][i]) << " (" << value << ")" << std::endl;
 			}
@@ -127,7 +127,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 	nodes++;
 	const short alphaOrigin = alpha;
 	TableEntry entry = lookUp();
-	if (entry.get_depth() > depth) {
+	if (entry.get_depth() >= depth) {
 		const short eval= entry.get_eval();
 		if (entry.get_flag() == EXACT) {
 			return eval;
@@ -162,15 +162,18 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 		return quiescence(moves, move_index+1,alpha, beta);
 	}
 	/* TODO fix nullmoves
+	*/
 	if ((depth >= 1 + Red) && (!in_check)) {
 		pos.make_nullmove();
-		int nm_value = -pv_search(moves, move_index+1, depth - 1 - Red, -beta, -beta + 1);
+		short nm_value = -pv_search(moves, move_index + 1, depth - 1 - Red, -beta, -beta + 1);
 		pos.unmake_nullmove();
 		if (nm_value >= beta) {
+			if (depth >= entry.get_depth()) {
+				hash_map[pos.current_hash] = TableEntry{ moves[move_index][0],nm_value,LOWER,depth };
+			}
 			return beta;
 		}
 	}
-	*/
 	order(moves[move_index], entry,number_of_moves);
 	unsigned int current_best_move = 0;
 	short current_best_eval = -infinity-1;
@@ -399,6 +402,63 @@ void Engine::parse_go(std::string str){
 			}
 		}
 		return;
+	}
+	command = "wtime ";
+	substr_pos = str.find(command);
+	if (substr_pos != std::string::npos) {
+		str = str.substr(substr_pos + command.size(), str.size());
+		std::string time_str = str.substr(0, str.find(" "));
+		const int wtime = stoi(time_str);
+		command = "btime ";
+		substr_pos = str.find(command);
+		str = str.substr(substr_pos + command.size(), str.size());
+		time_str = str.substr(0, str.find(" "));
+		const int btime = stoi(time_str);
+		command = "winc ";
+		substr_pos = str.find(command);
+		str = str.substr(substr_pos + command.size(), str.size());
+		time_str = str.substr(0, str.find(" "));
+		const int winc = stoi(time_str);
+		command = "binc ";
+		substr_pos = str.find(command);
+		str = str.substr(substr_pos + command.size(), str.size());
+		time_str = str.substr(0, str.find(" "));
+		const int binc = stoi(time_str);
+
+		const bool increment = ((pos.side) * binc + (!pos.side) * winc) != 0;
+		U64 max_search_time = (U64)((pos.side) * binc + (!pos.side) * winc);
+		U64 totalTime = (U64)((!pos.side) * wtime + (pos.side) * btime);
+		if (totalTime > last_search_time) {
+			time_at_begining_of_game = totalTime;
+		}
+		last_search_time = totalTime;
+		if (totalTime > time_at_begining_of_game) {
+			max_search_time = 2ULL * max_search_time + (U64)std::floor(0.3 * (totalTime - time_at_begining_of_game));
+		}
+		else if (totalTime > 0.8 * time_at_begining_of_game) {
+			max_search_time = (U64)std::floor(2.5 * max_search_time);
+		}
+		else if (totalTime > 0.5 * time_at_begining_of_game) {
+			max_search_time = 2ULL * max_search_time;
+		}
+		else if (totalTime > 0.3 * time_at_begining_of_game) {
+			max_search_time = (U64)std::floor(1.5 * max_search_time);
+		}
+		else if (totalTime < max_search_time) {
+			if (totalTime < 0.5 * (long double)max_search_time) {
+				max_search_time = (U64)std::floor(0.25 * max_search_time);
+			}
+			else max_search_time = (U64)std::floor(0.5 * max_search_time);
+		}
+		std::thread time_tracker = std::thread(&Engine::track_time, this, max_search_time * 1000000ULL);
+		max_depth = infinity;
+		bestMove();
+		while (true) {
+			if (time_tracker.joinable()) {
+				time_tracker.join();
+				break;
+			}
+		}
 	}
 }
 void Engine::print_info(const short depth, const int eval, const U64 time) {

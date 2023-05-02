@@ -151,9 +151,9 @@ int main()
     //simd_tests();
     //print_bitboard(Position::infinity);
     try {
-        Engine rosy{};
-        rosy.set_max_depth(7);
-        rosy.set_debug(true);
+        Engine rosy{true};
+        //rosy.set_max_depth(7);
+        //rosy.set_debug(true);
         rosy.uci_loop();
     }
     catch(std::exception e) {

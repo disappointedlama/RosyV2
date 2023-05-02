@@ -1594,11 +1594,11 @@ Position::Position() {
 	current_hash = get_hash();
 	move_history = std::vector<unsigned int>{};
 	move_history.reserve(256);
-	enpassant_history = std::vector<int>{};
+	enpassant_history = std::vector<short>{};
 	enpassant_history.reserve(256);
-	castling_rights_history = std::vector<int>{};
+	castling_rights_history = std::vector<short>{};
 	castling_rights_history.reserve(256);
-	no_pawns_or_captures_history = std::vector<int>{};
+	no_pawns_or_captures_history = std::vector<short>{};
 	no_pawns_or_captures_history.reserve(256);
 	hash_history = std::vector<U64>{};
 	hash_history.reserve(256);
@@ -1849,8 +1849,8 @@ U64 Position::get_hash() const {
 	ret ^= (get_bit(castling_rights, 3)) * keys[12 * 64 + 3];
 
 	ret ^= side * keys[772];
-
-	ret ^= ((enpassant_square != a8) && (enpassant_square != 64)) * keys[static_cast<std::array<size_t, 781Ui64>::size_type>(773 + enpassant_square % 8)];
+	assert(773 + enpassant_square % 8<781);
+	ret ^= ((enpassant_square != a8) && (enpassant_square != 64)) * keys[static_cast<std::array<size_t, 781Ui64>::size_type>(773 + (enpassant_square % 8))];
 	return ret % 4294967296;
 }
 inline void Position::update_hash(const unsigned int move) {
@@ -1961,6 +1961,7 @@ inline void Position::make_move(const unsigned int move) {
 
 	//update_hash(move);
 	current_hash = get_hash();
+	//assert(current_hash==get_hash());
 }
 inline void Position::unmake_move() {
 	const unsigned int move = move_history.back();
