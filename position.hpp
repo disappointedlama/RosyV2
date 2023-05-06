@@ -95,72 +95,77 @@ class Position {
 		return ret;
 	}
 	inline short raw_material(const bool is_endgame) {
-		short ret = openingKingTableWhite[bitscan(bitboards[K])] - openingKingTableBlack[bitscan(bitboards[k])];
+		short ret = openingKingTableWhite[bitscan(bitboards[K])] - openingKingTableBlack[bitscan(bitboards[k])]
+					+ (count_bits(bitboards[P]) - count_bits(bitboards[p])) * basePieceValue[P]
+					+ (count_bits(bitboards[N]) - count_bits(bitboards[n])) * basePieceValue[N]
+					+ (count_bits(bitboards[B]) - count_bits(bitboards[b])) * basePieceValue[B]
+					+ (count_bits(bitboards[R]) - count_bits(bitboards[r])) * basePieceValue[R]
+					+ (count_bits(bitboards[Q]) - count_bits(bitboards[q])) * basePieceValue[Q];
 		U64 whitePawns = bitboards[P];
 		while (whitePawns) {
-			const U64 isolated = whitePawns & twos_complement(whitePawns);
+			const U64 isolated = _blsi_u64(whitePawns);
 			const int ind = bitscan(isolated);
-			ret += basePieceValue[P] + (!is_endgame) * openingPawnTableWhite[ind] + (is_endgame)*endgamePawnTableWhite[ind];
-			whitePawns &= ones_decrement(whitePawns);
+			ret += (!is_endgame) * openingPawnTableWhite[ind] + (is_endgame)*endgamePawnTableWhite[ind];
+			whitePawns = _blsr_u64(whitePawns);
 		}
 		U64 blackPawns = bitboards[p];
 		while (blackPawns) {
-			const U64 isolated = blackPawns & twos_complement(blackPawns);
+			const U64 isolated = _blsi_u64(blackPawns);
 			const int ind = bitscan(isolated);
-			ret -= basePieceValue[P] + (!is_endgame) * openingPawnTableBlack[ind] + (is_endgame)*endgamePawnTableBlack[ind];
-			blackPawns &= ones_decrement(blackPawns);
+			ret -= (!is_endgame) * openingPawnTableBlack[ind] + (is_endgame)*endgamePawnTableBlack[ind];
+			blackPawns = _blsr_u64(blackPawns);
 		}
 
 		U64 whiteKnights = bitboards[N];
 		while (whiteKnights) {
-			const U64 isolated = whiteKnights & twos_complement(whiteKnights);
-			ret += basePieceValue[N] + openingKnightsTable[bitscan(isolated)];
-			whiteKnights &= ones_decrement(whiteKnights);
+			const U64 isolated = _blsi_u64(whiteKnights);
+			ret += openingKnightsTable[bitscan(isolated)];
+			whiteKnights = _blsr_u64(whiteKnights);
 		}
 		U64 blackKnights = bitboards[n];
 		while (blackKnights) {
-			const U64 isolated = blackKnights & twos_complement(blackKnights);
-			ret -= basePieceValue[N] + openingKnightsTable[bitscan(isolated)];
-			blackKnights &= ones_decrement(blackKnights);
+			const U64 isolated = _blsi_u64(blackKnights);
+			ret -= openingKnightsTable[bitscan(isolated)];
+			blackKnights = _blsr_u64(blackKnights);
 		}
 
 		U64 whiteBishops = bitboards[B];
 		while (whiteBishops) {
-			const U64 isolated = whiteBishops & twos_complement(whiteBishops);
-			ret += basePieceValue[B] + openingBishopTableWhite[bitscan(isolated)];
-			whiteBishops &= ones_decrement(whiteBishops);
+			const U64 isolated = _blsi_u64(whiteBishops);
+			ret += openingBishopTableWhite[bitscan(isolated)];
+			whiteBishops = _blsr_u64(whiteBishops);
 		}
 		U64 blackBishops = bitboards[b];
 		while (blackBishops) {
-			const U64 isolated = blackBishops & twos_complement(blackBishops);
-			ret -= basePieceValue[B] + openingBishopTableBlack[bitscan(isolated)];
-			blackBishops &= ones_decrement(blackBishops);
+			const U64 isolated = _blsi_u64(blackBishops);
+			ret -= openingBishopTableBlack[bitscan(isolated)];
+			blackBishops = _blsr_u64(blackBishops);
 		}
 
 		U64 whiteRooks = bitboards[R];
 		while (whiteRooks) {
-			const U64 isolated = whiteRooks & twos_complement(whiteRooks);
-			ret += basePieceValue[R] + openingRookTableWhite[bitscan(isolated)];
-			whiteRooks &= ones_decrement(whiteRooks);
+			const U64 isolated = _blsi_u64(whiteRooks);
+			ret += openingRookTableWhite[bitscan(isolated)];
+			whiteRooks = _blsr_u64(whiteRooks);
 		}
 		U64 blackRooks = bitboards[r];
 		while (blackRooks) {
-			const U64 isolated = blackRooks & twos_complement(blackRooks);
-			ret -= basePieceValue[R] + openingQueenTableBlack[bitscan(isolated)];
-			blackRooks &= ones_decrement(blackRooks);
+			const U64 isolated = _blsi_u64(blackRooks);
+			ret -= openingQueenTableBlack[bitscan(isolated)];
+			blackRooks = _blsr_u64(blackRooks);
 		}
 
 		U64 whiteQueens = bitboards[Q];
 		while (whiteQueens) {
-			const U64 isolated = whiteQueens & twos_complement(whiteQueens);
-			ret += basePieceValue[Q] + openingQueenTableWhite[bitscan(isolated)];
-			whiteQueens &= ones_decrement(whiteQueens);
+			const U64 isolated = _blsi_u64(whiteQueens);
+			ret += openingQueenTableWhite[bitscan(isolated)];
+			whiteQueens = _blsr_u64(whiteQueens);
 		}
 		U64 blackQueens = bitboards[q];
 		while (blackQueens) {
-			const U64 isolated = blackQueens & twos_complement(blackQueens);
-			ret -= basePieceValue[Q] + openingQueenTableBlack[bitscan(isolated)];
-			blackQueens &= ones_decrement(blackQueens);
+			const U64 isolated = _blsi_u64(blackQueens);
+			ret -= openingQueenTableBlack[bitscan(isolated)];
+			blackQueens = _blsr_u64(blackQueens);
 		}
 		return ret;
 	}
@@ -236,7 +241,87 @@ public:
 		const int sign = (side) ? (-1) : (1);
 		const int phase = get_phase();
 		const bool is_endgame = (phase < 30);
-		return sign * raw_material(is_endgame);
+		return sign * (raw_material(is_endgame) + doubledPawns() + king_attack_zones());
+	}
+	inline int doubledPawns() {
+		int ret = 0;
+		U64 whitePawns = bitboards[P];
+		while (whitePawns) {
+			const U64 isolated = _blsi_u64(whitePawns);
+			const int sq = bitscan(isolated);
+			ret -= count_bits(whitePawns & doubled_pawn_masks[sq]);
+			whitePawns = whitePawns & (~doubled_pawn_reset_masks[sq]);
+		}
+		U64 blackPawns = bitboards[p];
+		while (blackPawns) {
+			const U64 isolated = _blsi_u64(blackPawns);
+			const int sq = bitscan(isolated);
+			ret += count_bits(blackPawns & doubled_pawn_masks[sq]);
+			blackPawns = blackPawns & (~doubled_pawn_reset_masks[sq]);
+		}
+		return 15 * ret;
+	}
+	inline int king_attack_zones() {
+		U64 black_king_zone = blackKingZones[bitscan(bitboards[k])];
+
+		int table_index = 0;
+		U64 tempKnights = bitboards[N];
+		while (tempKnights) {
+			U64 isolated = _blsi_u64(tempKnights);
+			table_index += 2 * count_bits(knight_attacks[bitscan(isolated)] & black_king_zone);
+			tempKnights = _blsr_u64(tempKnights);
+		}
+		U64 tempBishops = bitboards[B];
+		while (tempBishops) {
+			U64 isolated = _blsi_u64(tempBishops);
+			table_index +=2 * count_bits(get_bishop_attacks(occupancies[both], bitscan(isolated)) & black_king_zone);
+			tempBishops = _blsr_u64(tempBishops);
+		}
+		U64 tempRooks = bitboards[R];
+		while (tempRooks) {
+			U64 isolated = _blsi_u64(tempRooks);
+			table_index += 3 * count_bits(get_bishop_attacks(occupancies[both], bitscan(isolated)) & black_king_zone);
+			tempRooks = _blsr_u64(tempRooks);
+		}
+		U64 tempQueens = bitboards[Q];
+		while (tempQueens) {
+			U64 isolated = _blsi_u64(tempQueens);
+			const int ind = bitscan(isolated);
+			table_index += 5 * count_bits((get_bishop_attacks(occupancies[both], ind) | get_rook_attacks(occupancies[both], ind)) & black_king_zone);
+			tempQueens = _blsr_u64(tempQueens);
+		}
+
+		int ret = SafetyTable[table_index];
+
+		U64 white_king_zone = whiteKingZones[bitscan(bitboards[K])];
+		table_index = 0;
+		tempKnights = bitboards[n];
+		while (tempKnights) {
+			U64 isolated = _blsi_u64(tempKnights);
+			table_index += 2 * count_bits(knight_attacks[bitscan(isolated)] & white_king_zone);
+			tempKnights = _blsr_u64(tempKnights);
+		}
+		tempBishops = bitboards[b];
+		while (tempBishops) {
+			U64 isolated = _blsi_u64(tempBishops);
+			table_index += 2 * count_bits(get_bishop_attacks(occupancies[both], bitscan(isolated)) & white_king_zone);
+			tempBishops = _blsr_u64(tempBishops);
+		}
+		tempRooks = bitboards[r];
+		while (tempRooks) {
+			U64 isolated = _blsi_u64(tempRooks);
+			table_index += 3 * count_bits(get_rook_attacks(occupancies[both], bitscan(isolated)) & white_king_zone);
+			tempRooks = _blsr_u64(tempRooks);
+		}
+		tempQueens = bitboards[q];
+		while (tempQueens) {
+			U64 isolated = _blsi_u64(tempQueens);
+			const int ind = bitscan(isolated);
+			table_index += 5 * count_bits((get_bishop_attacks(occupancies[both], ind) | get_rook_attacks(occupancies[both], ind)) & white_king_zone);
+			tempQueens = _blsr_u64(tempQueens);
+		}
+
+		return ret - SafetyTable[table_index];
 	}
 	inline int get_kind_of_piece_on(const int sq) {
 		bool found_piece;
