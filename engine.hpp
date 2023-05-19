@@ -278,8 +278,8 @@ class Engine {
 	KillerTable killer_table;
 	std::unordered_map<U64, TableEntry> hash_map;
 	U64 nodes;
-	U64 last_search_time;
-	U64 time_at_begining_of_game = 600000;
+	U64 time_for_next_move;
+	bool check_time;
 	MoveWEval pv_root_call(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta);
 	short pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta);
 	short quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, short alpha, short beta);

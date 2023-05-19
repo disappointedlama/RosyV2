@@ -4,6 +4,7 @@
 #include <cassert>
 #include "immintrin.h"
 #include "intrin.h"
+#include <unordered_map>
 
 #include "hashKeys.hpp"
 #include "move.hpp"
@@ -32,7 +33,6 @@ enum { wk = 1, wq = 2, bk = 4, bq = 8 };
 enum { P, N, B, R, Q, K, p, n, b, r, q, k };
 //ASCII pieces
 constexpr char ascii_pieces[] = "PNBRQKpnbrqk";
-
 //convert ascii char pieces to encoded constants
 static constexpr int char_pieces(const char piece) {
 	switch (piece) {
@@ -56,6 +56,8 @@ static constexpr U64 get_queen_attacks(U64 occ, const int sq) {
 };
 static const std::string start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 class Position {
+
+	std::unordered_map<U64, short> pawn_evaluation_map;
 	inline bool is_attacked_by_side(const int sq, const bool color);
 	inline U64 get_attacks_by(const bool color);
 	inline int get_piece_type_on(const int sq);
@@ -87,35 +89,32 @@ class Position {
 	inline void in_check_legal_wpawn_captures(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, int& ind);
 
 	inline void get_castles(std::array<unsigned int,128>& ptr, const U64 enemy_attacks, int& ind);
-	inline int get_phase() {
-		int ret = count_bits(bitboards[P] | bitboards[p]);
-		ret += 3 * count_bits(bitboards[N] | bitboards[n] | bitboards[B] | bitboards[b]);
-		ret += 5 * count_bits(bitboards[R] | bitboards[r]);
-		ret += 9 * count_bits(bitboards[Q] | bitboards[q]);
-		return ret;
-	}
-	inline short raw_material(const bool is_endgame) {
-		short ret = openingKingTableWhite[bitscan(bitboards[K])] - openingKingTableBlack[bitscan(bitboards[k])]
+	inline short raw_material(const short phase) {
+		short ret = (((openingKingTableWhite[bitscan(bitboards[K])] - openingKingTableBlack[bitscan(bitboards[k])]) * (256 - phase)) + ((endgameKingTable[bitscan(bitboards[K])] - endgameKingTable[bitscan(bitboards[k])]) * phase)) / 256
 					+ (count_bits(bitboards[P]) - count_bits(bitboards[p])) * basePieceValue[P]
 					+ (count_bits(bitboards[N]) - count_bits(bitboards[n])) * basePieceValue[N]
 					+ (count_bits(bitboards[B]) - count_bits(bitboards[b])) * basePieceValue[B]
 					+ (count_bits(bitboards[R]) - count_bits(bitboards[r])) * basePieceValue[R]
 					+ (count_bits(bitboards[Q]) - count_bits(bitboards[q])) * basePieceValue[Q];
 		U64 whitePawns = bitboards[P];
+		short pawnOpening = 0;
+		short pawnEndgame = 0;
 		while (whitePawns) {
 			const U64 isolated = _blsi_u64(whitePawns);
 			const int ind = bitscan(isolated);
-			ret += (!is_endgame) * openingPawnTableWhite[ind] + (is_endgame)*endgamePawnTableWhite[ind];
+			pawnOpening += openingPawnTableWhite[ind];
+			pawnEndgame += endgamePawnTableWhite[ind];
 			whitePawns = _blsr_u64(whitePawns);
 		}
 		U64 blackPawns = bitboards[p];
 		while (blackPawns) {
 			const U64 isolated = _blsi_u64(blackPawns);
 			const int ind = bitscan(isolated);
-			ret -= (!is_endgame) * openingPawnTableBlack[ind] + (is_endgame)*endgamePawnTableBlack[ind];
+			pawnOpening -= openingPawnTableBlack[ind];
+			pawnEndgame -= endgamePawnTableBlack[ind];
 			blackPawns = _blsr_u64(blackPawns);
 		}
-
+		ret += (pawnOpening * (256 - phase) + pawnEndgame * phase) / 256;
 		U64 whiteKnights = bitboards[N];
 		while (whiteKnights) {
 			const U64 isolated = _blsi_u64(whiteKnights);
@@ -231,6 +230,25 @@ public:
 	inline bool currently_in_check() {
 		return is_attacked_by_side(bitscan(bitboards[5 + (side) * 6]), !side);
 	}
+	inline int get_phase() {
+		const short PawnPhase = 0;
+		const short KnightPhase = 1;
+		const short BishopPhase = 1;
+		const short RookPhase = 2;
+		const short QueenPhase = 4;
+		const short TotalPhase = PawnPhase * 16 + KnightPhase * 4 + BishopPhase * 4 + RookPhase * 4 + QueenPhase * 2;
+
+		int phase = TotalPhase;
+
+		phase -= count_bits(bitboards[P] | bitboards[p]) * PawnPhase;
+		phase -= count_bits(bitboards[N] | bitboards[n]) * KnightPhase;
+		phase -= count_bits(bitboards[B] | bitboards[b]) * BishopPhase;
+		phase -= count_bits(bitboards[R] | bitboards[r]) * RookPhase;
+		phase -= count_bits(bitboards[Q] | bitboards[q]) * QueenPhase;
+
+		phase = (phase * 256 + (TotalPhase / 2)) / TotalPhase;
+		return phase;
+	}
 	inline short evaluate(const bool is_draw, const bool is_lost) {
 		if (is_draw) {
 			return 0;
@@ -238,13 +256,39 @@ public:
 		if (is_lost) {
 			return -infinity;
 		}
-		const int sign = (side) ? (-1) : (1);
 		const int phase = get_phase();
-		const bool is_endgame = (phase < 30);
-		return sign * (raw_material(is_endgame) + doubledPawns() + king_attack_zones());
+		const int sign = (side) ? (-1) : (1);
+		return sign * (raw_material(phase) + pawn_eval() + king_attack_zones() + knight_mobility() + bad_bishop() + trapped());
 	}
-	inline int doubledPawns() {
-		int ret = 0;
+	inline U64 get_pawn_hash() {
+		U64 ret = 0ULL;
+
+		U64 board = bitboards[P];
+		while (board) {
+			U64 isolated = _blsi_u64(board);
+			ret ^= keys[bitscan(isolated) + P * 64];
+			board = _blsr_u64(board);
+		}
+		board = bitboards[p];
+		while (board) {
+			U64 isolated = _blsi_u64(board);
+			ret ^= keys[bitscan(isolated) + p * 64];
+			board = _blsr_u64(board);
+		}
+		return ret;
+	}
+	inline short pawn_eval() {
+		const U64 pawn_hash = get_pawn_hash();
+		auto yield = pawn_evaluation_map.find(pawn_hash);
+		if (yield != pawn_evaluation_map.end()) {
+			return yield->second;
+		}
+		const short eval = doubledPawns() + pawn_structure();
+		pawn_evaluation_map[pawn_hash]=eval;
+		return eval;
+	}
+	inline short doubledPawns() {
+		short ret = 0;
 		U64 whitePawns = bitboards[P];
 		while (whitePawns) {
 			const U64 isolated = _blsi_u64(whitePawns);
@@ -261,67 +305,225 @@ public:
 		}
 		return 15 * ret;
 	}
-	inline int king_attack_zones() {
+	inline short pawn_structure() {
+		U64 whiteStops = bitboards[P] >> 8;
+		U64 blackStops = bitboards[p] << 8;
+		U64	blackAttacks = ((bitboards[p] << 7) & notHFile) | ((bitboards[p] << 9) & notAFile);
+		U64 whiteAttacks = ((bitboards[P] >> 7) & notAFile) | ((bitboards[P] >> 9) & notHFile);
+		U64 whiteAttackSpans = whiteAttacks | (whiteAttacks >> 8);
+		whiteAttackSpans |= whiteAttackSpans >> 8;
+		whiteAttackSpans |= whiteAttackSpans >> 8;
+		whiteAttackSpans |= whiteAttackSpans >> 8;
+		whiteAttackSpans |= whiteAttackSpans >> 8;
+		U64 blackAttackSpans = blackAttacks | (blackAttacks << 8);
+		blackAttackSpans |= blackAttackSpans << 8;
+		blackAttackSpans |= blackAttackSpans << 8;
+		blackAttackSpans |= blackAttackSpans << 8;
+		blackAttackSpans |= blackAttackSpans << 8;
+		const U64 whiteBackwardPawns = (whiteStops & blackAttacks & ~whiteAttackSpans) >> 8;
+		const U64 blackBackwardPawns = (blackStops & whiteAttacks & ~blackAttackSpans) << 8;
+
+		short backwards = -count_bits(whiteBackwardPawns) + count_bits(blackBackwardPawns);
+		short passed = 0;
+		short isolated = 0;
+		short supported = 0;
+		U64 tempPawns = bitboards[P];
+		while (tempPawns) {
+			U64 isolated = _blsi_u64(tempPawns);
+			passed += (!((bool)(passed_pawn_masks[white][bitscan(isolated)] & bitboards[p])));//passed pawns
+			isolated -= ((neighbour_pawn_masks[bitscan(isolated) % 8] & bitboards[P]) == 0);//isolated pawns
+			supported += count_bits(pawn_attacks[black][bitscan(isolated)] & bitboards[P]);//check if pawn is supported by pears
+			tempPawns = _blsr_u64(tempPawns);
+		}
+		tempPawns = bitboards[p];
+		while (tempPawns) {
+			U64 isolated = _blsi_u64(tempPawns);
+			passed -= (!((bool)(passed_pawn_masks[black][bitscan(isolated)] & bitboards[P])));//passed pawns
+			isolated += ((neighbour_pawn_masks[bitscan(isolated) % 8] & bitboards[p]) == 0);//isolated pawns
+			supported -= count_bits(pawn_attacks[white][bitscan(isolated)] & bitboards[p]);//check if pawn is supported by pears
+			tempPawns = _blsr_u64(tempPawns);
+		}
+		return 20 * passed + 50 * isolated + 5 * supported + 30 * backwards;
+	}
+	inline short knight_mobility() {
+		U64	blackPawnAttacks = ((bitboards[p] << 7) & notHFile) | ((bitboards[p] << 9) & notAFile);
+		U64 whitePawnAttacks = ((bitboards[P] >> 7) & notAFile) | ((bitboards[P] >> 9) & notHFile);
+		short ret=0;
+		U64 whiteKnights = bitboards[N];
+		while (whiteKnights) {
+			U64 isolated = _blsi_u64(whiteKnights);
+			ret -= count_bits(knight_attacks[bitscan(isolated)] & blackPawnAttacks);
+			whiteKnights = _blsr_u64(whiteKnights);
+		}
+		U64 blackKnights = bitboards[n];
+		while (blackKnights) {
+			U64 isolated = _blsi_u64(blackKnights);
+			ret = count_bits(knight_attacks[bitscan(isolated)] & whitePawnAttacks);
+			blackKnights = _blsr_u64(blackKnights);
+		}
+		return 5 * ret;
+	}
+	inline short bad_bishop() {
+		short ret = 0;
+		U64 whiteBishops = bitboards[B];
+		while (whiteBishops) {
+			U64 isolated = _blsi_u64(whiteBishops);
+			ret -= count_bits(pawn_attacks[white][bitscan(isolated)] & bitboards[P]);
+			whiteBishops = _blsr_u64(whiteBishops);
+		}
+		U64 blackBishops = bitboards[b];
+		while (blackBishops) {
+			U64 isolated = _blsi_u64(blackBishops);
+			ret += count_bits(pawn_attacks[black][bitscan(isolated)] & bitboards[p]);
+			blackBishops = _blsr_u64(blackBishops);
+		}
+		return 30 * ret;
+	}
+	inline short trapped() {
+		short minor = 0;
+		const U64 black_attacks = get_attacks_by(black);
+		const U64 white_attacks = get_attacks_by(white);
+		U64 whiteKnights = bitboards[N];
+		while (whiteKnights) {
+			U64 isolated = _blsi_u64(whiteKnights);
+			U64 squares = (knight_attacks[bitscan(isolated)] & ~occupancies[white]) | isolated;
+			minor -= (squares & black_attacks) == squares;
+			whiteKnights = _blsr_u64(whiteKnights);
+		}
+		U64 blackKnights = bitboards[n];
+		while (blackKnights) {
+			U64 isolated = _blsi_u64(blackKnights);
+			U64 squares = (knight_attacks[bitscan(isolated)] & ~occupancies[black]) | isolated;
+			minor += (squares & white_attacks) == squares;
+			blackKnights = _blsr_u64(blackKnights);
+		}
+		U64 whiteBishops = bitboards[B];
+		while (whiteBishops) {
+			U64 isolated = _blsi_u64(whiteBishops);
+			U64 squares = (get_bishop_attacks(occupancies[both], bitscan(isolated)) & ~occupancies[white]) | isolated;
+			minor -= (squares & black_attacks) == squares;
+			whiteBishops = _blsr_u64(whiteBishops);
+		}
+		U64 blackBishops = bitboards[b];
+		while (blackBishops) {
+			U64 isolated = _blsi_u64(blackBishops);
+			U64 squares = (get_bishop_attacks(occupancies[both], bitscan(isolated)) & ~occupancies[black]) | isolated;
+			minor += (squares & white_attacks) == squares;
+			blackBishops = _blsr_u64(blackBishops);
+		}
+		short rooks = 0;
+		U64 whiteRooks = bitboards[R];
+		while (whiteRooks) {
+			U64 isolated = _blsi_u64(whiteRooks);
+			U64 squares = (get_rook_attacks(occupancies[both], bitscan(isolated)) & ~occupancies[white]) | isolated;
+			rooks -= (squares & black_attacks) == squares;
+			whiteRooks = _blsr_u64(whiteRooks);
+		}
+		U64 blackRooks = bitboards[r];
+		while (blackRooks) {
+			U64 isolated = _blsi_u64(blackRooks);
+			U64 squares = (get_rook_attacks(occupancies[both], bitscan(isolated)) & ~occupancies[black]) | isolated;
+			rooks += (squares & white_attacks) == squares;
+			blackRooks = _blsr_u64(blackRooks);
+		}
+		short queens = 0;
+		U64 whiteQueens = bitboards[Q];
+		while (whiteQueens) {
+			U64 isolated = _blsi_u64(whiteQueens);
+			int sq = bitscan(isolated);
+			U64 squares = ((get_rook_attacks(occupancies[both], sq) | get_bishop_attacks(occupancies[both], sq)) & ~occupancies[white]) | isolated;
+			queens -= (squares & black_attacks) == squares;
+			whiteQueens = _blsr_u64(whiteQueens);
+		}
+		U64 blackQueens = bitboards[q];
+		while (blackQueens) {
+			U64 isolated = _blsi_u64(blackQueens);
+			int sq = bitscan(isolated);
+			U64 squares = ((get_rook_attacks(occupancies[both], sq) | get_bishop_attacks(occupancies[both],sq)) & ~occupancies[black]) | isolated;
+			queens += (squares & white_attacks) == squares;
+			blackQueens = _blsr_u64(blackQueens);
+		}
+		return 150 * minor + 350  * rooks + 750 * queens;
+	}
+	inline short king_attack_zones() {
 		U64 black_king_zone = blackKingZones[bitscan(bitboards[k])];
 
+		short attackersOnWhite = 0;
 		int table_index = 0;
 		U64 tempKnights = bitboards[N];
 		while (tempKnights) {
 			U64 isolated = _blsi_u64(tempKnights);
-			table_index += 2 * count_bits(knight_attacks[bitscan(isolated)] & black_king_zone);
+			int attacks = count_bits(knight_attacks[bitscan(isolated)] & black_king_zone);
+			table_index += 2 * attacks;
+			attackersOnWhite += (attacks != 0);
 			tempKnights = _blsr_u64(tempKnights);
 		}
 		U64 tempBishops = bitboards[B];
 		while (tempBishops) {
 			U64 isolated = _blsi_u64(tempBishops);
-			table_index +=2 * count_bits(get_bishop_attacks(occupancies[both], bitscan(isolated)) & black_king_zone);
+			int attacks = count_bits(get_bishop_attacks(occupancies[both], bitscan(isolated)) & black_king_zone);
+			table_index += 2 * attacks;
+			attackersOnWhite += (attacks != 0);
 			tempBishops = _blsr_u64(tempBishops);
 		}
 		U64 tempRooks = bitboards[R];
 		while (tempRooks) {
 			U64 isolated = _blsi_u64(tempRooks);
-			table_index += 3 * count_bits(get_bishop_attacks(occupancies[both], bitscan(isolated)) & black_king_zone);
+			int attacks = count_bits(get_bishop_attacks(occupancies[both], bitscan(isolated)) & black_king_zone);
+			table_index += 3 * attacks;
+			attackersOnWhite += (attacks != 0);
 			tempRooks = _blsr_u64(tempRooks);
 		}
 		U64 tempQueens = bitboards[Q];
 		while (tempQueens) {
 			U64 isolated = _blsi_u64(tempQueens);
 			const int ind = bitscan(isolated);
-			table_index += 5 * count_bits((get_bishop_attacks(occupancies[both], ind) | get_rook_attacks(occupancies[both], ind)) & black_king_zone);
+			int attacks = count_bits((get_bishop_attacks(occupancies[both], ind) | get_rook_attacks(occupancies[both], ind)) & black_king_zone);
+			table_index += 5 * attacks;
+			attackersOnWhite += (attacks != 0);
 			tempQueens = _blsr_u64(tempQueens);
 		}
 
-		int ret = SafetyTable[table_index];
+		int ret = SafetyTable[table_index] * (attackersOnWhite>2);
 
+		short attackersOnBlack = 0;
 		U64 white_king_zone = whiteKingZones[bitscan(bitboards[K])];
 		table_index = 0;
 		tempKnights = bitboards[n];
 		while (tempKnights) {
 			U64 isolated = _blsi_u64(tempKnights);
-			table_index += 2 * count_bits(knight_attacks[bitscan(isolated)] & white_king_zone);
+			int attacks = count_bits(knight_attacks[bitscan(isolated)] & white_king_zone);
+			table_index += 2 * attacks;
+			attackersOnBlack += (attacks != 0);
 			tempKnights = _blsr_u64(tempKnights);
 		}
 		tempBishops = bitboards[b];
 		while (tempBishops) {
 			U64 isolated = _blsi_u64(tempBishops);
-			table_index += 2 * count_bits(get_bishop_attacks(occupancies[both], bitscan(isolated)) & white_king_zone);
+			int attacks = count_bits(get_bishop_attacks(occupancies[both], bitscan(isolated)) & white_king_zone);
+			table_index += 2 * attacks;
+			attackersOnBlack += (attacks != 0);
 			tempBishops = _blsr_u64(tempBishops);
 		}
 		tempRooks = bitboards[r];
 		while (tempRooks) {
 			U64 isolated = _blsi_u64(tempRooks);
-			table_index += 3 * count_bits(get_rook_attacks(occupancies[both], bitscan(isolated)) & white_king_zone);
+			int attacks = count_bits(get_rook_attacks(occupancies[both], bitscan(isolated)) & white_king_zone);
+			table_index += 3 * attacks;
+			attackersOnBlack += (attacks != 0);
 			tempRooks = _blsr_u64(tempRooks);
 		}
 		tempQueens = bitboards[q];
 		while (tempQueens) {
 			U64 isolated = _blsi_u64(tempQueens);
 			const int ind = bitscan(isolated);
-			table_index += 5 * count_bits((get_bishop_attacks(occupancies[both], ind) | get_rook_attacks(occupancies[both], ind)) & white_king_zone);
+			int attacks = count_bits((get_bishop_attacks(occupancies[both], ind) | get_rook_attacks(occupancies[both], ind)) & white_king_zone);
+			table_index += 5 * attacks;
+			attackersOnBlack += (attacks != 0);
 			tempQueens = _blsr_u64(tempQueens);
 		}
 
-		return ret - SafetyTable[table_index];
+		return ret - SafetyTable[table_index] * (attackersOnBlack>2);
 	}
 	inline int get_kind_of_piece_on(const int sq) {
 		bool found_piece;

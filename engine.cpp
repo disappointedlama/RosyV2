@@ -28,7 +28,6 @@ Engine::Engine() {
 	killer_table = KillerTable{};
 	hash_map = std::unordered_map<U64, TableEntry>{};
 	nodes = 0ULL;
-	last_search_time = 0ULL;
 }
 Engine::Engine(const bool t_debug) {
 	pos = Position{};
@@ -38,9 +37,9 @@ Engine::Engine(const bool t_debug) {
 	killer_table = KillerTable{};
 	hash_map = std::unordered_map<U64, TableEntry>{};
 	nodes = 0ULL;
-	last_search_time = 0ULL;
 }
 int Engine::bestMove() {
+	std::chrono::steady_clock::time_point search_start = std::chrono::steady_clock::now();
 	const int aspiration_window = 200;
 	std::array<std::array<unsigned int,128>,40> moves{};
 	pos.get_legal_moves(moves[0]);
@@ -63,6 +62,13 @@ int Engine::bestMove() {
 			print_info(current_desired_depth, result.eval, time);
 			old_best = best;
 			best = result;
+			if (check_time) {
+				const U64 total_time_searched = (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - search_start).count();
+				std::cout << total_time_searched << "\n";
+				if (total_time_searched * 2 > time_for_next_move) {
+					break;
+				}
+			}
 			alpha = result.eval - aspiration_window;
 			beta = result.eval + aspiration_window;
 			if (result.eval == infinity) {
@@ -161,9 +167,8 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 	if (depth <= 0) {
 		return quiescence(moves, move_index+1,alpha, beta);
 	}
-	/* TODO fix nullmoves
-	*/
-	if ((depth >= 1 + Red) && (!in_check)) {
+	const int phase = pos.get_phase();
+	if ((depth >= 1 + Red) && (!in_check) && (phase>=8)) {
 		pos.make_nullmove();
 		short nm_value = -pv_search(moves, move_index + 1, depth - 1 - Red, -beta, -beta + 1);
 		pos.unmake_nullmove();
@@ -372,6 +377,7 @@ void Engine::reset_position() {
 	pos = Position{ start_position };
 }
 void Engine::parse_go(std::string str){
+	check_time = false;
 	std::string command = "depth ";
 	auto substr_pos = str.find(command);
 	if (substr_pos != std::string::npos) {
@@ -425,33 +431,19 @@ void Engine::parse_go(std::string str){
 		time_str = str.substr(0, str.find(" "));
 		const int binc = stoi(time_str);
 
-		const bool increment = ((pos.side) * binc + (!pos.side) * winc) != 0;
-		U64 max_search_time = (U64)((pos.side) * binc + (!pos.side) * winc);
-		U64 totalTime = (U64)((!pos.side) * wtime + (pos.side) * btime);
-		if (totalTime > last_search_time) {
-			time_at_begining_of_game = totalTime;
+		const int increment = (pos.side) * binc + (!pos.side) * winc;
+		const int time = (pos.side) * btime + (!pos.side) * wtime;
+		time_for_next_move = time / 40 + increment / 2;
+		if (time_for_next_move >= time) {
+			time_for_next_move = time - 500;
 		}
-		last_search_time = totalTime;
-		if (totalTime > time_at_begining_of_game) {
-			max_search_time = 2ULL * max_search_time + (U64)std::floor(0.3 * (totalTime - time_at_begining_of_game));
+		if (time_for_next_move < 0) {
+			time_for_next_move = 100;
 		}
-		else if (totalTime > 0.8 * time_at_begining_of_game) {
-			max_search_time = (U64)std::floor(2.5 * max_search_time);
-		}
-		else if (totalTime > 0.5 * time_at_begining_of_game) {
-			max_search_time = 2ULL * max_search_time;
-		}
-		else if (totalTime > 0.3 * time_at_begining_of_game) {
-			max_search_time = (U64)std::floor(1.5 * max_search_time);
-		}
-		else if (totalTime < max_search_time) {
-			if (totalTime < 0.5 * (long double)max_search_time) {
-				max_search_time = (U64)std::floor(0.25 * max_search_time);
-			}
-			else max_search_time = (U64)std::floor(0.5 * max_search_time);
-		}
-		std::thread time_tracker = std::thread(&Engine::track_time, this, max_search_time * 1000000ULL);
+		time_for_next_move *= 1000000ULL;
+		std::thread time_tracker = std::thread(&Engine::track_time, this, time_for_next_move);
 		max_depth = infinity;
+		check_time = true;
 		bestMove();
 		while (true) {
 			if (time_tracker.joinable()) {
@@ -522,6 +514,7 @@ void Engine::uci_loop(){
 		}
 		else if (strncmp(input, "ucinewgame", 10) == 0) {
 			parse_position("position startpos");
+			hash_map = std::unordered_map<U64, TableEntry>{};
 		}
 		else if (strncmp(input, "go", 2) == 0) {
 			if (!run) {

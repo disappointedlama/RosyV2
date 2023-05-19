@@ -83,8 +83,6 @@ void test() {
 void position_test() {
     Position pos{ "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0" };
     std::array<std::array<unsigned int, 128>, 40> moves{};
-    /*
-    */
     std::array<int, 6> first_nodes{ 48,2039,97862 ,4085603,193690690,8031647685 };
     std::array<int, 6> first_mates{ 0,0,1,43,30171,360003 };
     for (int i = 0; i < 5; i++) {
@@ -151,7 +149,7 @@ int main()
     //simd_tests();
     //print_bitboard(Position::infinity);
     try {
-        Engine rosy{true};
+        Engine rosy{false};
         //rosy.set_max_depth(7);
         //rosy.set_debug(true);
         rosy.uci_loop();
