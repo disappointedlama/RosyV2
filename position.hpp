@@ -30,7 +30,7 @@ enum { white, black, both };
 //castling bits
 enum { wk = 1, wq = 2, bk = 4, bq = 8 };
 //pieces
-enum Piece:short { P, N, B, R, Q, K, p, n, b, r, q, k };
+enum { P, N, B, R, Q, K, p, n, b, r, q, k };
 //ASCII pieces
 constexpr char ascii_pieces[] = "PNBRQKpnbrqk";
 //convert ascii char pieces to encoded constants
