@@ -34,7 +34,7 @@ static constexpr U64 whiteKingZones[64] = {
 };
 
 static constexpr short openingKingTableBlack[64] = {
-	7,20,10,0,0,0,20,7,
+	7,30,15,0,0,0,30,7,
 	0,2,0,0,0,0,2,0,
 	-10,-10,-10,-10,-10,-10,-10,-10,
 	-10,-10,-10,-10,-10,-10,-10,-10,
@@ -51,7 +51,7 @@ static constexpr short openingKingTableWhite[64] = {
 	-10,-10,-10,-10,-10,-10,-10,-10,
 	-10,-10,-10,-10,-10,-10,-10,-10,
 	0,2,0,0,0,0,2,0,
-	7,20,10,0,0,0,20,7,
+	7,30,15,0,0,0,30,7,
 };
 static constexpr short openingRookTableWhite[64] = {
 	0,0,0,0,0,0,0,0,

@@ -138,6 +138,7 @@
     <ClCompile Include="bitboard.cpp" />
     <ClCompile Include="engine.cpp" />
     <ClCompile Include="move.cpp" />
+    <ClCompile Include="openingBook.cpp" />
     <ClCompile Include="position.cpp" />
     <ClCompile Include="RosyV2.cpp" />
   </ItemGroup>
@@ -151,6 +152,7 @@
     <ClInclude Include="knightAttacks.hpp" />
     <ClInclude Include="masks.hpp" />
     <ClInclude Include="move.hpp" />
+    <ClInclude Include="openingBook.hpp" />
     <ClInclude Include="pawnAttacks.hpp" />
     <ClInclude Include="position.hpp" />
     <ClInclude Include="rookAttacks.hpp" />

@@ -1,4 +1,13 @@
 #include "engine.hpp"
+namespace std {
+	string getCurDir() {
+		char buff[512];
+		_getcwd(buff, 512);
+		string current_working_dir(buff);
+		return current_working_dir;
+	}
+}
+OpeningBook book{ (std::getCurDir() + std::string("\\engines\\openingBook.txt")).c_str() };
 
 invalid_move_exception::invalid_move_exception(const Position t_pos, const int t_move) {
 	pos = t_pos;
@@ -28,6 +37,7 @@ Engine::Engine() {
 	killer_table = KillerTable{};
 	hash_map = std::unordered_map<U64, TableEntry>{};
 	nodes = 0ULL;
+	use_opening_book = true;
 }
 Engine::Engine(const bool t_debug) {
 	pos = Position{};
@@ -37,8 +47,18 @@ Engine::Engine(const bool t_debug) {
 	killer_table = KillerTable{};
 	hash_map = std::unordered_map<U64, TableEntry>{};
 	nodes = 0ULL;
+	use_opening_book = true;
 }
 int Engine::bestMove() {
+	if (use_opening_book) {
+		const int move = book.find_move(pos.current_hash);
+		if (move) {
+			std::cout << "bestmove " << uci(move) << std::endl;
+			run = false;
+			pos = Position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
+			return move;
+		}
+	}
 	std::chrono::steady_clock::time_point search_start = std::chrono::steady_clock::now();
 	killer_table.shift_by(2);
 	const int aspiration_window = 200;

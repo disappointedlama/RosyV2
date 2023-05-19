@@ -3,6 +3,8 @@
 #include <unordered_map>
 
 #include "position.hpp"
+#include "openingBook.hpp"
+#include <direct.h>
 constexpr short EXACT = 0;
 constexpr short UPPER = 1;
 constexpr short LOWER = 2;
@@ -10,6 +12,9 @@ constexpr short LOWER = 2;
 constexpr short Red = 1;
 static constexpr int full_depth_moves = 8;
 static constexpr int reduction_limit = 3;
+namespace std {
+	string getCurDir();
+}
 struct invalid_move_exception : std::exception {
 	unsigned int move;
 	std::string move_str;
@@ -98,6 +103,7 @@ class Engine {
 	U64 nodes;
 	U64 time_for_next_move;
 	bool check_time;
+	bool use_opening_book;
 	MoveWEval pv_root_call(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta);
 	short pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta);
 	short quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, short alpha, short beta);
