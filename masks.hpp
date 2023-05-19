@@ -1,5 +1,6 @@
 #pragma once
 #include "bitboard.hpp"
+#include <array>
 static constexpr U64 rank8 = (1ULL << 8) - 1ULL;
 static constexpr U64 rank7 = rank8 << 8;
 static constexpr U64 rank6 = rank7 << 8;
@@ -8,6 +9,20 @@ static constexpr U64 rank4 = rank5 << 8;
 static constexpr U64 rank3 = rank4 << 8;
 static constexpr U64 rank2 = rank3 << 8;
 static constexpr U64 rank1 = rank2 << 8;
+static constexpr U64 aFile = 0x101010101010101;
+static constexpr U64 bFile = 0x202020202020202;
+static constexpr U64 cFile = 0x404040404040404;
+static constexpr U64 dFile = 0x808080808080808;
+static constexpr U64 eFile = 0x1010101010101010;
+static constexpr U64 fFile = 0x2020202020202020;
+static constexpr U64 gFile = 0x4040404040404040;
+static constexpr U64 hFile = 0x8080808080808080;
+static constexpr U64 notHFile = ~hFile;
+static constexpr U64 notAFile = ~aFile;
+static constexpr U64 whiteSquares = 12273903644374837845ULL;
+static constexpr U64 blackSquares = 6172840429334713770ULL;
+static constexpr U64 centralSquares = 0x1818000000;
+static constexpr U64 notEdges = 0x7E7E7E7E7E7E00;
 static constexpr U64 passed_pawn_masks[2][64] = {
 	{0, 0, 0, 0, 0, 0, 0, 0,
 	3, 7, 14, 28, 56, 112, 224, 192,
@@ -80,15 +95,3 @@ static constexpr std::array<std::array<U64, 64>, 2> init_front_pawn_attack_spans
 	return ret;
 }
 static constexpr std::array<std::array<U64, 64>, 2> front_pawn_attack_spans = init_front_pawn_attack_spans(std::array<std::array<U64, 64>, 2>{});
-static constexpr U64 whiteSquares = 12273903644374837845ULL;
-static constexpr U64 blackSquares = 6172840429334713770ULL;
-static constexpr U64 aFile = 0x101010101010101;
-static constexpr U64 bFile = 0x202020202020202;
-static constexpr U64 cFile = 0x404040404040404;
-static constexpr U64 dFile = 0x808080808080808;
-static constexpr U64 eFile = 0x1010101010101010;
-static constexpr U64 fFile = 0x2020202020202020;
-static constexpr U64 gFile = 0x4040404040404040;
-static constexpr U64 hFile = 0x8080808080808080;
-static constexpr U64 centralSquares = 0x1818000000;
-static constexpr U64 notEdges = 0x7E7E7E7E7E7E00;

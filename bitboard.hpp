@@ -9,7 +9,7 @@
 #define twos_complement(bitboard) ((~bitboard) + 1)
 #define count_bits(bitboard) (std::_Popcount(bitboard))
 #define bitscan(bitboard) (index64[((bitboard & twos_complement(bitboard)) * debruijn64) >> 58])
-constexpr unsigned long long debruijn64 = 0x07EDD5E59A4E28C2;
+constexpr U64 debruijn64 = 0x07EDD5E59A4E28C2;
 constexpr int index64[64] = {
    63,  0, 58,  1, 59, 47, 53,  2,
    60, 39, 48, 27, 54, 33, 42,  3,
@@ -20,10 +20,6 @@ constexpr int index64[64] = {
    56, 45, 25, 31, 35, 16,  9, 12,
    44, 24, 15,  8, 23,  7,  6,  5
 };
-constexpr U64 notHFile = 0x7f7f7f7f7f7f7f7fULL;
-constexpr U64 notAFile = 0xfefefefefefefefeULL;
-constexpr U64 secondRank = 0xFF000000000000;
-constexpr U64 seventhRank = 0xFF00;
 
 void print_bitboard(const U64 bitboard);
 const std::string square_coordinates[64] = {
