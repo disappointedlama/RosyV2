@@ -126,32 +126,10 @@ void position_test() {
 }
 int main()
 {
-    /*
-    Position pos{};
-    std::array<int, 128> moves;
-    int number = pos.get_legal_moves(moves);
-    std::cout << number << "\n";
-    for (int i = 0; i < 30; i++) {
-        print_move(moves[i]);
-    }
-    */
     //test();
-    //print_bitboard(137438953472);
-    //Position pos{ "8/8/8/K7/1R3p1k/6P1/8/8 b - - 0 1" };
-    //std::array<int, 128> moves;
-    //int number=pos.get_legal_moves(moves);
-    //for (int i = 0; i < number; i++) {
-    //    print_move(moves[i]);
-    //}
     //position_test();
-    //rosy.parse_position("2k3r1/8/1q6/8/8/8/5PBP/7K b - - 0 1");
-    //rosy.bestMove();
-    //simd_tests();
-    //print_bitboard(Position::infinity);
     try {
         Engine rosy{false};
-        //rosy.set_max_depth(7);
-        //rosy.set_debug(true);
         rosy.uci_loop();
     }
     catch(std::exception e) {

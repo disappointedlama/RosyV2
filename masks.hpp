@@ -23,6 +23,14 @@ static constexpr U64 whiteSquares = 12273903644374837845ULL;
 static constexpr U64 blackSquares = 6172840429334713770ULL;
 static constexpr U64 centralSquares = 0x1818000000;
 static constexpr U64 notEdges = 0x7E7E7E7E7E7E00;
+static constexpr U64 bKingposABCPawnShield = 7ULL;
+static constexpr U64 wKingposABCPawnShield = bKingposABCPawnShield<<7*8;
+static constexpr U64 bKingposFGHPawnShield = 7ULL << 5;
+static constexpr U64 wKingposFGHPawnShield = bKingposFGHPawnShield << 7 * 8;
+static constexpr U64 wABCPawnShield = (wKingposABCPawnShield >> 8) | (wKingposABCPawnShield >> 16);
+static constexpr U64 bABCPawnShield = (bKingposABCPawnShield << 8) | (bKingposABCPawnShield << 16);
+static constexpr U64 wFGHPawnShield = (wKingposFGHPawnShield >> 8) | (wKingposFGHPawnShield >> 16);
+static constexpr U64 bFGHPawnShield = (bKingposFGHPawnShield << 8) | (bKingposFGHPawnShield << 16);
 static constexpr U64 passed_pawn_masks[2][64] = {
 	{0, 0, 0, 0, 0, 0, 0, 0,
 	3, 7, 14, 28, 56, 112, 224, 192,

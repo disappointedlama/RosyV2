@@ -486,7 +486,6 @@ void Engine::uci_loop(){
 	char input[2000];
 
 	std::vector<std::thread> workers{};
-	char* command = nullptr;
 	while (true) {
 		memset(input, 0, sizeof(input));
 		fflush(stdout);
@@ -569,6 +568,15 @@ void Engine::uci_loop(){
 			std::cout << "id name Rosy author disappointed_lama\n";
 			std::cout << "option name Move Overhead type spin default 100 min 0 max 20000\noption name Threads type spin default 2 min 2 max 2\noption name Hash type spin default 512 min 256" << std::endl;
 			std::cout << "uciok\n";
+		}
+		else if (strncmp(input, "debug", 5) == 0) {
+			if (strncmp(input + 6, "true", 4) == 0) {
+				debug = true;
+			}
+			else if (strncmp(input +6 , "false", 5) == 0) {
+				debug = false;
+			}
+			std::cout << "Debug is set to " << ((debug) ? ("true") : ("false")) << std::endl;
 		}
 		/*
 		else if (strncmp(input, "ponderhit", 9) == 0) {

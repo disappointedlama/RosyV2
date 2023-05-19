@@ -30,7 +30,7 @@ enum { white, black, both };
 //castling bits
 enum { wk = 1, wq = 2, bk = 4, bq = 8 };
 //pieces
-enum { P, N, B, R, Q, K, p, n, b, r, q, k };
+enum Piece:short { P, N, B, R, Q, K, p, n, b, r, q, k };
 //ASCII pieces
 constexpr char ascii_pieces[] = "PNBRQKpnbrqk";
 //convert ascii char pieces to encoded constants
@@ -258,7 +258,7 @@ public:
 		}
 		const int phase = get_phase();
 		const int sign = (side) ? (-1) : (1);
-		return sign * (raw_material(phase) + pawn_eval() + king_attack_zones() + knight_mobility() + bad_bishop() + trapped());
+		return sign * (raw_material(phase) + pawn_eval() + king_shield(phase) + king_attack_zones() + knight_mobility() + bad_bishop() + trapped());
 	}
 	inline U64 get_pawn_hash() {
 		U64 ret = 0ULL;
@@ -524,6 +524,11 @@ public:
 		}
 
 		return ret - SafetyTable[table_index] * (attackersOnBlack>2);
+	}
+	inline short king_shield(const short phase) {
+		short wKingBonus = (bool)(bitboards[K] & wKingposABCPawnShield) * (count_bits(wABCPawnShield & bitboards[P]) == 3) + (bool)(bitboards[K] & wKingposFGHPawnShield) * (count_bits(wFGHPawnShield & bitboards[P]) == 3);
+		short bKingBonus = (bool)(bitboards[k] & bKingposABCPawnShield) * (count_bits(bABCPawnShield & bitboards[p]) == 3) + (bool)(bitboards[k] & bKingposFGHPawnShield) * (count_bits(bFGHPawnShield & bitboards[p]) == 3);
+		return (75 * (wKingBonus - bKingBonus) * (256 - phase)) / 256;
 	}
 	inline int get_kind_of_piece_on(const int sq) {
 		bool found_piece;

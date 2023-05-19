@@ -638,7 +638,7 @@ inline void Position::legal_bpawn_pushes(std::array<unsigned int,128>& ret, cons
 	U64 promoters = bitboards[6] & (~pinned) & rank2;
 	U64 push_promotions = (promoters << 8) & valid_targets;
 	U64 pushes = ((bitboards[6] & ~(pinned | promoters)) << 8) & valid_targets;
-	U64 doublePushes = ((pushes << 8) & 0xFF000000ULL) & valid_targets;
+	U64 doublePushes = ((pushes << 8) & rank5) & valid_targets;
 	unsigned int move;
 	while (push_promotions) {
 		U64 isolated = _blsi_u64(push_promotions);
@@ -680,7 +680,7 @@ inline void Position::legal_wpawn_pushes(std::array<unsigned int,128>& ret, cons
 	U64 promoters = bitboards[0] & (~pinned) & rank7;
 	U64 push_promotions = (promoters >> 8) & valid_targets;
 	U64 pushes = ((bitboards[0] & ~(pinned | promoters)) >> 8) & valid_targets;
-	U64 doublePushes = ((pushes >> 8) & 0xFF00000000ULL) & valid_targets;
+	U64 doublePushes = ((pushes >> 8) & rank4) & valid_targets;
 	unsigned int move;
 	while (push_promotions) {
 		U64 isolated = _blsi_u64(push_promotions);
@@ -880,7 +880,7 @@ inline void Position::in_check_legal_bpawn_pushes(std::array<unsigned int,128>& 
 	U64 promoters = bitboards[6] & (~pinned) & rank2;
 	U64 push_promotions = (promoters << 8) & in_check_valid & valid_targets;
 	U64 pushes = ((bitboards[6] & ~(pinned | promoters)) << 8) & valid_targets;
-	U64 doublePushes = ((pushes << 8) & 0xFF000000ULL) & in_check_valid & valid_targets;
+	U64 doublePushes = ((pushes << 8) & rank5) & in_check_valid & valid_targets;
 	pushes = pushes & in_check_valid & valid_targets;
 	unsigned int move;
 	while (push_promotions) {
@@ -919,7 +919,7 @@ inline void Position::in_check_legal_wpawn_pushes(std::array<unsigned int,128>& 
 	U64 promoters = bitboards[0] & (~pinned) & rank7;
 	U64 push_promotions = (promoters >> 8) & in_check_valid & valid_targets;
 	U64 pushes = ((bitboards[0] & ~(pinned | promoters)) >> 8) & valid_targets;
-	U64 doublePushes = ((pushes >> 8) & 0xFF00000000ULL) & in_check_valid & valid_targets;
+	U64 doublePushes = ((pushes >> 8) & rank4) & in_check_valid & valid_targets;
 	pushes = pushes & in_check_valid & valid_targets;
 	unsigned int move;
 	while (push_promotions) {
