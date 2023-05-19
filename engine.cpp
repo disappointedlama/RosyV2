@@ -40,6 +40,7 @@ Engine::Engine(const bool t_debug) {
 }
 int Engine::bestMove() {
 	std::chrono::steady_clock::time_point search_start = std::chrono::steady_clock::now();
+	killer_table = KillerTable{};
 	const int aspiration_window = 200;
 	std::array<std::array<unsigned int,128>,40> moves{};
 	pos.get_legal_moves(moves[0]);
@@ -199,7 +200,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 				__assume(get_piece_type(moves[move_index][0]) < 12);
 				__assume(get_to_square(moves[move_index][0]) > -1);
 				__assume(get_to_square(moves[move_index][0]) < 64);
-				history[pos.get_side()][get_piece_type(moves[move_index][0])][get_to_square(moves[move_index][0])] += (U64)(!get_capture_flag(moves[move_index][0])) << depth;
+				history[pos.get_side()][get_piece_type(moves[move_index][0])][get_to_square(moves[move_index][0])] += 1 << depth;
 			}
 			if (depth >= entry.get_depth()) {
 				hash_map[pos.current_hash] = TableEntry{ moves[move_index][0],value,LOWER,depth };
@@ -230,7 +231,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 					__assume(get_to_square(moves[move_index][i]) > -1);
 					__assume(get_to_square(moves[move_index][i]) < 64);
 					__assume(pos.get_side()==0 || pos.get_side()==1);
-					history[pos.get_side()][get_piece_type(moves[move_index][i])][get_to_square(moves[move_index][i])] += (U64)(!get_capture_flag(moves[move_index][i])) << depth;
+					history[pos.get_side()][get_piece_type(moves[move_index][i])][get_to_square(moves[move_index][i])] += 1 << depth;
 				}
 				if (depth >= entry.get_depth()) {
 					hash_map[pos.current_hash] = TableEntry{ moves[move_index][i],value,LOWER,depth };
@@ -514,6 +515,7 @@ void Engine::uci_loop(){
 		else if (strncmp(input, "ucinewgame", 10) == 0) {
 			parse_position("position startpos");
 			hash_map = std::unordered_map<U64, TableEntry>{};
+			history = std::array<std::array<std::array<U64, 64>, 12>, 2>{};
 		}
 		else if (strncmp(input, "go", 2) == 0) {
 			if (!run) {

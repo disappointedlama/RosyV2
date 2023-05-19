@@ -137,6 +137,3 @@ int main()
     }
     return 0;
 }
-//1648673 1/s is current move gen speed
-//position fen 2k3r1/8/1q6/8/8/8/5PBP/7K b - - 0 1 moves b6b1 g2f1 b1f1
-//position startpos moves e2e4

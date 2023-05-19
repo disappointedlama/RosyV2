@@ -593,7 +593,7 @@ public:
 		if (move) {
 			make_move(move);
 			/* Do not consider captures if they lose material, therefor max zero */
-			value = std::max(-1000000, basePieceValue[basePiece[get_captured_type(move)]] - see(square));
+			value = std::max(-infinity, basePieceValue[basePiece[get_captured_type(move)]] - see(square));
 			unmake_move();
 		}
 		return value;
