@@ -40,7 +40,7 @@ Engine::Engine(const bool t_debug) {
 }
 int Engine::bestMove() {
 	std::chrono::steady_clock::time_point search_start = std::chrono::steady_clock::now();
-	killer_table = KillerTable{};
+	killer_table.shift_by(2);
 	const int aspiration_window = 200;
 	std::array<std::array<unsigned int,128>,40> moves{};
 	pos.get_legal_moves(moves[0]);
@@ -65,7 +65,6 @@ int Engine::bestMove() {
 			best = result;
 			if (check_time) {
 				const U64 total_time_searched = (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - search_start).count();
-				std::cout << total_time_searched << "\n";
 				if (total_time_searched * 2 > time_for_next_move) {
 					break;
 				}
@@ -132,6 +131,23 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 		throw stop_exception("pv search");
 	}
 	nodes++;
+	
+	const int number_of_moves = pos.get_legal_moves(moves[move_index]);
+
+	const bool draw_by_repetition = pos.is_draw_by_repetition();
+	const bool draw_by_fifty_move_rule = pos.is_draw_by_fifty_moves();
+	const bool in_check = pos.currently_in_check();
+	const bool no_moves_left = number_of_moves == 0;
+	const bool draw_by_stalemate = no_moves_left && (!in_check);
+	const bool is_draw = draw_by_fifty_move_rule || draw_by_repetition || draw_by_stalemate;
+	const bool is_lost = no_moves_left && in_check;
+
+	if (is_draw || is_lost) {
+		const short eval = pos.evaluate(is_draw, is_lost);
+		hash_map[pos.current_hash] = TableEntry{ 0,eval,EXACT,depth };
+		return eval;
+	}
+
 	const short alphaOrigin = alpha;
 	TableEntry entry = lookUp();
 	if (entry.get_depth() >= depth) {
@@ -150,21 +166,6 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 		}
 	}
 
-	const int number_of_moves = pos.get_legal_moves(moves[move_index]);
-
-	const bool draw_by_repetition = pos.is_draw_by_repetition();
-	const bool draw_by_fifty_move_rule = pos.is_draw_by_fifty_moves();
-	const bool in_check = pos.currently_in_check();
-	const bool no_moves_left = number_of_moves == 0;
-	const bool draw_by_stalemate = no_moves_left && (!in_check);
-	const bool is_draw = draw_by_fifty_move_rule || draw_by_repetition || draw_by_stalemate;
-	const bool is_lost = no_moves_left && in_check;
-
-	if (is_draw || is_lost) {
-		const short eval = pos.evaluate(is_draw, is_lost);
-		hash_map[pos.current_hash] = TableEntry{ 0,eval,EXACT,depth };
-		return eval;
-	}
 	if (depth <= 0) {
 		return quiescence(moves, move_index+1,alpha, beta);
 	}
@@ -516,6 +517,7 @@ void Engine::uci_loop(){
 			parse_position("position startpos");
 			hash_map = std::unordered_map<U64, TableEntry>{};
 			history = std::array<std::array<std::array<U64, 64>, 12>, 2>{};
+			std::cout << "Done with cleanup\n";
 		}
 		else if (strncmp(input, "go", 2) == 0) {
 			if (!run) {

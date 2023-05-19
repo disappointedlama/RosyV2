@@ -343,7 +343,7 @@ public:
 			supported -= count_bits(pawn_attacks[white][bitscan(isolated)] & bitboards[p]);//check if pawn is supported by pears
 			tempPawns = _blsr_u64(tempPawns);
 		}
-		return 20 * passed + 50 * isolated + 5 * supported + 30 * backwards;
+		return 15 * passed + 40 * isolated + 3 * supported + 20 * backwards;
 	}
 	inline short knight_mobility() {
 		U64	blackPawnAttacks = ((bitboards[p] << 7) & notHFile) | ((bitboards[p] << 9) & notAFile);
@@ -361,7 +361,7 @@ public:
 			ret = count_bits(knight_attacks[bitscan(isolated)] & whitePawnAttacks);
 			blackKnights = _blsr_u64(blackKnights);
 		}
-		return 5 * ret;
+		return 3 * ret;
 	}
 	inline short bad_bishop() {
 		short ret = 0;
@@ -377,7 +377,7 @@ public:
 			ret += count_bits(pawn_attacks[black][bitscan(isolated)] & bitboards[p]);
 			blackBishops = _blsr_u64(blackBishops);
 		}
-		return 30 * ret;
+		return 20 * ret;
 	}
 	inline short trapped() {
 		short minor = 0;
@@ -528,7 +528,7 @@ public:
 	inline short king_shield(const short phase) {
 		short wKingBonus = (bool)(bitboards[K] & wKingposABCPawnShield) * (count_bits(wABCPawnShield & bitboards[P]) == 3) + (bool)(bitboards[K] & wKingposFGHPawnShield) * (count_bits(wFGHPawnShield & bitboards[P]) == 3);
 		short bKingBonus = (bool)(bitboards[k] & bKingposABCPawnShield) * (count_bits(bABCPawnShield & bitboards[p]) == 3) + (bool)(bitboards[k] & bKingposFGHPawnShield) * (count_bits(bFGHPawnShield & bitboards[p]) == 3);
-		return (75 * (wKingBonus - bKingBonus) * (256 - phase)) / 256;
+		return (30 * (wKingBonus - bKingBonus) * (256 - phase)) / 256;
 	}
 	inline int get_kind_of_piece_on(const int sq) {
 		bool found_piece;

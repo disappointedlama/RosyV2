@@ -73,6 +73,15 @@ struct KillerTable {
 	bool find(const unsigned int move, const short depth) {
 		return (table[depth][0] == move) || (table[depth][1] == move) || (table[depth][2] == move);
 	}
+	void shift_by(int shift) {
+		int temp[512][3]{};
+		for (int i = shift; i < 512; i++) {
+			if (table[i][0] == 0 && table[i][1] == 0 && table[i][2] == 0) break;
+			temp[i - shift][0] = table[i][0];
+			temp[i - shift][1] = table[i][1];
+			temp[i - shift][2] = table[i][2];
+		}
+	}
 };
 
 static std::array<std::array<std::array<U64, 64>, 12>, 2> history = std::array<std::array<std::array<U64, 64>, 12>, 2>{};
