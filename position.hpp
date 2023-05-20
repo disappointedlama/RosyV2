@@ -342,7 +342,7 @@ public:
 			supported -= count_bits(pawn_attacks[white][bitscan(isolated)] & bitboards[p]);//check if pawn is supported by pears
 			tempPawns = _blsr_u64(tempPawns);
 		}
-		return 15 * passed + 25 * isolated + 3 * supported + 15 * backwards;
+		return 30 * passed + 25 * isolated + 3 * supported + 15 * backwards;
 	}
 	inline short knight_mobility() {
 		U64	blackPawnAttacks = ((bitboards[p] << 7) & notHFile) | ((bitboards[p] << 9) & notAFile);
@@ -361,6 +361,24 @@ public:
 			blackKnights = _blsr_u64(blackKnights);
 		}
 		return 2 * ret;
+	}
+	inline short rook_on_semi_open_file() {
+		short ret = 0;
+		U64 whiteRooks = bitboards[R];
+		while (whiteRooks) {
+			const U64 isolated = _blsi_u64(whiteRooks);
+			U64 file = files[bitscan(isolated) % 8];
+			ret += (bool)(file & bitboards[P]) * rooks_semi_open[count_bits(file & bitboards[R])];
+			whiteRooks &= ~file;
+		}
+		U64 blackRooks = bitboards[r];
+		while (blackRooks) {
+			const U64 isolated = _blsi_u64(blackRooks);
+			U64 file = files[bitscan(isolated) % 8];
+			ret -= (bool)(file & bitboards[p]) * rooks_semi_open[count_bits(file & bitboards[r])];
+			blackRooks &= ~file;
+		}
+		return ret;
 	}
 	inline short bad_bishop() {
 		short ret = 0;

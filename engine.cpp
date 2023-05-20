@@ -110,6 +110,7 @@ int Engine::bestMove() {
 	if (best.move == -1) {
 		throw invalid_move_exception(pos, best.move);
 	}
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	std::cout << "\nbestmove " << uci(best.move) << std::endl;
 	run = false;
 	return best.move;

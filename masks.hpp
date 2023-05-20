@@ -17,6 +17,7 @@ static constexpr U64 eFile = 0x1010101010101010;
 static constexpr U64 fFile = 0x2020202020202020;
 static constexpr U64 gFile = 0x4040404040404040;
 static constexpr U64 hFile = 0x8080808080808080;
+static constexpr U64 files[8] = {aFile,bFile,cFile,dFile,eFile,fFile,gFile,hFile};
 static constexpr U64 notHFile = ~hFile;
 static constexpr U64 notAFile = ~aFile;
 static constexpr U64 whiteSquares = 12273903644374837845ULL;
