@@ -56,7 +56,6 @@ static constexpr U64 get_queen_attacks(U64 occ, const int sq) {
 };
 static const std::string start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 class Position {
-
 	std::unordered_map<U64, short> pawn_evaluation_map;
 	inline bool is_attacked_by_side(const int sq, const bool color);
 	inline U64 get_attacks_by(const bool color);
@@ -303,7 +302,7 @@ public:
 			ret += count_bits(blackPawns & doubled_pawn_masks[sq]);
 			blackPawns = blackPawns & (~doubled_pawn_reset_masks[sq]);
 		}
-		return 15 * ret;
+		return 10 * ret;
 	}
 	inline short pawn_structure() {
 		U64 whiteStops = bitboards[P] >> 8;
@@ -343,7 +342,7 @@ public:
 			supported -= count_bits(pawn_attacks[white][bitscan(isolated)] & bitboards[p]);//check if pawn is supported by pears
 			tempPawns = _blsr_u64(tempPawns);
 		}
-		return 15 * passed + 40 * isolated + 3 * supported + 20 * backwards;
+		return 15 * passed + 25 * isolated + 3 * supported + 15 * backwards;
 	}
 	inline short knight_mobility() {
 		U64	blackPawnAttacks = ((bitboards[p] << 7) & notHFile) | ((bitboards[p] << 9) & notAFile);
@@ -361,7 +360,7 @@ public:
 			ret = count_bits(knight_attacks[bitscan(isolated)] & whitePawnAttacks);
 			blackKnights = _blsr_u64(blackKnights);
 		}
-		return 3 * ret;
+		return 2 * ret;
 	}
 	inline short bad_bishop() {
 		short ret = 0;
@@ -526,9 +525,42 @@ public:
 		return ret - SafetyTable[table_index] * (attackersOnBlack>2);
 	}
 	inline short king_shield(const short phase) {
-		short wKingBonus = (bool)(bitboards[K] & wKingposABCPawnShield) * (count_bits(wABCPawnShield & bitboards[P]) == 3) + (bool)(bitboards[K] & wKingposFGHPawnShield) * (count_bits(wFGHPawnShield & bitboards[P]) == 3);
-		short bKingBonus = (bool)(bitboards[k] & bKingposABCPawnShield) * (count_bits(bABCPawnShield & bitboards[p]) == 3) + (bool)(bitboards[k] & bKingposFGHPawnShield) * (count_bits(bFGHPawnShield & bitboards[p]) == 3);
-		return (30 * (wKingBonus - bKingBonus) * (256 - phase)) / 256;
+		short ret = 0;
+		const U64 bPawns = bitboards[p];
+		const U64 bKing = bitboards[k];
+		if (bKing & bKingposABCPawnShield) {
+			short to_key = ((bPawns >> 8) & 7ULL) | (((bPawns >> 16) & 7ULL) << 3);
+			auto yield = pawn_shield.find(to_key);
+			if (yield != pawn_shield.end()) {
+				ret -= yield->second;
+			}
+		}
+		else if (bKing & bKingposFGHPawnShield) {
+			short to_key = (short)(((bPawns >> 13) & 7ULL) | ((bPawns >> 18) & (7ULL << 3)));
+			to_key = (to_key & 9) << 2 | (to_key & (9 << 1)) | (to_key & (9 << 2)) >> 2;
+			auto yield = pawn_shield.find(to_key);
+			if (yield != pawn_shield.end()) {
+				ret -= yield->second;
+			}
+		}
+		const U64 wPawns = bitboards[P];
+		const U64 wKing = bitboards[K];
+		if (wKing & wKingposFGHPawnShield) {
+			short to_key = (short)(((wPawns >> 53) & 7ULL) | ((wPawns >> 42) & (7ULL << 3)));
+			to_key = (to_key & 9) << 2 | (to_key & (9 << 1)) | (to_key & (9 << 2)) >> 2;
+			auto yield = pawn_shield.find(to_key);
+			if (yield != pawn_shield.end()) {
+				ret += yield->second;
+			}
+		}
+		else if (wKing & wKingposABCPawnShield) {
+			short to_key = (wPawns >> 37) & (7ULL << 3) | (wPawns >> 48) & 7ULL;
+			auto yield = pawn_shield.find(to_key);
+			if (yield != pawn_shield.end()) {
+				ret += yield->second;
+			}
+		}
+		return (ret * (256 - phase)) / 256;
 	}
 	inline int get_kind_of_piece_on(const int sq) {
 		bool found_piece;

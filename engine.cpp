@@ -335,7 +335,7 @@ inline TableEntry Engine::lookUp() {
 	if (yield != hash_map.end()) {
 		return yield->second;
 	}
-	return TableEntry{ 0,0,0,-32768 };
+	return TableEntry{ 0,0,0,-infinity-1 };
 }
 void Engine::set_max_depth(const short depth) {
 	max_depth = depth;

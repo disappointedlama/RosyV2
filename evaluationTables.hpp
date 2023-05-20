@@ -175,3 +175,15 @@ static constexpr short endgamePawnTableBlack[64] = {
 };
 static constexpr short basePieceValue[6] = { 100,305,333,563,950,0 };
 static constexpr short basePiece[16] = { 0,1,2,3,4,5,0,1,2,3,4,5,0,0,0,0 };
+static const std::unordered_map<short, short> pawn_shield = {
+	{0,0},
+	{1,2},{2,2},{4,2},{8,2},{16,2},{32,2},
+	{3,7},{6,7},
+	{5,3},{40,3},
+	{34,5},{10,5},{20,5},{17,5},
+	{36,4},{18,4},{9,4},
+	{7,25},
+	{39,20},{53,20},
+	{21,15},{14,15},{46,15},
+	{35,10}
+};
