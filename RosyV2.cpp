@@ -57,7 +57,14 @@ void perf(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, 
     std::cout << "\tTime: " << totalTime << "  (" << 1000000000 * total_nodes / totalTime << " 1/s)\n";
     lookedAt = total_nodes;
 }
-
+void reset_test_parameters() {
+    lookedAt = 0;
+    mates = 0;
+    captures = 0ULL;
+    en_passant = 0ULL;
+    castles = 0ULL;
+    promotions = 0ULL;
+}
 void test() {
     Position pos;
     pos = Position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
@@ -86,48 +93,38 @@ void position_test() {
     std::array<int, 6> first_nodes{ 48,2039,97862 ,4085603,193690690,8031647685 };
     std::array<int, 6> first_mates{ 0,0,1,43,30171,360003 };
     for (int i = 0; i < 5; i++) {
+        reset_test_parameters();
         std::string out = "";
         perf(moves, 0, pos, i + 1);
         std::cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
-        out = ((lookedAt == first_nodes[i]) && (mates == first_mates[i])) ? ("Passed Test") : ("Failed Test");
         std::cout << "captures: " << captures << "\n";
         std::cout << "en_passant: " << en_passant << "\n";
         std::cout << "castles: " << castles << "\n";
         std::cout << "promotions: " << promotions << "\n";
+        out = ((lookedAt == first_nodes[i]) && (mates == first_mates[i])) ? ("Passed Test") : ("Failed Test");
         std::cout << out << "\n";
-        lookedAt = 0;
-        mates = 0;
-        captures = 0ULL;
-        en_passant = 0ULL;
-        castles = 0ULL;
-        promotions = 0ULL;
     }
     pos = Position{ "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 0" };
 
     std::array<int, 6> second_nodes{ 14,191,2812,43238,674624,11030083 };
     std::array<int, 6> second_mates{ 0,0,0,17,0,2733 };
     for (int i = 0; i < 5; i++) {
+        reset_test_parameters();
         std::string out = "";
         perf(moves, 0, pos, i + 1);
         std::cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
-        out = ((lookedAt == second_nodes[i]) && (mates == second_mates[i])) ? ("Passed Test") : ("Failed Test");
         std::cout << "captures: " << captures << "\n";
         std::cout << "en_passant: " << en_passant << "\n";
         std::cout << "castles: " << castles << "\n";
         std::cout << "promotions: " << promotions << "\n";
+        out = ((lookedAt == second_nodes[i]) && (mates == second_mates[i])) ? ("Passed Test") : ("Failed Test");
         std::cout << out << "\n";
-        lookedAt = 0;
-        mates = 0;
-        captures = 0ULL;
-        en_passant = 0ULL;
-        castles = 0ULL;
-        promotions = 0ULL;
     }
 }
 int main()
 {
-    //test();
-    //position_test();
+    test();
+    position_test();
     try {
         Engine rosy{false};
         rosy.uci_loop();

@@ -36,6 +36,14 @@ inline U64 Position::get_attacks_by(const bool color) {
 	return attacks;
 }
 inline int Position::get_piece_type_on(const int sq) {
+	if (sq == enpassant_square && sq != a8) return (!side) * p;
+	return square_board[sq];
+	/*
+	for (int i = 0; i < 12; i++) {
+		if (get_bit(bitboards[i], sq)) return i;
+	}
+	const bool is_enpassant = (sq == enpassant_square && sq != a8);
+	return (is_enpassant) * (!side) * 6 + no_piece * (!is_enpassant);
 	const int offset = (!side) * 6;
 	unsigned long ret = 0;
 	__m256i _square_mask = _mm256_set1_epi64x(1ULL << sq);
@@ -57,8 +65,9 @@ inline int Position::get_piece_type_on(const int sq) {
 		_BitScanForward(&ret, mask);
 		return offset + 2 + ((int)ret) / 8;
 	}
-	const bool is_enpassant = (sq == enpassant_square);
+	const bool is_enpassant = (sq == enpassant_square && sq != a8);
 	return (is_enpassant)*offset + no_piece * (!is_enpassant);
+	*/
 	/*
 	const int offset = (!side) * 6;
 	bool found_piece = false;
@@ -1602,6 +1611,10 @@ Position::Position() {
 	no_pawns_or_captures_history.reserve(256);
 	hash_history = std::vector<U64>{};
 	hash_history.reserve(256);
+	square_board = std::array<short, 64>{};
+	for (int i = 0; i < square_board.size(); i++) {
+		square_board[i] = no_piece;
+	}
 }
 Position::Position(const std::string& fen) {
 	parse_fen(fen);
@@ -1619,6 +1632,10 @@ void Position::parse_fen(std::string fen) {
 	// Empty the board quares
 	for (int i = 0; i < 12; i++) {
 		bitboards[i] = 0ULL;
+	}
+	square_board = std::array<short, 64>{};
+	for (int i = 0; i < square_board.size(); i++) {
+		square_board[i] = no_piece;
 	}
 	castling_rights = 0;
 	no_pawns_or_captures = 0;
@@ -1642,7 +1659,9 @@ void Position::parse_fen(std::string fen) {
 		case '6': j += 5; break;
 		case '7': j += 6; break;
 		case '8': j += 7; break;
-		default: set_bit(bitboards[char_pieces(letter)], sq);
+		default:
+			set_bit(bitboards[char_pieces(letter)], sq);
+			square_board[sq] = char_pieces(letter);
 		}
 		j++;
 	}
@@ -1807,7 +1826,7 @@ void Position::print() const {
 				printf(" %d ", 8 - rank);
 			}//print rank on the left side
 
-			int piece = -1;
+			int piece = no_piece;
 
 			for (int piece_on_square = P; piece_on_square <= k; piece_on_square++) {
 				if (get_bit(bitboards[piece_on_square], square)) {
@@ -1815,7 +1834,38 @@ void Position::print() const {
 					break;
 				}
 			}
-			printf(" %c", (piece == -1) ? ' .' : ascii_pieces[piece]);
+			printf(" %c", (piece == no_piece) ? ' .' : ascii_pieces[piece]);
+		}
+		printf("\n");
+	}
+	printf("\n    a b c d e f g h \n\n");
+	printf("    To move: %s\n", (side) ? "black" : "white");
+	printf("    enpassant square: %s\n", (enpassant_square != a8) ? square_coordinates[enpassant_square].c_str() : "none");
+
+	printf("    castling rights: %c%c%c%c\n", (get_bit(castling_rights, 0)) ? 'K' : '-', (get_bit(castling_rights, 1)) ? 'Q' : '-', (get_bit(castling_rights, 2)) ? 'k' : '-', (get_bit(castling_rights, 3)) ? 'q' : '-');
+	//print castling rights
+
+	printf("    halfmoves since last pawn move or capture: %d\n", no_pawns_or_captures);
+	printf("    current halfclock turn: %d\n", ply);
+	printf("    current game turn: %d\n", (int)ply / 2 + (side == white));
+	std::cout << "    current hash: " << current_hash << "\n";
+}
+void Position::print_square_board() const {
+	printf("\n");
+	for (int rank = 0; rank < 8; rank++) {
+		for (int file = 0; file < 8; file++) {
+			//loop over board ranks and files
+
+			int square = rank * 8 + file;
+			//convert to square index
+
+			if (!file) {
+				printf(" %d ", 8 - rank);
+			}//print rank on the left side
+
+			int piece = square_board[square];
+
+			printf(" %c", (piece == no_piece) ? ' .' : ascii_pieces[piece]);
 		}
 		printf("\n");
 	}
@@ -1940,7 +1990,11 @@ inline void Position::make_move(const unsigned int move) {
 	pop_bit(castling_rights, (wK || (wR && (from_square == a1)) || (to_square == a1)) ? 1 : 4);
 	pop_bit(castling_rights, (wK || (wR && (from_square == h1)) || (to_square == h1)) ? 0 : 4);
 	//branchlessly pop castle right bits
-
+	square_board[from_square] = no_piece;
+	square_board[to_square] = true_piece_type;
+	if (is_enpassant) {
+		square_board[to_square + 8 * ((!side) - (side))] = no_piece;
+	}
 	if (is_castle) {
 		const int square_offset = 56 * (side);
 		const bool is_kingside = to_square > from_square;
@@ -1953,6 +2007,9 @@ inline void Position::make_move(const unsigned int move) {
 		castling_rights &= ~((1ULL) << (2 * (piece_type == k)));
 		castling_rights &= ~((1ULL) << (1 + 2 * (piece_type == k)));
 		//pop castle right bits if move is castling
+
+		square_board[rook_source] = no_piece;
+		square_board[rook_target] = piece_type - 2;
 	}
 	side = !side;
 	occupancies[0] = (bitboards[0] | bitboards[1]) | (bitboards[2] | bitboards[3]) | (bitboards[4] | bitboards[5]);
@@ -1962,6 +2019,13 @@ inline void Position::make_move(const unsigned int move) {
 	//update_hash(move);
 	current_hash = get_hash();
 	//assert(current_hash==get_hash());
+	/*
+	if (!boardsMatch()) {
+		print();
+		std::cout << "| last move " << uci(move) << " (unmake move)";
+		print_square_board();
+	}
+	*/
 }
 inline void Position::unmake_move() {
 	const unsigned int move = move_history.back();
@@ -2002,9 +2066,31 @@ inline void Position::unmake_move() {
 	bitboards[(9 - 6 * (side))] |= (((is_castle) * 1ULL) << ((is_kingside) ? (h8 + square_offset) : (a8 + square_offset)));
 	bitboards[(9 - 6 * (side))] &= ~(((is_castle) * 1ULL) << ((is_kingside) ? (f8 + square_offset) : (d8 + square_offset)));
 	//branchlessly set and pop rook bits if move was castling
-
+	square_board[from_square] = piece_type;
+	square_board[to_square] = no_piece;
+	if (capture) {
+		if (is_enpassant) {
+			square_board[to_square + 8 * ((side)-(!side))] = captured_type;
+		}
+		else {
+			square_board[to_square] = captured_type;
+		}
+	}
+	if (is_castle) {
+		const int rook_source = (is_kingside) ? (h8 + square_offset) : (a8 + square_offset);
+		const int rook_target = (is_kingside) ? (f8 + square_offset) : (d8 + square_offset);
+		square_board[rook_target] = no_piece;
+		square_board[rook_source] = piece_type - 2;
+	}
 	occupancies[0] = bitboards[0] | bitboards[1] | bitboards[2] | bitboards[3] | bitboards[4] | bitboards[5];
 	occupancies[1] = bitboards[6] | bitboards[7] | bitboards[8] | bitboards[9] | bitboards[10] | bitboards[11];
 	occupancies[2] = occupancies[0] | occupancies[1];
 	side = !side;
+	/*
+	if (!boardsMatch()) {
+		print();
+		std::cout << "| last move " << uci(move) << " (unmake move)";
+		print_square_board();
+	}
+	*/
 }

@@ -129,8 +129,8 @@ class Engine {
 				const bool rhs_is_capture = get_capture_flag(rhs);
 				const int lhs_piece = get_piece_type(lhs);
 				const int rhs_piece = get_piece_type(rhs);
-				assert((lhs_piecs > -1) && (lhs_piece < 12));
-				assert((lhs_piecs > -1) && (lhs_piece < 12));
+				//assert((lhs_piecs > -1) && (lhs_piece < 12));
+				//assert((lhs_piecs > -1) && (lhs_piece < 12));
 				if (lhs_is_capture && rhs_is_capture) {
 					return (get_captured_type(lhs) - lhs_piece) > (get_captured_type(rhs) - rhs_piece);
 				}

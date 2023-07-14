@@ -169,6 +169,7 @@ class Position {
 public:
 	std::array<U64, 12> bitboards; // P, N, B, R, Q, K, p, n, b, r, q, k
 	std::array<U64, 3> occupancies;
+	std::array<short, 64> square_board;
 	bool side;//white: false, black: true
 	int ply;
 	short enpassant_square;
@@ -188,6 +189,7 @@ public:
 	void parse_fen(std::string fen);
 	std::string fen();
 	void print() const;
+	void print_square_board() const;
 	U64 get_hash() const;
 	constexpr bool get_side() const { return side; };
 	constexpr int get_ply() const { return ply; };
@@ -648,5 +650,21 @@ public:
 			unmake_move();
 		}
 		return value;
+	}
+	inline bool boardsMatch() {
+		for (int i = 0; i < 64; i++) {
+			short type = get_piece_type_on(i);
+			if (i == enpassant_square && i!=a8) {
+				if (type != p && type != P && square_board[i] != no_piece) {
+					std::cout << std::endl<< "mismatch at " << square_coordinates[i] << " : "<<type<<", " << square_board[i] << std::endl;
+					return false;
+				}
+			}
+			else if (type != square_board[i]) {
+				std::cout << std::endl<< "mismatch at " << square_coordinates[i] << " : " << type << ", " << square_board[i] << std::endl;
+				return false;
+			}
+		}
+		return true;
 	}
 };
