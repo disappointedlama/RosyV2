@@ -192,7 +192,7 @@ public:
 	Position(const std::string& fen);
 	void parse_fen(std::string fen);
 	std::string fen();
-	void print() const;
+	void print();
 	void print_square_board() const;
 	U64 get_hash() const;
 	constexpr bool get_side() const { return side; };

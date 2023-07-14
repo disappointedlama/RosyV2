@@ -1243,7 +1243,7 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 				ret[ind++]=move;
 			}
 			if ((double_push_target < a3) && (double_push_target > h6)) {
-				if (get_bit(valid_targets & ((side) ? (0xFF000000ULL) : (0xFF00000000ULL)), double_push_target)) {
+				if (get_bit(valid_targets & ((side) ? (0xFF00000000ULL) : (0xFF000000ULL)), double_push_target)) {
 					unsigned int move = encode_move(from, double_push_target, type, no_piece, no_piece, false, true, false, false);
 					ret[ind++]=move;
 				}
@@ -1733,9 +1733,7 @@ std::string Position::fen() {
 			const int ind = 8 * i + j;
 			int piece = get_piece_type_on(ind);
 			if (piece == no_piece) {
-				side = !side;
 				piece = get_piece_type_on(ind);
-				side = !side;
 			}
 			if ((piece == no_piece) || ((ind == enpassant_square) && (enpassant_square != a8))) {
 				empty_spaces++;
@@ -1796,7 +1794,7 @@ std::string Position::fen() {
 	}
 	return ret;
 }
-void Position::print() const {
+void Position::print() {
 	printf("\n");
 	for (int rank = 0; rank < 8; rank++) {
 		for (int file = 0; file < 8; file++) {
@@ -1832,6 +1830,7 @@ void Position::print() const {
 	printf("    current halfclock turn: %d\n", ply);
 	printf("    current game turn: %d\n", (int)ply / 2 + (side == white));
 	std::cout << "    current hash: " << current_hash << "\n";
+	std::cout<<"    fen: " << fen() <<"\n";
 }
 void Position::print_square_board() const {
 	printf("\n");
@@ -2008,6 +2007,11 @@ inline void Position::make_move(const unsigned int move) {
 	//update_hash(move);
 	current_hash = get_hash();
 	//assert(current_hash==get_hash());
+	//if (!boardsMatch()) {
+	//	print();
+	//	std::cout << "| last move: "; print_move(move);
+	//	print_square_board();
+	//}
 }
 inline void Position::unmake_move() {
 	const unsigned int move = move_history.back();
@@ -2070,4 +2074,9 @@ inline void Position::unmake_move() {
 	occupancies[1] = bitboards[6] | bitboards[7] | bitboards[8] | bitboards[9] | bitboards[10] | bitboards[11];
 	occupancies[2] = occupancies[0] | occupancies[1];
 	side = !side;
-}
+	//if (!boardsMatch()) {
+	//	print();
+	//	std::cout << "| last move: "; print_move(move);
+	//	print_square_board();
+	//}
+}//position fen 8/2k4p/1b6/3P3p/p7/5K1P/P4P2/5q2 w - - 0 39

@@ -173,7 +173,7 @@ void position_test() {
 int main()
 {
     //test();
-    position_test();
+    //position_test();
     try {
         Engine rosy{false};
         rosy.uci_loop();
