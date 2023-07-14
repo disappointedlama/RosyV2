@@ -1197,7 +1197,7 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 				ret[ind++]=move;
 			}
 			if ((double_push_target < a3) && (double_push_target > h6)) {
-				if (get_bit(valid_targets & ((side) ? (rank5) : (rank4)), double_push_target)) {
+				if (get_bit(valid_targets & ((side) ? (rank5) : (rank4)), double_push_target)&&push_target!=kingpos) {
 					unsigned int move = encode_move(from, double_push_target, type, no_piece, no_piece, false, true, false, false);
 					ret[ind++]=move;
 				}
