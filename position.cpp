@@ -37,52 +37,6 @@ inline U64 Position::get_attacks_by(const bool color) {
 }
 inline int Position::get_piece_type_on(const int sq) {
 	return square_board[sq];
-	/*
-	for (int i = 0; i < 12; i++) {
-		if (get_bit(bitboards[i], sq)) return i;
-	}
-	const bool is_enpassant = (sq == enpassant_square && sq != a8);
-	return (is_enpassant) * (!side) * 6 + no_piece * (!is_enpassant);
-	const int offset = (!side) * 6;
-	unsigned long ret = 0;
-	__m256i _square_mask = _mm256_set1_epi64x(1ULL << sq);
-	__m256i _pieces = _mm256_loadu_si256((__m256i*) & bitboards[offset]);
-	_pieces = _mm256_and_si256(_square_mask, _pieces);
-
-	__m256i _found_mask = _mm256_cmpeq_epi64(_square_mask, _pieces);
-	int mask = _mm256_movemask_epi8(_found_mask);
-	if (mask) {
-		_BitScanForward(&ret, mask);
-		return offset + ((int)ret) / 8;
-	}
-	_pieces = _mm256_loadu_si256((__m256i*) & bitboards[offset + 2]);
-	_pieces = _mm256_and_si256(_square_mask, _pieces);
-
-	_found_mask = _mm256_cmpeq_epi64(_square_mask, _pieces);
-	mask = _mm256_movemask_epi8(_found_mask);
-	if (mask) {
-		_BitScanForward(&ret, mask);
-		return offset + 2 + ((int)ret) / 8;
-	}
-	const bool is_enpassant = (sq == enpassant_square && sq != a8);
-	return (is_enpassant)*offset + no_piece * (!is_enpassant);
-	*/
-	/*
-	const int offset = (!side) * 6;
-	bool found_piece = false;
-	int piece_type = 0;
-	bool bit;
-	for (int ind = offset; ind < offset + 6; ind++) {
-		bit = get_bit(bitboards[ind], sq);
-		if (bit) {
-			found_piece = bit;
-			piece_type = ind;
-			break;
-		}
-	}
-	const bool is_enpassant = (sq == enpassant_square);
-	return (!found_piece) * ((is_enpassant)*offset + 15 * (!is_enpassant)) + (found_piece)*piece_type;
-	*/
 }
 void Position::try_out_move(std::array<unsigned int,128>& ret, unsigned int move, int& ind) {
 	make_move(move);
@@ -735,8 +689,8 @@ inline void Position::legal_bpawn_captures(std::array<unsigned int,128>& ret, co
 
 	U64 enpassant = 0ULL;
 	set_bit(enpassant, enpassant_square);
-	const bool left_enpassant = ((enpassant >> 7) & notAFile) & (bitboards[6] & ~promoters);
-	const bool right_enpassant = ((enpassant >> 9) & notHFile) & (bitboards[6] & ~promoters);
+	const bool left_enpassant = (enpassant >> 7) & notAFile & bitboards[p];
+	const bool right_enpassant = (enpassant >> 9) & notHFile & bitboards[p];
 	if (left_enpassant) {
 		unsigned int move = encode_move(enpassant_square - 7, enpassant_square, p, P, no_piece, true, false, false, true);
 		try_out_move(ret, move, ind);
@@ -811,8 +765,8 @@ inline void Position::legal_wpawn_captures(std::array<unsigned int,128>& ret, co
 
 	U64 enpassant = 0ULL;
 	enpassant = (enpassant_square != a8) * (1ULL << enpassant_square);
-	const bool left_enpassant = ((enpassant << 7) & notHFile) & (bitboards[0] & ~promoters);
-	const bool right_enpassant = ((enpassant << 9) & notAFile) & (bitboards[0] & ~promoters);
+	const bool left_enpassant = (enpassant << 7) & notHFile & bitboards[P];
+	const bool right_enpassant = (enpassant << 9) & notAFile & bitboards[P];
 	if (left_enpassant) {
 		unsigned int move = encode_move(enpassant_square + 7, enpassant_square, P, p, no_piece, true, false, false, true);
 		try_out_move(ret, move, ind);
@@ -967,8 +921,8 @@ inline void Position::in_check_legal_bpawn_captures(std::array<unsigned int,128>
 
 	U64 enpassant = 0ULL;
 	set_bit(enpassant, enpassant_square);
-	const bool left_enpassant = ((enpassant >> 7) & notAFile) & (bitboards[6] & ~promoters);
-	const bool right_enpassant = ((enpassant >> 9) & notHFile) & (bitboards[6] & ~promoters);
+	const bool left_enpassant = (enpassant >> 7) & notAFile & (bitboards[p]);
+	const bool right_enpassant = (enpassant >> 9) & notHFile & (bitboards[p]);
 	if (left_enpassant) {
 		unsigned int move = encode_move(enpassant_square - 7, enpassant_square, p, P, no_piece, true, false, false, true);
 		try_out_move(ret, move, ind);
@@ -1032,8 +986,8 @@ inline void Position::in_check_legal_wpawn_captures(std::array<unsigned int, 128
 	U64 captures = ((bitboards[0] & (~(pinned | promoters))) >> 7) & notAFile & targets;
 
 	U64 enpassant = (enpassant_square != a8) * (1ULL << enpassant_square);
-	const bool left_enpassant = ((enpassant << 7) & notHFile) & (bitboards[0] & ~promoters);
-	const bool right_enpassant = ((enpassant << 9) & notAFile) & (bitboards[0] & ~promoters);
+	const bool left_enpassant = (enpassant << 7) & notHFile & bitboards[P];
+	const bool right_enpassant = (enpassant << 9) & notAFile & bitboards[P];
 	if (left_enpassant) {
 		unsigned int move = encode_move(enpassant_square + 7, enpassant_square, P, p, no_piece, true, false, false, true);
 		try_out_move(ret, move, ind);
@@ -1243,7 +1197,7 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 				ret[ind++]=move;
 			}
 			if ((double_push_target < a3) && (double_push_target > h6)) {
-				if (get_bit(valid_targets & ((side) ? (0xFF00000000ULL) : (0xFF000000ULL)), double_push_target)) {
+				if (get_bit(valid_targets & ((side) ? (rank5) : (rank4)), double_push_target)) {
 					unsigned int move = encode_move(from, double_push_target, type, no_piece, no_piece, false, true, false, false);
 					ret[ind++]=move;
 				}
@@ -2007,11 +1961,11 @@ inline void Position::make_move(const unsigned int move) {
 	//update_hash(move);
 	current_hash = get_hash();
 	//assert(current_hash==get_hash());
-	//if (!boardsMatch()) {
-	//	print();
-	//	std::cout << "| last move: "; print_move(move);
-	//	print_square_board();
-	//}
+	if (!boardsMatch()) {
+		print();
+		std::cout << "| last move: "; print_move(move);
+		print_square_board();
+	}
 }
 inline void Position::unmake_move() {
 	const unsigned int move = move_history.back();
@@ -2074,9 +2028,9 @@ inline void Position::unmake_move() {
 	occupancies[1] = bitboards[6] | bitboards[7] | bitboards[8] | bitboards[9] | bitboards[10] | bitboards[11];
 	occupancies[2] = occupancies[0] | occupancies[1];
 	side = !side;
-	//if (!boardsMatch()) {
-	//	print();
-	//	std::cout << "| last move: "; print_move(move);
-	//	print_square_board();
-	//}
+	if (!boardsMatch()) {
+		print();
+		std::cout << "| last move: "; print_move(move);
+		print_square_board();
+	}
 }//position fen 8/2k4p/1b6/3P3p/p7/5K1P/P4P2/5q2 w - - 0 39

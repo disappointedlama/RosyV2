@@ -43,6 +43,14 @@ void perf(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, 
     unsigned long long total_nodes = 0ULL;
     for (int i = 0; i < number_of_moves; i++) {
         nodes_from_branches.push_back(0ULL);
+        if (depth == 1) {
+            if (get_capture_flag(moves[move_index][i])) {
+                captures++;
+                if (get_enpassant_flag(moves[move_index][i])) en_passant++;
+            }
+            if (get_castling_flag(moves[move_index][i])) castles++;
+            if (get_promotion_type(moves[move_index][i]) != 15) promotions++;
+        }
         pos.make_move(moves[move_index][i]);
         tree(moves, move_index +1, pos, depth - 1, i, &nodes_from_branches);
         pos.unmake_move();
@@ -104,7 +112,7 @@ void position_test() {
         std::cout << "castles: " << castles << "\n";
         std::cout << "promotions: " << promotions << "\n";
         const bool correct = lookedAt == expected_nodes[i] && mates == expected_mates[i] && captures==expected_captures[i] && castles==expected_castles[i] && promotions==expected_promotions[i];
-        passedAllTests |= correct;
+        passedAllTests &= correct;
         out = (correct) ? ("Passed Test") : ("Failed Test");
         std::cout << out << "\n";
     }
@@ -124,7 +132,7 @@ void position_test() {
         std::cout << "castles: " << castles << "\n";
         std::cout << "promotions: " << promotions << "\n";
         const bool correct = lookedAt == expected_nodes[i] && mates == expected_mates[i] && captures == expected_captures[i] && castles == expected_castles[i] && promotions == expected_promotions[i];
-        passedAllTests |= correct;
+        passedAllTests &= correct;
         out = (correct) ? ("Passed Test") : ("Failed Test");
         std::cout << out << "\n";
     }
@@ -144,7 +152,7 @@ void position_test() {
         std::cout << "castles: " << castles << "\n";
         std::cout << "promotions: " << promotions << "\n";
         const bool correct = lookedAt == expected_nodes[i] && mates == expected_mates[i] && captures == expected_captures[i] && castles == expected_castles[i] && promotions == expected_promotions[i];
-        passedAllTests |= correct;
+        passedAllTests &= correct;
         out = (correct) ? ("Passed Test") : ("Failed Test");
         std::cout << out << "\n";
     }
@@ -159,7 +167,7 @@ void position_test() {
         std::cout << "castles: " << castles << "\n";
         std::cout << "promotions: " << promotions << "\n";
         const bool correct = lookedAt == expected_nodes[i] && mates == expected_mates[i] && captures == expected_captures[i] && castles == expected_castles[i] && promotions == expected_promotions[i];
-        passedAllTests |= correct;
+        passedAllTests &= correct;
         out = (correct) ? ("Passed Test") : ("Failed Test");
         std::cout << out << "\n";
     }
@@ -173,7 +181,7 @@ void position_test() {
 int main()
 {
     //test();
-    //position_test();
+    position_test();
     try {
         Engine rosy{false};
         rosy.uci_loop();
