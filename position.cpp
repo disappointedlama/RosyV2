@@ -58,7 +58,7 @@ inline int Position::get_piece_type_on(const int sq) {
 		return offset + 2 + ((int)ret) / 8;
 	}
 	const bool is_enpassant = (sq == enpassant_square);
-	return (is_enpassant)*offset + 15 * (!is_enpassant);
+	return (is_enpassant)*offset + no_piece * (!is_enpassant);
 	/*
 	const int offset = (!side) * 6;
 	bool found_piece = false;
@@ -124,7 +124,7 @@ void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
 			//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), 15, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 			ret[ind++] = move;
 
 			attacks = _blsr_u64(attacks);
@@ -151,7 +151,7 @@ void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
 			//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), 15, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 			ret[ind++] = move;
 
 			attacks = _blsr_u64(attacks);
@@ -178,7 +178,7 @@ void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
 			//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), 15, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 			ret[ind++] = move;
 
 			attacks = _blsr_u64(attacks);
@@ -205,7 +205,7 @@ void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
 			//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), 15, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 			ret[ind++] = move;
 
 			attacks = _blsr_u64(attacks);
@@ -228,7 +228,7 @@ void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int
 		//move |= type << 12;
 		//move |= get_piece_type_on(to) << 16;
 		//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-		move = encode_move(kingpos, to, type, get_piece_type_on(to), 15, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+		move = encode_move(kingpos, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 		ret[ind++] = move;
 
 		attacks = _blsr_u64(attacks);
@@ -269,7 +269,7 @@ void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret,
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
 			//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), 15, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 			ret[ind++]=move;
 
 			attacks = _blsr_u64(attacks);
@@ -296,7 +296,7 @@ void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret,
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
 			//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), 15, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 			ret[ind++]=move;
 
 			attacks = _blsr_u64(attacks);
@@ -323,7 +323,7 @@ void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret,
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
 			//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), 15, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 			ret[ind++]=move;
 
 			attacks = _blsr_u64(attacks);
@@ -350,7 +350,7 @@ void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret,
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
 			//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), 15, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 			ret[ind++]=move;
 
 			attacks = _blsr_u64(attacks);
@@ -375,7 +375,7 @@ void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret,
 		//move |= type << 12;
 		//move |= get_piece_type_on(to) << 16;
 		//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-		move = encode_move(kingpos, to, type, get_piece_type_on(to), 15, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+		move = encode_move(kingpos, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 		ret[ind++]=move;
 
 		attacks = _blsr_u64(attacks);
@@ -412,7 +412,7 @@ void Position::legal_capture_gen(std::array<unsigned int,128>& ret, const U64 ki
 			const U64 isolated2 = _blsi_u64(attacks);
 
 			const int to = bitscan(isolated2);
-			move = encode_move(sq, to, type, get_piece_type_on(to), 15, true, false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 			ret[ind++] = move;
 
 			attacks = _blsr_u64(attacks);
@@ -433,7 +433,7 @@ void Position::legal_capture_gen(std::array<unsigned int,128>& ret, const U64 ki
 			const U64 isolated2 = _blsi_u64(attacks);
 
 			const int to = bitscan(isolated2);
-			move = encode_move(sq, to, type, get_piece_type_on(to), 15, true, false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 			ret[ind++] = move;
 
 			attacks = _blsr_u64(attacks);
@@ -454,7 +454,7 @@ void Position::legal_capture_gen(std::array<unsigned int,128>& ret, const U64 ki
 			const U64 isolated2 = _blsi_u64(attacks);
 
 			const int to = bitscan(isolated2);
-			move = encode_move(sq, to, type, get_piece_type_on(to), 15, true, false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 			ret[ind++] = move;
 
 			attacks = _blsr_u64(attacks);
@@ -476,7 +476,7 @@ void Position::legal_capture_gen(std::array<unsigned int,128>& ret, const U64 ki
 			const U64 isolated2 = _blsi_u64(attacks);
 
 			const int to = bitscan(isolated2);
-			move = encode_move(sq, to, type, get_piece_type_on(to), 15, true, false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 			ret[ind++] = move;
 
 			attacks = _blsr_u64(attacks);
@@ -494,7 +494,7 @@ void Position::legal_capture_gen(std::array<unsigned int,128>& ret, const U64 ki
 		const U64 isolated2 = _blsi_u64(attacks);
 
 		const int to = bitscan(isolated2);
-		move = encode_move(kingpos, to, type, get_piece_type_on(to), 15, true, false, false, false);
+		move = encode_move(kingpos, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 		ret[ind++] = move;
 
 		attacks = _blsr_u64(attacks);
@@ -524,7 +524,7 @@ void Position::legal_in_check_capture_gen(std::array<unsigned int, 128>& ret, co
 
 			unsigned long to = 0UL;
 			_BitScanForward64(&to, isolated2);
-			move = encode_move(sq, to, type, get_piece_type_on(to), 15, true, false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 			try_out_move(ret, move, ind);
 
 			attacks = _blsr_u64(attacks);
@@ -547,7 +547,7 @@ void Position::legal_in_check_capture_gen(std::array<unsigned int, 128>& ret, co
 
 			unsigned long to = 0UL;
 			_BitScanForward64(&to, isolated2);
-			move = encode_move(sq, to, type, get_piece_type_on(to), 15, true, false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 			try_out_move(ret, move, ind);
 
 			attacks = _blsr_u64(attacks);
@@ -569,7 +569,7 @@ void Position::legal_in_check_capture_gen(std::array<unsigned int, 128>& ret, co
 
 			unsigned long to = 0UL;
 			_BitScanForward64(&to, isolated2);
-			move = encode_move(sq, to, type, get_piece_type_on(to), 15, true, false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 
 			try_out_move(ret, move, ind);
 
@@ -593,7 +593,7 @@ void Position::legal_in_check_capture_gen(std::array<unsigned int, 128>& ret, co
 
 			unsigned long to = 0UL;
 			_BitScanForward64(&to, isolated2);
-			move = encode_move(sq, to, type, get_piece_type_on(to), 15, true, false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 			try_out_move(ret, move, ind);
 
 			attacks = _blsr_u64(attacks);
@@ -614,7 +614,7 @@ void Position::legal_in_check_capture_gen(std::array<unsigned int, 128>& ret, co
 
 		unsigned long to = 0UL;
 		_BitScanForward64(&to, isolated);
-		move = encode_move(kingpos, to, type, get_piece_type_on(to), 15, true, false, false, false);
+		move = encode_move(kingpos, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 		ret[ind++]=move;
 
 		attacks = _blsr_u64(attacks);
@@ -644,7 +644,7 @@ inline void Position::legal_bpawn_pushes(std::array<unsigned int,128>& ret, cons
 		U64 isolated = _blsi_u64(push_promotions);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		move = encode_move(sq - 8, sq, p, 15, n, false, false, false, true);
+		move = encode_move(sq - 8, sq, p, no_piece, n, false, false, false, true);
 		ret[ind++]=move;
 		set_promotion_type(move, b);
 		ret[ind++]=move;
@@ -686,7 +686,7 @@ inline void Position::legal_wpawn_pushes(std::array<unsigned int,128>& ret, cons
 		U64 isolated = _blsi_u64(push_promotions);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		move = encode_move(sq + 8, sq, P, 15, N, false, false, false, true);
+		move = encode_move(sq + 8, sq, P, no_piece, N, false, false, false, true);
 		ret[ind++]=move;
 		set_promotion_type(move, B);
 		ret[ind++]=move;
@@ -730,11 +730,11 @@ inline void Position::legal_bpawn_captures(std::array<unsigned int,128>& ret, co
 	const bool left_enpassant = ((enpassant >> 7) & notAFile) & (bitboards[6] & ~(pinned | promoters));
 	const bool right_enpassant = ((enpassant >> 9) & notHFile) & (bitboards[6] & ~(pinned | promoters));
 	if (left_enpassant) {
-		unsigned int move = encode_move(enpassant_square - 7, enpassant_square, p, P, 15, true, false, false, true);
+		unsigned int move = encode_move(enpassant_square - 7, enpassant_square, p, P, no_piece, true, false, false, true);
 		try_out_move(ret, move, ind);
 	}
 	if (right_enpassant) {
-		unsigned int move = encode_move(enpassant_square - 9, enpassant_square, p, P, 15, true, false, false, true);
+		unsigned int move = encode_move(enpassant_square - 9, enpassant_square, p, P, no_piece, true, false, false, true);
 		try_out_move(ret, move, ind);
 	}
 
@@ -742,7 +742,7 @@ inline void Position::legal_bpawn_captures(std::array<unsigned int,128>& ret, co
 		U64 isolated = _blsi_u64(captures);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		unsigned int move = encode_move(sq - 7, sq, p, get_piece_type_on(sq), 15, true, false, false, false);
+		unsigned int move = encode_move(sq - 7, sq, p, get_piece_type_on(sq), no_piece, true, false, false, false);
 		//unsigned int move = 0x1f06000;
 		//move |= sq - 7;
 		//move |= sq << 6;
@@ -755,7 +755,7 @@ inline void Position::legal_bpawn_captures(std::array<unsigned int,128>& ret, co
 		U64 isolated = _blsi_u64(captures);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		unsigned int move = encode_move(sq - 9, sq, p, get_piece_type_on(sq), 15, true, false, false, false);
+		unsigned int move = encode_move(sq - 9, sq, p, get_piece_type_on(sq), no_piece, true, false, false, false);
 		//unsigned int move = 0x1f06000;
 		//move |= sq - 9;
 		//move |= sq << 6;
@@ -806,11 +806,11 @@ inline void Position::legal_wpawn_captures(std::array<unsigned int,128>& ret, co
 	const bool left_enpassant = ((enpassant << 7) & notHFile) & (bitboards[0] & ~(pinned | promoters));
 	const bool right_enpassant = ((enpassant << 9) & notAFile) & (bitboards[0] & ~(pinned | promoters));
 	if (left_enpassant) {
-		unsigned int move = encode_move(enpassant_square + 7, enpassant_square, P, p, 15, true, false, false, true);
+		unsigned int move = encode_move(enpassant_square + 7, enpassant_square, P, p, no_piece, true, false, false, true);
 		try_out_move(ret, move, ind);
 	}
 	if (right_enpassant) {
-		unsigned int move = encode_move(enpassant_square + 9, enpassant_square, P, p, 15, true, false, false, true);
+		unsigned int move = encode_move(enpassant_square + 9, enpassant_square, P, p, no_piece, true, false, false, true);
 		try_out_move(ret, move, ind);
 	}
 
@@ -818,7 +818,7 @@ inline void Position::legal_wpawn_captures(std::array<unsigned int,128>& ret, co
 		U64 isolated = _blsi_u64(captures);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		unsigned int move = encode_move(sq + 7, sq, P, get_piece_type_on(sq), 15, true, false, false, false);
+		unsigned int move = encode_move(sq + 7, sq, P, get_piece_type_on(sq), no_piece, true, false, false, false);
 		//unsigned int move = 0x1f00000;
 		//move |= sq + 7;
 		//move |= sq << 6;
@@ -831,7 +831,7 @@ inline void Position::legal_wpawn_captures(std::array<unsigned int,128>& ret, co
 		U64 isolated = _blsi_u64(captures);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		unsigned int move = encode_move(sq + 9, sq, P, get_piece_type_on(sq), 15, true, false, false, false);
+		unsigned int move = encode_move(sq + 9, sq, P, get_piece_type_on(sq), no_piece, true, false, false, false);
 		//unsigned int move = 0x1f00000;
 		//move |= sq + 9;
 		//move |= sq << 6;
@@ -887,7 +887,7 @@ inline void Position::in_check_legal_bpawn_pushes(std::array<unsigned int,128>& 
 		U64 isolated = _blsi_u64(push_promotions);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		move = encode_move(sq - 8, sq, p, 15, n, false, false, false, false);
+		move = encode_move(sq - 8, sq, p, no_piece, n, false, false, false, false);
 		ret[ind++]=move;
 		set_promotion_type(move, b);
 		ret[ind++]=move;
@@ -901,7 +901,7 @@ inline void Position::in_check_legal_bpawn_pushes(std::array<unsigned int,128>& 
 		U64 isolated = _blsi_u64(pushes);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		move = encode_move(sq - 8, sq, p, 15, 15, false, false, false, false);
+		move = encode_move(sq - 8, sq, p, no_piece, no_piece, false, false, false, false);
 		ret[ind++]=move;
 		pushes = _blsr_u64(pushes);
 	}
@@ -909,7 +909,7 @@ inline void Position::in_check_legal_bpawn_pushes(std::array<unsigned int,128>& 
 		U64 isolated = _blsi_u64(doublePushes);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		move = encode_move(sq - 16, sq, p, 15, 15, false, true, false, false);
+		move = encode_move(sq - 16, sq, p, no_piece, no_piece, false, true, false, false);
 		ret[ind++]=move;
 		doublePushes = _blsr_u64(doublePushes);
 	}
@@ -926,7 +926,7 @@ inline void Position::in_check_legal_wpawn_pushes(std::array<unsigned int,128>& 
 		U64 isolated = _blsi_u64(push_promotions);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		move = encode_move(sq + 8, sq, P, 15, N, false, false, false, false);
+		move = encode_move(sq + 8, sq, P, no_piece, N, false, false, false, false);
 		ret[ind++]=move;
 		set_promotion_type(move, B);
 		ret[ind++]=move;
@@ -940,7 +940,7 @@ inline void Position::in_check_legal_wpawn_pushes(std::array<unsigned int,128>& 
 		U64 isolated = _blsi_u64(pushes);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		move = encode_move(sq + 8, sq, P, 15, 15, false, false, false, false);
+		move = encode_move(sq + 8, sq, P, no_piece, no_piece, false, false, false, false);
 		ret[ind++]=move;
 		pushes = _blsr_u64(pushes);
 	}
@@ -948,7 +948,7 @@ inline void Position::in_check_legal_wpawn_pushes(std::array<unsigned int,128>& 
 		U64 isolated = _blsi_u64(doublePushes);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		move = encode_move(sq + 16, sq, P, 15, 15, false, true, false, false);
+		move = encode_move(sq + 16, sq, P, no_piece, no_piece, false, true, false, false);
 		ret[ind++]=move;
 		doublePushes = _blsr_u64(doublePushes);
 	}
@@ -962,11 +962,11 @@ inline void Position::in_check_legal_bpawn_captures(std::array<unsigned int,128>
 	const bool left_enpassant = ((enpassant >> 7) & notAFile) & (bitboards[6] & ~(pinned | promoters));
 	const bool right_enpassant = ((enpassant >> 9) & notHFile) & (bitboards[6] & ~(pinned | promoters));
 	if (left_enpassant) {
-		unsigned int move = encode_move(enpassant_square - 7, enpassant_square, p, P, 15, true, false, false, true);
+		unsigned int move = encode_move(enpassant_square - 7, enpassant_square, p, P, no_piece, true, false, false, true);
 		try_out_move(ret, move, ind);
 	}
 	if (right_enpassant) {
-		unsigned int move = encode_move(enpassant_square - 9, enpassant_square, p, P, 15, true, false, false, true);
+		unsigned int move = encode_move(enpassant_square - 9, enpassant_square, p, P, no_piece, true, false, false, true);
 		try_out_move(ret, move, ind);
 	}
 
@@ -974,7 +974,7 @@ inline void Position::in_check_legal_bpawn_captures(std::array<unsigned int,128>
 		U64 isolated = _blsi_u64(captures);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		unsigned int move = encode_move(sq - 7, sq, p, get_piece_type_on(sq), 15, true, false, false, false);
+		unsigned int move = encode_move(sq - 7, sq, p, get_piece_type_on(sq), no_piece, true, false, false, false);
 		ret[ind++] = move;
 		captures = captures & ones_decrement(captures);
 	}
@@ -983,7 +983,7 @@ inline void Position::in_check_legal_bpawn_captures(std::array<unsigned int,128>
 		U64 isolated = _blsi_u64(captures);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		unsigned int move = encode_move(sq - 9, sq, p, get_piece_type_on(sq), 15, true, false, false, false);
+		unsigned int move = encode_move(sq - 9, sq, p, get_piece_type_on(sq), no_piece, true, false, false, false);
 		ret[ind++] = move;
 		captures = captures & ones_decrement(captures);
 	}
@@ -1027,11 +1027,11 @@ inline void Position::in_check_legal_wpawn_captures(std::array<unsigned int, 128
 	const bool left_enpassant = ((enpassant << 7) & notHFile) & (bitboards[0] & ~(pinned | promoters));
 	const bool right_enpassant = ((enpassant << 9) & notAFile) & (bitboards[0] & ~(pinned | promoters));
 	if (left_enpassant) {
-		unsigned int move = encode_move(enpassant_square + 7, enpassant_square, P, p, 15, true, false, false, true);
+		unsigned int move = encode_move(enpassant_square + 7, enpassant_square, P, p, no_piece, true, false, false, true);
 		try_out_move(ret, move, ind);
 	}
 	if (right_enpassant) {
-		unsigned int move = encode_move(enpassant_square + 9, enpassant_square, P, p, 15, true, false, false, true);
+		unsigned int move = encode_move(enpassant_square + 9, enpassant_square, P, p, no_piece, true, false, false, true);
 		try_out_move(ret, move, ind);
 	}
 
@@ -1039,7 +1039,7 @@ inline void Position::in_check_legal_wpawn_captures(std::array<unsigned int, 128
 		U64 isolated = _blsi_u64(captures);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		unsigned int move = encode_move(sq + 7, sq, P, get_piece_type_on(sq), 15, true, false, false, false);
+		unsigned int move = encode_move(sq + 7, sq, P, get_piece_type_on(sq), no_piece, true, false, false, false);
 		ret[ind++]=move;
 		captures = captures & ones_decrement(captures);
 	}
@@ -1048,7 +1048,7 @@ inline void Position::in_check_legal_wpawn_captures(std::array<unsigned int, 128
 		U64 isolated = _blsi_u64(captures);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		unsigned int move = encode_move(sq + 9, sq, P, get_piece_type_on(sq), 15, true, false, false, false);
+		unsigned int move = encode_move(sq + 9, sq, P, get_piece_type_on(sq), no_piece, true, false, false, false);
 		ret[ind++]=move;
 		captures = captures & ones_decrement(captures);
 	}
@@ -1103,7 +1103,7 @@ inline void Position::get_castles(std::array<unsigned int,128>& ptr, const U64 e
 	queenside &= (((bitboards[king_index]) >> 2) & empty) && (!(bool)_bittest64((long long*)&enemy_attacks, c1 - square_offset));
 	queenside &= (bool)(((bitboards[king_index]) >> 3) & empty);
 
-	unsigned int move = encode_move(kingpos, kingpos - 2, king_index, 15, 15, false, false, true, false);
+	unsigned int move = encode_move(kingpos, kingpos - 2, king_index, no_piece, no_piece, false, false, true, false);
 
 	if (queenside) {
 		ptr[ind++]=move;
@@ -1194,11 +1194,11 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 			U64 attacks = pawn_attacks[(side)][from];
 			const bool is_enpassant = attacks & enpassant;
 			if (is_enpassant) {
-				unsigned int move = encode_move(from, enpassant_square, type, get_piece_type_on(P + offset), 15, true, false, false, true);
+				unsigned int move = encode_move(from, enpassant_square, type, get_piece_type_on(P + offset), no_piece, true, false, false, true);
 				ret[ind++]=move;
 			}
 			else if (attacks & pinner) {
-				unsigned int move = encode_move(from, to, type, get_piece_type_on(to), 15, true, false, false, false);
+				unsigned int move = encode_move(from, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 				if ((side && (to < a7)) || ((!side) && (to > h2))) {
 					set_promotion_type(move, N + piece_offset);
 					ret[ind++]=move;
@@ -1231,7 +1231,7 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 			const int push_target = from + 8 * sign;
 			const int double_push_target = from + 16 * sign;
 			if (get_bit(valid_targets, push_target)) {
-				unsigned int move = encode_move(from, push_target, type, 15, 15, false, false, false, false);
+				unsigned int move = encode_move(from, push_target, type, no_piece, no_piece, false, false, false, false);
 				if ((push_target < a7) || (push_target > h2)) {
 					set_promotion_type(move, N + piece_offset);
 					ret[ind++]=move;
@@ -1245,7 +1245,7 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 			}
 			if ((double_push_target < a3) && (double_push_target > h6)) {
 				if (get_bit(valid_targets & ((side) ? (0xFF000000ULL) : (0xFF00000000ULL)), double_push_target)) {
-					unsigned int move = encode_move(from, double_push_target, type, 15, 15, false, true, false, false);
+					unsigned int move = encode_move(from, double_push_target, type, no_piece, no_piece, false, true, false, false);
 					ret[ind++]=move;
 				}
 			}
@@ -1285,12 +1285,12 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 		if (pinner) {
 			const int from = bitscan(isolated);
 			const int to = bitscan(pinner);
-			unsigned int move = encode_move(from, to, type, get_piece_type_on(to), 15, true, false, false, false);
+			unsigned int move = encode_move(from, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 			ret[ind++]=move;
 			U64 attacks = (pot_attacks & get_bishop_attacks(occupancies[both], to)) & (~isolated);
 			while (attacks) {
 				const U64 isolated2 = _blsi_u64(attacks);
-				move = encode_move(from, bitscan(isolated2), type, 15, 15, false, false, false, false);
+				move = encode_move(from, bitscan(isolated2), type, no_piece, no_piece, false, false, false, false);
 				ret[ind++]=move;
 				attacks = _blsr_u64(attacks);
 			}
@@ -1316,12 +1316,12 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 		if (pinner) {
 			const int from = bitscan(isolated);
 			const int to = bitscan(pinner);
-			unsigned int move = encode_move(from, to, type, get_piece_type_on(to), 15, true, false, false, false);
+			unsigned int move = encode_move(from, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 			ret[ind++]=move;
 			U64 attacks = (pot_attacks & get_rook_attacks(occupancies[both], to)) & (~isolated);
 			while (attacks) {
 				const U64 isolated2 = _blsi_u64(attacks);
-				move = encode_move(from, bitscan(isolated2), type, 15, 15, false, false, false, false);
+				move = encode_move(from, bitscan(isolated2), type, no_piece, no_piece, false, false, false, false);
 				ret[ind++]=move;
 				attacks = _blsr_u64(attacks);
 			}
@@ -1348,12 +1348,12 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 		if (pinner) {
 			const int from = bitscan(isolated);
 			const int to = bitscan(pinner);
-			unsigned int move = encode_move(from, to, type, get_piece_type_on(to), 15, true, false, false, false);
+			unsigned int move = encode_move(from, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 			ret[ind++]=move;
 			U64 attacks = (pot_attacks & get_bishop_attacks(occupancies[both], to)) & (~isolated);
 			while (attacks) {
 				const U64 isolated2 = _blsi_u64(attacks);
-				move = encode_move(from, bitscan(isolated2), type, 15, 15, false, false, false, false);
+				move = encode_move(from, bitscan(isolated2), type, no_piece, no_piece, false, false, false, false);
 				ret[ind++]=move;
 				attacks = _blsr_u64(attacks);
 			}
@@ -1371,12 +1371,12 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 		if (pinner) {
 			const int from = bitscan(isolated);
 			const int to = bitscan(pinner);
-			unsigned int move = encode_move(from, to, type, get_piece_type_on(to), 15, true, false, false, false);
+			unsigned int move = encode_move(from, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 			ret[ind++]=move;
 			U64 attacks = (pot_attacks & get_rook_attacks(occupancies[both], to)) & (~isolated);
 			while (attacks) {
 				const U64 isolated2 = _blsi_u64(attacks);
-				move = encode_move(from, bitscan(isolated2), type, 15, 15, false, false, false, false);
+				move = encode_move(from, bitscan(isolated2), type, no_piece, no_piece, false, false, false, false);
 				ret[ind++]=move;
 				attacks = _blsr_u64(attacks);
 			}
@@ -1430,7 +1430,7 @@ U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>& ret, 
 		if (pinner) {
 			const int from = bitscan(isolated);
 			const int to = bitscan(pinner);
-			unsigned int move = encode_move(from, to, type, get_piece_type_on(to), 15, true, false, false, false);
+			unsigned int move = encode_move(from, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 			ret[ind++]=move;
 		}
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
@@ -1455,7 +1455,7 @@ U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>& ret, 
 		if (pinner) {
 			const int from = bitscan(isolated);
 			const int to = bitscan(pinner);
-			unsigned int move = encode_move(from, to, type, get_piece_type_on(to), 15, true, false, false, false);
+			unsigned int move = encode_move(from, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 			ret[ind++]=move;
 		}
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
@@ -1471,7 +1471,7 @@ U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>& ret, 
 		if (pinner) {
 			const int from = bitscan(isolated);
 			const int to = bitscan(pinner);
-			unsigned int move = encode_move(from, to, type, get_piece_type_on(to), 15, true, false, false, false);
+			unsigned int move = encode_move(from, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 			ret[ind++]=move;
 		}
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
@@ -1488,7 +1488,7 @@ U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>& ret, 
 		if (pinner) {
 			const int from = bitscan(isolated);
 			const int to = bitscan(pinner);
-			unsigned int move = encode_move(from, to, type, get_piece_type_on(to), 15, true, false, false, false);
+			unsigned int move = encode_move(from, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 			ret[ind++]=move;
 		}
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
@@ -1516,11 +1516,11 @@ U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>& ret, 
 			U64 attacks = pawn_attacks[(side)][from];
 			const bool is_enpassant = attacks & enpassant;
 			if (is_enpassant) {
-				unsigned int move = encode_move(from, enpassant_square, type, get_piece_type_on(P + offset), 15, true, false, false, true);
+				unsigned int move = encode_move(from, enpassant_square, type, get_piece_type_on(P + offset), no_piece, true, false, false, true);
 				ret[ind++]=move;
 			}
 			else if (attacks & pinner) {
-				unsigned int move = encode_move(from, to, type, get_piece_type_on(to), 15, true, false, false, false);
+				unsigned int move = encode_move(from, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
 				if ((side && (to < a7)) || ((!side) && (to > h2))) {
 					set_promotion_type(move, N + piece_offset);
 					ret[ind++]=move;
@@ -1730,12 +1730,12 @@ std::string Position::fen() {
 		for (int j = 0; j < 8; j++) {
 			const int ind = 8 * i + j;
 			int piece = get_piece_type_on(ind);
-			if (piece == 15) {
+			if (piece == no_piece) {
 				side = !side;
 				piece = get_piece_type_on(ind);
 				side = !side;
 			}
-			if ((piece == 15) || ((ind == enpassant_square) && (enpassant_square != a8))) {
+			if ((piece == no_piece) || ((ind == enpassant_square) && (enpassant_square != a8))) {
 				empty_spaces++;
 			}
 			else {
@@ -1925,7 +1925,7 @@ inline void Position::make_move(const unsigned int move) {
 
 	pop_bit(bitboards[(capture)*captured_type], (capture) * (!is_enpassant) * to_square + (is_enpassant) * (to_square + 8 * ((!side) - (side))));
 	//pop bit on captured square. if move was not a capture the a8 bit of the white pawn is poped. however white pawns should never be on the 8th rank anyway
-	const bool is_promotion = promoted_type != 15;
+	const bool is_promotion = promoted_type != no_piece;
 	const int true_piece_type = (!(is_promotion)) * piece_type + (is_promotion) * (promoted_type);
 	pop_bit(bitboards[piece_type], from_square);
 	set_bit(bitboards[true_piece_type], to_square);
@@ -1990,7 +1990,7 @@ inline void Position::unmake_move() {
 	set_bit(bitboards[piece_type], from_square);
 	pop_bit(bitboards[piece_type], to_square);
 
-	const bool is_promotion = promoted_type != 15;
+	const bool is_promotion = promoted_type != no_piece;
 	bitboards[(is_promotion)*promoted_type] &= ~(((is_promotion) * 1ULL) << (to_square));
 	//branchlessly pop the piece that was promoted. if move was not a promotion the white pawns are and'ed with a bitboard of ones, thus it would not change
 

@@ -56,7 +56,6 @@ static constexpr U64 get_queen_attacks(U64 occ, const int sq) {
 };
 static const std::string start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 class Position {
-	std::unordered_map<U64, short> pawn_evaluation_map;
 	inline bool is_attacked_by_side(const int sq, const bool color);
 	inline U64 get_attacks_by(const bool color);
 	inline int get_piece_type_on(const int sq);
@@ -180,7 +179,9 @@ public:
 	std::vector<short> castling_rights_history;
 	std::vector<short> no_pawns_or_captures_history;
 	std::vector<U64> hash_history;
+	std::unordered_map<U64, short> pawn_evaluation_map;
 	const static short infinity = 32767 - 1;//one less than max(short)
+	const static short no_piece = 15;
 	U64 current_hash;
 	Position();
 	Position(const std::string& fen);
@@ -342,7 +343,7 @@ public:
 			supported -= count_bits(pawn_attacks[white][bitscan(isolated)] & bitboards[p]);//check if pawn is supported by pears
 			tempPawns = _blsr_u64(tempPawns);
 		}
-		return 30 * passed + 25 * isolated + 3 * supported + 15 * backwards;
+		return 30 * passed + 25 * isolated + 3 * supported + no_piece * backwards;
 	}
 	inline short knight_mobility() {
 		U64	blackPawnAttacks = ((bitboards[p] << 7) & notHFile) | ((bitboards[p] << 9) & notAFile);
@@ -591,12 +592,12 @@ public:
 			if (bit) { break; }
 		}
 		const bool is_enpassant = (sq == enpassant_square);
-		return 15 * (!(found_piece || is_enpassant)) + (found_piece)*piece_type;
+		return no_piece * (!(found_piece || is_enpassant)) + (found_piece)*piece_type;
 	}
 	inline int get_smallest_attack(const int sq, const bool color) {
 		if (get_bit(occupancies[both], sq)) {
 			unsigned int move = 0;
-			set_promotion_type(move, 15);
+			set_promotion_type(move, no_piece);
 			set_to_square(move, sq);
 			set_captured_type(move, get_piece_type_on(sq));
 			set_capture_flag(move, true);
