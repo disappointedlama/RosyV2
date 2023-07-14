@@ -18,14 +18,12 @@ void tree(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, 
         return;
     }
     */
-    //print_position(pos);
     if (depth > 0) {
         for (int i = 0; i < number_of_moves; i++) {
             if (depth == 1) {
                 if (get_capture_flag(moves[move_index][i])) {
                     captures++;
-                    //pos.print();
-                    //print_move(moves[move_index][i]);
+                    if (get_enpassant_flag(moves[move_index][i])) en_passant++;
                 }
                 if (get_castling_flag(moves[move_index][i])) castles++;
                 if (get_promotion_type(moves[move_index][i]) != 15) promotions++;
@@ -88,11 +86,15 @@ void test() {
     std::cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
 }
 void position_test() {
+    bool passedAllTests = true;
     Position pos{ "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0" };
     std::array<std::array<unsigned int, 128>, 40> moves{};
-    std::array<int, 6> first_nodes{ 48,2039,97862 ,4085603,193690690,8031647685 };
-    std::array<int, 6> first_mates{ 0,0,1,43,30171,360003 };
-    for (int i = 0; i < 5; i++) {
+    std::array<int, 6> expected_nodes{ 48,2039,97862 ,4085603,193690690,8031647685 };
+    std::array<int, 6> expected_mates{ 0, 0, 1, 43, 30171, 360003 };
+    std::array<int, 6> expected_captures{ 8, 351, 17102, 757163, 35043416, 1558445089 };
+    std::array<int, 6> expected_castles{ 2, 91, 3162, 128013, 4993637, 184513607 };
+    std::array<int, 6> expected_promotions{ 0, 0, 0, 15172, 8392, 56627920 };
+    for (int i = 0; i < 4; i++) {
         reset_test_parameters();
         std::string out = "";
         perf(moves, 0, pos, i + 1);
@@ -101,13 +103,37 @@ void position_test() {
         std::cout << "en_passant: " << en_passant << "\n";
         std::cout << "castles: " << castles << "\n";
         std::cout << "promotions: " << promotions << "\n";
-        out = ((lookedAt == first_nodes[i]) && (mates == first_mates[i])) ? ("Passed Test") : ("Failed Test");
+        const bool correct = lookedAt == expected_nodes[i] && mates == expected_mates[i] && captures==expected_captures[i] && castles==expected_castles[i] && promotions==expected_promotions[i];
+        passedAllTests |= correct;
+        out = (correct) ? ("Passed Test") : ("Failed Test");
         std::cout << out << "\n";
     }
     pos = Position{ "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 0" };
-
-    std::array<int, 6> second_nodes{ 14,191,2812,43238,674624,11030083 };
-    std::array<int, 6> second_mates{ 0,0,0,17,0,2733 };
+    expected_nodes = std::array<int, 6>{ 14, 191, 2812, 43238, 674624, 11030083 };
+    expected_mates = std::array<int, 6>{ 0, 0, 0, 17, 0, 2733 };
+    expected_captures = std::array<int, 6>{ 1, 14, 209, 3348, 52051, 940350 };
+    expected_castles = std::array<int, 6>{ 0, 0, 0, 0, 0, 0 };
+    expected_promotions = std::array<int, 6>{ 0, 0, 0, 0, 0, 7552 };
+    for (int i = 0; i < 6; i++) {
+        reset_test_parameters();
+        std::string out = "";
+        perf(moves, 0, pos, i + 1);
+        std::cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
+        std::cout << "captures: " << captures << "\n";
+        std::cout << "en_passant: " << en_passant << "\n";
+        std::cout << "castles: " << castles << "\n";
+        std::cout << "promotions: " << promotions << "\n";
+        const bool correct = lookedAt == expected_nodes[i] && mates == expected_mates[i] && captures == expected_captures[i] && castles == expected_castles[i] && promotions == expected_promotions[i];
+        passedAllTests |= correct;
+        out = (correct) ? ("Passed Test") : ("Failed Test");
+        std::cout << out << "\n";
+    }
+    pos = Position{ "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1" };
+    expected_nodes = std::array<int, 6>{ 6, 264, 9467, 422333, 15833292, 706045033 };
+    expected_mates = std::array<int, 6>{ 0, 0, 22, 5, 50562, 81076 };
+    expected_captures = std::array<int, 6>{ 0, 87, 1021, 131393, 2046173, 210369132 };
+    expected_castles = std::array<int, 6>{ 0, 6, 0, 7795, 0, 10882006 };
+    expected_promotions = std::array<int, 6>{ 0, 48, 120, 60032, 329464, 81102984 };
     for (int i = 0; i < 5; i++) {
         reset_test_parameters();
         std::string out = "";
@@ -117,13 +143,36 @@ void position_test() {
         std::cout << "en_passant: " << en_passant << "\n";
         std::cout << "castles: " << castles << "\n";
         std::cout << "promotions: " << promotions << "\n";
-        out = ((lookedAt == second_nodes[i]) && (mates == second_mates[i])) ? ("Passed Test") : ("Failed Test");
+        const bool correct = lookedAt == expected_nodes[i] && mates == expected_mates[i] && captures == expected_captures[i] && castles == expected_castles[i] && promotions == expected_promotions[i];
+        passedAllTests |= correct;
+        out = (correct) ? ("Passed Test") : ("Failed Test");
         std::cout << out << "\n";
+    }
+    pos = Position{ "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1 " };
+    for (int i = 0; i < 5; i++) {
+        reset_test_parameters();
+        std::string out = "";
+        perf(moves, 0, pos, i + 1);
+        std::cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
+        std::cout << "captures: " << captures << "\n";
+        std::cout << "en_passant: " << en_passant << "\n";
+        std::cout << "castles: " << castles << "\n";
+        std::cout << "promotions: " << promotions << "\n";
+        const bool correct = lookedAt == expected_nodes[i] && mates == expected_mates[i] && captures == expected_captures[i] && castles == expected_castles[i] && promotions == expected_promotions[i];
+        passedAllTests |= correct;
+        out = (correct) ? ("Passed Test") : ("Failed Test");
+        std::cout << out << "\n";
+    }
+    if (passedAllTests) {
+        std::cout<< "All Tests passed" << std::endl;
+    }
+    else {
+        std::cout << "Not all Tests passed" << std::endl;
     }
 }
 int main()
 {
-    test();
+    //test();
     position_test();
     try {
         Engine rosy{false};

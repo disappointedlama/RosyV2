@@ -59,6 +59,10 @@ class Position {
 	inline bool is_attacked_by_side(const int sq, const bool color);
 	inline U64 get_attacks_by(const bool color);
 	inline int get_piece_type_on(const int sq);
+	inline int get_piece_type_or_enpassant_on(const int sq) {
+		if (sq == enpassant_square && sq != a8) return (!side) * p;
+		return square_board[sq];
+	};
 
 	void legal_move_generator(std::array<unsigned int,128>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind);
 	void legal_in_check_move_generator(std::array<unsigned int,128>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind);
@@ -601,7 +605,7 @@ public:
 			unsigned int move = 0;
 			set_promotion_type(move, no_piece);
 			set_to_square(move, sq);
-			set_captured_type(move, get_piece_type_on(sq));
+			set_captured_type(move, get_piece_type_or_enpassant_on(sq));
 			set_capture_flag(move, true);
 			const int offset = 6 * (color);
 			U64 pot_pawns = pawn_attacks[(color)][sq] & bitboards[offset];
