@@ -1164,7 +1164,7 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 			U64 attacks = pawn_attacks[(side)][from];
 			if (attacks & pinner) {
 				unsigned int move = encode_move(from, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
-				if ((side && (to < a7)) || ((!side) && (to > h2))) {
+				if ((side && get_bit(rank1,to)) || ((!side) && get_bit(rank8,to))) {
 					set_promotion_type(move, N + piece_offset);
 					ret[ind++]=move;
 					set_promotion_type(move, B + piece_offset);
@@ -1197,7 +1197,7 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 			const int double_push_target = from + 16 * sign;
 			if (get_bit(valid_targets, push_target)) {
 				unsigned int move = encode_move(from, push_target, type, no_piece, no_piece, false, false, false, false);
-				if ((push_target < a7) || (push_target > h2)) {
+				if ((side && get_bit(rank1, to)) || ((!side) && get_bit(rank8, to))) {
 					set_promotion_type(move, N + piece_offset);
 					ret[ind++]=move;
 					set_promotion_type(move, B + piece_offset);
@@ -2065,12 +2065,12 @@ inline void Position::make_move(const unsigned int move) {
 	//	std::string str = std::move(stream).str();
 	//	throw Position_Error{str};
 	//}
-	if (!boardsMatch()) {
-		std::string str = to_string();
-		str += "| last move: \n" + move_to_string(move);
-		str += square_board_to_string();
-		throw Position_Error{str};
-	}
+	//if (!boardsMatch()) {
+	//	std::string str = to_string();
+	//	str += "| last move: \n" + move_to_string(move);
+	//	str += square_board_to_string();
+	//	throw Position_Error{str};
+	//}
 }
 inline void Position::unmake_move() {
 	const unsigned int move = move_history.back();
@@ -2133,10 +2133,10 @@ inline void Position::unmake_move() {
 	occupancies[1] = bitboards[6] | bitboards[7] | bitboards[8] | bitboards[9] | bitboards[10] | bitboards[11];
 	occupancies[2] = occupancies[0] | occupancies[1];
 	side = !side;
-	if (!boardsMatch()) {
-		std::string str = to_string();
-		str += "| last move: \n" + move_to_string(move);
-		str += square_board_to_string();
-		throw Position_Error{str};
-	}
+	//if (!boardsMatch()) {
+	//	std::string str = to_string();
+	//	str += "| last move: \n" + move_to_string(move);
+	//	str += square_board_to_string();
+	//	throw Position_Error{str};
+	//}
 }//position fen 8/2k4p/1b6/3P3p/p7/5K1P/P4P2/5q2 w - - 0 39

@@ -117,6 +117,9 @@ MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& mo
 	unsigned int current_best_move = 0;
 	short current_best_eval = -infinity-1;
 	for (int i = 0; i < number_of_moves; i++) {
+		if (debug) {
+			std::cout << "starting " << uci(moves[move_index][i]) << std::endl;
+		}
 		pos.make_move(moves[move_index][i]);
 		short value = -pv_search(moves, move_index+1, depth - 1, -beta, -alpha);
 		pos.unmake_move();

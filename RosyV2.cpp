@@ -201,3 +201,9 @@ POTENTIAL ISSUE POSITIONS
 7R/3Pk1pp/8/p7/1p6/PP6/1B3PPP/6K1 b - - 2 33
 1B6/5p1p/8/6P1/6PP/3k1K2/4p3/8 w - - 0 48
 */
+/*
+ISSUE POSITION
+FEN
+8/8/5K2/3q3p/7k/8/5p2/4Q3 b - - 1 93
+position startpos moves c2c4 b8c6 b1c3 e7e5 g1f3 g8f6 g2g3 f8c5 f1g2 d7d6 e1g1 e8g8 d2d3 c8e6 c3a4 c5b4 a2a3 b4a5 b2b4 a5b6 b4b5 c6e7 a4b6 c7b6 d1d2 h7h6 f1e1 a7a6 b5a6 b7a6 f3h4 a8c8 g2b7 c8b8 b7a6 e7c6 h4f3 e5e4 d3e4 f6e4 d2e3 e4c5 a6b5 c6a5 c1b2 a5c4 b5c4 e6c4 e3c3 d8f6 c3c4 f6b2 e1b1 b2f6 c4d5 f8e8 b1c1 e8e2 h2h4 c5e4 d5d3 e2f2 d3e4 f2f3 e4g4 h6h5 c1c8 b8c8 g4c8 g8h7 c8c2 g7g6 g1g2 f3g3 g2g3 f6a1 a3a4 a1e5 g3g2 h7g7 c2d2 e5e4 g2g1 e4a4 d2b2 f7f6 b2b6 a4g4 g1f1 g4f3 f1g1 f3g3 g1f1 g3f4 f1g2 f4e4 g2g1 e4e5 b6c7 g7h6 c7d8 e5g3 g1f1 g3f3 f1e1 f3e3 e1d1 e3d3 d1c1 d3c3 c1b1 c3b3 b1c1 b3c4 c1b2 c4d4 b2b3 d4d3 b3b4 d3e4 b4b5 e4h4 d8d6 h4f2 d6f8 h6g5 f8a3 f2e2 b5b6 e2e6 b6b7 e6d5 b7c8 g5f4 a3c1 f4f5 c1c2 f5g5 c2c1 g5g4 c1g1 g4f5 g1f2 f5e6 f2e3 d5e5 e3b3 e6f5 b3d3 f5g5 d3d2 g5g4 d2g2 g4f5 c8d7 e5e6 d7d8 e6e3 g2c2 f5g5 c2g2 g5h6 g2c6 e3e5 c6a8 f6f5 a8a3 h6g5 d8d7 e5d5 d7e7 f5f4 a3c3 g5h4 e7f6 f4f3 f6g6 d5e6 g6g7 e6d5 g7f6 f3f2 c3e1 f2e1
+*/

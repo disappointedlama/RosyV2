@@ -617,7 +617,7 @@ public:
 			unsigned int move = 0;
 			set_promotion_type(move, no_piece);
 			set_to_square(move, sq);
-			set_captured_type(move, get_piece_type_or_enpassant_on(sq));
+			set_captured_type(move, get_piece_type_on(sq));
 			set_capture_flag(move, true);
 			const int offset = 6 * (color);
 			U64 pot_pawns = pawn_attacks[(color)][sq] & bitboards[offset];
