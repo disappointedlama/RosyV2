@@ -31,6 +31,32 @@ void print_move(int move) {
 
 
 }
+std::string move_to_string(int move) {
+	const int piece_type = get_piece_type(move);
+	const int from_square = get_from_square(move);
+	const int to_square = get_to_square(move);
+	const int captured_type = get_captured_type(move);
+	const int promoted_type = get_promotion_type(move);
+
+	const bool double_pawn_push = get_double_push_flag(move);
+	const bool capture = get_capture_flag(move);
+	const bool is_enpassant = get_enpassant_flag(move);
+	const bool is_castle = get_castling_flag(move);
+	char ascii_pieces[] = "PNBRQKpnbrqk";
+
+	std::stringstream stream = std::stringstream{};
+
+	stream << "Uci: " << uci(move) << "\n";
+	stream<<"Piece type: "<< ascii_pieces[piece_type]<<"\n";
+	stream<<"Captured type: "<< ((capture) ? ascii_pieces[captured_type] : '0') << "\n";
+	stream<<"Promotion: "<< ((promoted_type != 15) ? ascii_pieces[promoted_type] : '0') << "\n";
+	stream<<"Is double push: "<< double_pawn_push << "\n";
+	stream<<"Is castle: "<< is_castle << "\n";
+	stream<<"Is enpassant: "<< is_enpassant<<"\n";
+	std::string ret = "";
+	stream >> ret;
+	return ret;
+}
 void print_move_bits(int move) {
 	std::cout << "\n";
 	for (int i = 0; i < 28; i++) {

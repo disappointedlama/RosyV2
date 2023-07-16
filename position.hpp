@@ -55,6 +55,16 @@ static constexpr U64 get_queen_attacks(U64 occ, const int sq) {
 	return get_bishop_attacks(occ, sq) | get_rook_attacks(occ, sq);
 };
 static const std::string start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+struct Position_Error : std::exception {
+	std::string msg;
+	Position_Error(std::string msg) {
+		this->msg = msg;
+	}
+	const std::string what() throw() {
+		return std::format("Position Error: {}", msg);
+	}
+
+};
 class Position {
 	inline bool is_attacked_by_side(const int sq, const bool color);
 	inline U64 get_attacks_by(const bool color);
@@ -194,6 +204,8 @@ public:
 	std::string fen();
 	void print();
 	void print_square_board() const;
+	std::string to_string();
+	std::string square_board_to_string() const;
 	U64 get_hash() const;
 	constexpr bool get_side() const { return side; };
 	constexpr int get_ply() const { return ply; };
@@ -671,4 +683,12 @@ public:
 		}
 		return true;
 	}
+};
+struct invalid_move_exception : std::exception {
+	unsigned int move;
+	std::string move_str;
+	Position pos;
+	invalid_move_exception(const Position t_pos, const int t_move);
+	invalid_move_exception(const Position t_pos, const std::string t_move);
+	const std::string what() throw();
 };

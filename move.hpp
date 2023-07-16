@@ -1,5 +1,6 @@
 #pragma once
 #include "bitboard.hpp"
+#include <sstream>
 #define encode_move(from,to,piece,capture,promotion,capture_flag,double_push,castling,enpassant) ((from)|((to)<<6)|((piece)<<12)|((capture)<<16)|((promotion)<<20)|((capture_flag)<<24)|((double_push)<<25)|((castling)<<26)|((enpassant)<<27))
 #define get_from_square(move) ((move)&0x3f)
 #define get_to_square(move) (((move)>>6)&0x3f)
@@ -24,6 +25,7 @@
 #define set_enpassant_flag(move,enpassant) (move)=(((move)&0x7ffffff)|((enpassant)<<27))
 constexpr char ascii_promotion_symbols[] = "pnbrqkpnbrqk    ";
 void print_move(int move);
+std::string move_to_string(int move);
 std::string uci(const int move);
 void print_move_bits(int move);
 /*

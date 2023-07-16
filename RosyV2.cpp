@@ -187,7 +187,17 @@ int main()
         rosy.uci_loop();
     }
     catch(std::exception e) {
+        std::cout << e.what() << std::endl;
         std::cout << "Whoopsie" << std::endl;
     }
     return 0;
 }
+
+/*
+OLD ISSUE POSITIONS
+8/2k4p/1b6/3P3p/p7/5K1P/P4P2/5q2 w - - 0 39
+
+POTENTIAL ISSUE POSITIONS
+7R/3Pk1pp/8/p7/1p6/PP6/1B3PPP/6K1 b - - 2 33
+1B6/5p1p/8/6P1/6PP/3k1K2/4p3/8 w - - 0 48
+*/

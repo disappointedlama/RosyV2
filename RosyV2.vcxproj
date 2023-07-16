@@ -150,6 +150,7 @@
     <ClInclude Include="hashKeys.hpp" />
     <ClInclude Include="kingAttacks.hpp" />
     <ClInclude Include="knightAttacks.hpp" />
+    <ClInclude Include="logging.hpp" />
     <ClInclude Include="masks.hpp" />
     <ClInclude Include="move.hpp" />
     <ClInclude Include="openingBook.hpp" />

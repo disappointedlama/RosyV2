@@ -4,6 +4,7 @@
 
 #include "position.hpp"
 #include "openingBook.hpp"
+#include "logging.hpp"
 #include <direct.h>
 constexpr short EXACT = 0;
 constexpr short UPPER = 1;
@@ -15,14 +16,6 @@ static constexpr int reduction_limit = 3;
 namespace std {
 	string getCurDir();
 }
-struct invalid_move_exception : std::exception {
-	unsigned int move;
-	std::string move_str;
-	Position pos;
-	invalid_move_exception(const Position t_pos, const int t_move);
-	invalid_move_exception(const Position t_pos, const std::string t_move);
-	const std::string what() throw();
-};
 struct stop_exception : std::exception {
 	std::string source;
 	stop_exception(std::string t_source);
@@ -91,6 +84,7 @@ struct KillerTable {
 
 static std::array<std::array<std::array<U64, 64>, 12>, 2> history = std::array<std::array<std::array<U64, 64>, 12>, 2>{};
 class Engine {
+	std::string logging_path = "RosyV2LOGS.txt";
 	Position pos;
 	int current_desired_depth;
 	int max_depth;
@@ -104,6 +98,7 @@ class Engine {
 	U64 time_for_next_move;
 	bool check_time;
 	bool use_opening_book;
+	Logger log;
 	MoveWEval pv_root_call(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta);
 	short pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta);
 	short quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, short alpha, short beta);
@@ -124,6 +119,14 @@ class Engine {
 				}
 				if (lhs_is_killer || rhs_is_killer) {
 					return lhs_is_killer;
+				}
+				const bool lhs_is_promotion = get_promotion_type(lhs) != pos.no_piece;
+				const bool rhs_is_promotion = get_promotion_type(rhs) != pos.no_piece;
+				if (lhs_is_promotion && rhs_is_promotion) {
+					return get_promotion_type(lhs) > get_promotion_type(rhs);
+				}
+				if (lhs_is_promotion || rhs_is_promotion) {
+					return lhs_is_promotion;
 				}
 				const bool lhs_is_capture = get_capture_flag(lhs);
 				const bool rhs_is_capture = get_capture_flag(rhs);
@@ -158,6 +161,7 @@ public:
 	Engine();
 	Engine(const bool t_debug);
 	int bestMove();
+	inline void printBestMove(int move);
 	void set_debug(const bool t_debug);
 	void set_max_depth(const short depth);
 	void parse_position(std::string fen);

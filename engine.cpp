@@ -9,19 +9,6 @@ namespace std {
 }
 OpeningBook book{ (std::getCurDir() + std::string("\\engines\\openingBook.txt")).c_str() };
 
-invalid_move_exception::invalid_move_exception(const Position t_pos, const int t_move) {
-	pos = t_pos;
-	move = t_move;
-	move_str = uci(t_move);
-}
-invalid_move_exception::invalid_move_exception(const Position t_pos, const std::string t_move) {
-	pos = t_pos;
-	move = -1;
-	move_str = t_move;
-}
-const std::string invalid_move_exception::what() throw() {
-	return std::format("Found invalid move {} in position {}", move_str, pos.fen());
-}
 stop_exception::stop_exception(std::string t_source) {
 	source = t_source;
 }
@@ -38,6 +25,7 @@ Engine::Engine() {
 	hash_map = std::unordered_map<U64, TableEntry>{};
 	nodes = 0ULL;
 	use_opening_book = true;
+	log = Logger{ logging_path };
 }
 Engine::Engine(const bool t_debug) {
 	pos = Position{};
@@ -48,6 +36,7 @@ Engine::Engine(const bool t_debug) {
 	hash_map = std::unordered_map<U64, TableEntry>{};
 	nodes = 0ULL;
 	use_opening_book = true;
+	log = Logger{ logging_path };
 }
 int Engine::bestMove() {
 	if (use_opening_book) {
@@ -92,12 +81,12 @@ int Engine::bestMove() {
 			alpha = result.eval - aspiration_window;
 			beta = result.eval + aspiration_window;
 			if (result.eval == infinity) {
-				std::cout << "\nbestmove " << uci(best.move) << std::endl;
+				printBestMove(best.move);
 				run = false;
 				return result.eval;
 			}
 			if (result.eval == -infinity) {
-				std::cout << "\nbestmove " << uci(old_best.move) << std::endl;
+				printBestMove(old_best.move);
 				run = false;
 				return old_best.move;
 			}
@@ -106,14 +95,20 @@ int Engine::bestMove() {
 	catch (stop_exception e) {
 		std::cout << "caught \"" << e.what() << "\"" << std::endl;
 	}
+	catch (Position_Error e) {
+		log.error(e.what());
+	}
 	reset_position();
 	if (best.move == -1) {
 		throw invalid_move_exception(pos, best.move);
 	}
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	std::cout << "\nbestmove " << uci(best.move) << std::endl;
+	printBestMove(best.move);
 	run = false;
 	return best.move;
+}
+inline void Engine::printBestMove(int move) {
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	log<< "bestmove " + uci(move);
 }
 MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta) {
 	TableEntry entry = lookUp();
@@ -345,6 +340,7 @@ void Engine::set_debug(const bool t_debug) {
 	debug = t_debug;
 }
 void Engine::parse_position(std::string fen) {
+	log << fen;
 	std::string moves="";
 	std::string str = " moves ";
 	auto substr_pos = fen.find(str);
@@ -400,6 +396,7 @@ void Engine::reset_position() {
 	pos = Position{ start_position };
 }
 void Engine::parse_go(std::string str){
+	log << str;
 	check_time = false;
 	std::string command = "depth ";
 	auto substr_pos = str.find(command);
@@ -463,6 +460,7 @@ void Engine::parse_go(std::string str){
 		if (time_for_next_move < 0) {
 			time_for_next_move = 100;
 		}
+		std::cout << "Thinking time: " << time_for_next_move << std::endl;
 		time_for_next_move *= 1000000ULL;
 		std::thread time_tracker = std::thread(&Engine::track_time, this, time_for_next_move);
 		max_depth = infinity;
@@ -477,19 +475,22 @@ void Engine::parse_go(std::string str){
 	}
 }
 void Engine::print_info(const short depth, const int eval, const U64 time) {
-	std::cout << "info score cp " << eval << " depth " << depth << " nodes " << nodes << " nps " << 1000000000 * nodes / time << " pv ";
+	std::stringstream stream{};
+	stream << "info score cp " << eval << " depth " << depth << " nodes " << nodes << " nps " << 1000000000 * nodes / time << " pv ";
 	int j = 0;
 	for (int i = 0; i < depth; i++) {
 		TableEntry entry = lookUp();
 		if (!entry.get_move()) break;
 		j++;
-		std::cout << uci(entry.get_move()) << " ";
+		stream << uci(entry.get_move()) << " ";
 		pos.make_move(entry.get_move());
 	}
 	for (int i = 0; i < j; i++) {
 		pos.unmake_move();
 	}
-	std::cout << std::endl;
+	stream<<"\n";
+	std::string str = std::move(stream).str();
+	log << str;
 }
 void Engine::track_time(const U64 max_time) {
 	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -497,8 +498,8 @@ void Engine::track_time(const U64 max_time) {
 	while (run) {
 		end = std::chrono::steady_clock::now();
 		if ((U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() >= max_time) {
-			std::cout << "stopping execution" << std::endl;
 			run = false;
+			std::cout << "stopping execution" << std::endl;
 		}
 	}
 }

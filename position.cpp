@@ -1,5 +1,17 @@
 #include "position.hpp"
-
+invalid_move_exception::invalid_move_exception(const Position t_pos, const int t_move) {
+	pos = t_pos;
+	move = t_move;
+	move_str = uci(t_move);
+}
+invalid_move_exception::invalid_move_exception(const Position t_pos, const std::string t_move) {
+	pos = t_pos;
+	move = -1;
+	move_str = t_move;
+}
+const std::string invalid_move_exception::what() throw() {
+	return std::format("Found invalid move {} in position {}", move_str, pos.fen());
+}
 inline bool Position::is_attacked_by_side(const int sq, const bool color) {
 	return (color) ? ((get_rook_attacks(occupancies[both], sq) & (bitboards[9] | bitboards[10])) | (get_bishop_attacks(occupancies[both], sq) & (bitboards[8] | bitboards[10])) | (pawn_attacks[!color][sq] & bitboards[6]) | (king_attacks[sq] & bitboards[11]) | (knight_attacks[sq] & bitboards[7])) :
 		((get_rook_attacks(occupancies[both], sq) & (bitboards[3] | bitboards[4])) | (get_bishop_attacks(occupancies[both], sq) & (bitboards[2] | bitboards[4])) | (pawn_attacks[!color][sq] & bitboards[0]) | (king_attacks[sq] & bitboards[5]) | (knight_attacks[sq] & bitboards[1]));
@@ -1784,7 +1796,7 @@ void Position::print() {
 	printf("    current halfclock turn: %d\n", ply);
 	printf("    current game turn: %d\n", (int)ply / 2 + (side == white));
 	std::cout << "    current hash: " << current_hash << "\n";
-	std::cout<<"    fen: " << fen() <<"\n";
+	std::cout << "    fen: " << fen() << "\n";
 }
 void Position::print_square_board() const {
 	printf("\n");
@@ -1816,6 +1828,91 @@ void Position::print_square_board() const {
 	printf("    current halfclock turn: %d\n", ply);
 	printf("    current game turn: %d\n", (int)ply / 2 + (side == white));
 	std::cout << "    current hash: " << current_hash << "\n";
+}
+std::string Position::to_string() {
+	std::stringstream stream = std::stringstream{};
+	for (int rank = 0; rank < 8; rank++) {
+		for (int file = 0; file < 8; file++) {
+			//loop over board ranks and files
+
+			int square = rank * 8 + file;
+			//convert to square index
+
+			if (!file) {
+				stream<< 8 - rank;
+			}//print rank on the left side
+
+			int piece = no_piece;
+
+			for (int piece_on_square = P; piece_on_square <= k; piece_on_square++) {
+				if (get_bit(bitboards[piece_on_square], square)) {
+					piece = piece_on_square;
+					break;
+				}
+			}
+			stream<< ((piece == no_piece) ? ' .' : ascii_pieces[piece]);
+		}
+		stream<<"\n";
+	}
+	stream<<"\n    a b c d e f g h \n\n";
+	stream<<"    To move: "<< ((side) ? "black" : "white") <<"\n";
+	stream<<"    enpassant square: "<< ((enpassant_square != a8) ? square_coordinates[enpassant_square].c_str() : "none") <<"\n";
+	std::string castling_rights_str = "";
+	castling_rights_str += (get_bit(castling_rights, 0)) ? "K" : "-";
+	castling_rights_str += (get_bit(castling_rights, 1)) ? "Q" : "-";
+	castling_rights_str += (get_bit(castling_rights, 2)) ? "k" : "-";
+	castling_rights_str += (get_bit(castling_rights, 3)) ? "q" : "-";
+	stream << "    castling rights: "<<castling_rights_str<<"\n";
+
+	stream << "    halfmoves since last pawn move or capture: "<< no_pawns_or_captures <<"\n";;
+	stream<<"    current halfclock turn: "<< ply<<"\n";
+	stream << "    current game turn: " << ((int)ply / 2 + (side == white)) << "\n";
+	stream << "    current hash: " << current_hash << "\n";
+	stream << "    fen: " << fen() << "\n";
+	std::string ret = std::move(stream).str();
+	return ret;
+}
+std::string Position::square_board_to_string() const {
+	std::stringstream stream = std::stringstream{};
+	for (int rank = 0; rank < 8; rank++) {
+		for (int file = 0; file < 8; file++) {
+			//loop over board ranks and files
+
+			int square = rank * 8 + file;
+			//convert to square index
+
+			if (!file) {
+				stream << 8 - rank;
+			}//print rank on the left side
+
+			int piece = square_board[square];
+
+			for (int piece_on_square = P; piece_on_square <= k; piece_on_square++) {
+				if (get_bit(bitboards[piece_on_square], square)) {
+					piece = piece_on_square;
+					break;
+				}
+			}
+			stream << ((piece == no_piece) ? ' .' : ascii_pieces[piece]);
+		}
+		stream << "\n";
+	}
+	stream << "\n    a b c d e f g h \n\n";
+	stream << "    To move: " << ((side) ? "black" : "white") << "\n";
+	stream << "    enpassant square: " << ((enpassant_square != a8) ? square_coordinates[enpassant_square].c_str() : "none") << "\n";
+	std::string castling_rights_str = "";
+	castling_rights_str += (get_bit(castling_rights, 0)) ? "K" : "-";
+	castling_rights_str += (get_bit(castling_rights, 1)) ? "Q" : "-";
+	castling_rights_str += (get_bit(castling_rights, 2)) ? "k" : "-";
+	castling_rights_str += (get_bit(castling_rights, 3)) ? "q" : "-";
+	stream << "    castling rights: " << castling_rights_str << "\n";
+
+	stream << "    halfmoves since last pawn move or capture: " << no_pawns_or_captures << "\n";;
+	stream << "    current halfclock turn: " << ply << "\n";
+	stream << "    current game turn: " << ((int)ply / 2 + (side == white)) << "\n";
+	stream << "    current hash: " << current_hash << "\n";
+	std::string ret = std::move(stream).str();
+	return ret;
 }
 U64 Position::get_hash() const {
 
@@ -1958,13 +2055,21 @@ inline void Position::make_move(const unsigned int move) {
 	occupancies[1] = bitboards[6] | bitboards[7] | bitboards[8] | bitboards[9] | bitboards[10] | bitboards[11];
 	occupancies[2] = occupancies[0] | occupancies[1];
 
-	//update_hash(move);
 	current_hash = get_hash();
-	//assert(current_hash==get_hash());
+	//IN CASE I WANT TO FIX HASH UPDATING
+	//update_hash(move);
+	//const U64 hash = get_hash();
+	//if (current_hash != get_hash()) {
+	//	std::stringstream stream{};
+	//	stream<<"Updating hash did not yield correct result. Got " << current_hash<<" when fully calculating the hash yields "<<hash;
+	//	std::string str = std::move(stream).str();
+	//	throw Position_Error{str};
+	//}
 	if (!boardsMatch()) {
-		print();
-		std::cout << "| last move: "; print_move(move);
-		print_square_board();
+		std::string str = to_string();
+		str += "| last move: \n" + move_to_string(move);
+		str += square_board_to_string();
+		throw Position_Error{str};
 	}
 }
 inline void Position::unmake_move() {
@@ -2029,8 +2134,9 @@ inline void Position::unmake_move() {
 	occupancies[2] = occupancies[0] | occupancies[1];
 	side = !side;
 	if (!boardsMatch()) {
-		print();
-		std::cout << "| last move: "; print_move(move);
-		print_square_board();
+		std::string str = to_string();
+		str += "| last move: \n" + move_to_string(move);
+		str += square_board_to_string();
+		throw Position_Error{str};
 	}
 }//position fen 8/2k4p/1b6/3P3p/p7/5K1P/P4P2/5q2 w - - 0 39
