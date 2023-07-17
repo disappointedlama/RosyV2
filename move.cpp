@@ -53,8 +53,7 @@ std::string move_to_string(int move) {
 	stream<<"Is double push: "<< double_pawn_push << "\n";
 	stream<<"Is castle: "<< is_castle << "\n";
 	stream<<"Is enpassant: "<< is_enpassant<<"\n";
-	std::string ret = "";
-	stream >> ret;
+	std::string ret = std::move(stream).str();
 	return ret;
 }
 void print_move_bits(int move) {

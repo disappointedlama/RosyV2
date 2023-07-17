@@ -123,12 +123,17 @@ MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& mo
 		pos.make_move(moves[move_index][i]);
 		short value = -pv_search(moves, move_index+1, depth - 1, -beta, -alpha);
 		pos.unmake_move();
+		if(debug){
+			pos.print();
+		}
 		const bool is_best_move = (value > current_best_eval);
 		current_best_move = (is_best_move)*moves[move_index][i] + (!is_best_move) * current_best_move;
 		current_best_eval = (is_best_move)*value + (!is_best_move) * current_best_eval;
 		if (debug) {
 			if (is_best_move) {
-				std::cout << "Found new best move in: " << uci(moves[move_index][i]) << " (" << value << ")" << std::endl;
+				std::cout << "Found new best move in: " << "\n";
+				print_move(moves[move_index][i]);
+				std::cout << " (" << value << ")" << std::endl;
 			}
 			else {
 				std::cout << "finished " << uci(moves[move_index][i]) << std::endl;
@@ -137,10 +142,16 @@ MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& mo
 		if (value > alpha) {
 			alpha = value;
 			if (value >= infinity) {
+				if (debug) {
+					std::cout << "Finished depth " << depth << std::endl;
+				}
 				hash_map[pos.current_hash] = TableEntry{ current_best_move,current_best_eval,EXACT,depth };
 				return MoveWEval{current_best_move, current_best_eval};
 			}
 		}
+	}
+	if (debug) {
+		std::cout << "Finished depth " << depth << std::endl;
 	}
 	hash_map[pos.current_hash] = TableEntry{ current_best_move, current_best_eval, EXACT, depth };
 	return MoveWEval{ current_best_move, current_best_eval };
@@ -203,11 +214,18 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 	order(moves[move_index], entry,number_of_moves);
 	unsigned int current_best_move = 0;
 	short current_best_eval = -infinity-1;
-
+	//std::string before_moves = pos.fen();
 	pos.make_move(moves[move_index][0]);
 	bool in_check_now = pos.currently_in_check();
 	short value = -pv_search(moves, move_index + 1, depth - 1, -beta, -alpha);
 	pos.unmake_move();
+	//if (pos.fen() != before_moves) {
+	//	pos.print();
+	//	pos.print_square_board();
+	//	std::cout << "Should have been: " << before_moves << std::endl;
+	//	print_move(pos.move_history.back());
+	//	throw stop_exception("pv");
+	//}
 	const bool is_best_move = (value > current_best_eval);
 	current_best_move = (is_best_move)*moves[move_index][0] + (!is_best_move) * current_best_move;
 	current_best_eval = (is_best_move)*value + (!is_best_move) * current_best_eval;
@@ -238,6 +256,13 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 			value = -pv_search(moves, move_index + 1, depth - 1, -beta, -alpha);
 		}
 		pos.unmake_move();
+		//if (pos.fen() != before_moves) {
+		//	pos.print();
+		//	pos.print_square_board();
+		//	std::cout << "Should have been: " << before_moves << std::endl;
+		//	print_move(pos.move_history.back());
+		//	throw stop_exception("pv");
+		//}
 		const bool is_best_move = (value > current_best_eval);
 		current_best_move = (is_best_move)*moves[move_index][i] + (!is_best_move) * current_best_move;
 		current_best_eval = (is_best_move)*value + (!is_best_move) * current_best_eval;
@@ -304,6 +329,7 @@ short Engine::quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, i
 	}
 	quiescence_order(moves[move_index], number_of_captures);
 
+	//std::string before_moves = pos.fen();
 	unsigned int current_best_move = 0;
 	short current_best_eval = -infinity - 1;
 	for (int i = 0; i < number_of_captures; i++) {
@@ -313,6 +339,13 @@ short Engine::quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, i
 		pos.make_move(moves[move_index][i]);
 		const short value = -quiescence(moves, move_index+1, -beta, -alpha);
 		pos.unmake_move();
+		//if (pos.fen() != before_moves) {
+		//	pos.print();
+		//	pos.print_square_board();
+		//	std::cout << "Should have been: " << before_moves << std::endl;
+		//	print_move(pos.move_history.back());
+		//	throw stop_exception("quiescence");
+		//}
 
 		const bool is_new_best = (current_best_eval < value);
 		current_best_eval = (is_new_best)*value + (!is_new_best) * current_best_eval;

@@ -47,7 +47,7 @@ inline U64 Position::get_attacks_by(const bool color) {
 
 	return attacks;
 }
-inline int Position::get_piece_type_on(const int sq) {
+inline int Position::get_piece_type_on(const int sq)const {
 	return square_board[sq];
 }
 void Position::try_out_move(std::array<unsigned int,128>& ret, unsigned int move, int& ind) {
@@ -1208,11 +1208,9 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 				}
 				ret[ind++]=move;
 			}
-			if ((double_push_target < a3) && (double_push_target > h6)) {
-				if (get_bit(valid_targets & ((side) ? (rank5) : (rank4)), double_push_target)&&push_target!=kingpos) {
-					unsigned int move = encode_move(from, double_push_target, type, no_piece, no_piece, false, true, false, false);
-					ret[ind++]=move;
-				}
+			if ((get_bit(valid_targets, push_target) && get_bit(valid_targets,double_push_target)) && ((side && get_bit(rank5, double_push_target)) || (!side && get_bit(rank4, double_push_target)))) {
+				unsigned int move = encode_move(from, double_push_target, type, no_piece, no_piece, false, true, false, false);
+				ret[ind++] = move;
 			}
 		}
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
@@ -1479,7 +1477,7 @@ U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>& ret, 
 			U64 attacks = pawn_attacks[(side)][from];
 			if (attacks & pinner) {
 				unsigned int move = encode_move(from, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
-				if ((side && (to < a7)) || ((!side) && (to > h2))) {
+				if ((side && get_bit(rank1, to)) || ((!side) && get_bit(rank8, to))) {
 					set_promotion_type(move, N + piece_offset);
 					ret[ind++]=move;
 					set_promotion_type(move, B + piece_offset);
@@ -1690,7 +1688,7 @@ void Position::parse_fen(std::string fen) {
 	hash_history.push_back(current_hash);
 }
 
-std::string Position::fen() {
+std::string Position::fen() const{
 	std::string ret = "";
 	const int arr[8] = { 7,6,5,4,3,2,1,0 };
 	for (int i = 0; i < 8; i++) {
@@ -1839,7 +1837,7 @@ std::string Position::to_string() {
 			//convert to square index
 
 			if (!file) {
-				stream<< 8 - rank;
+				stream<<' ' << 8 - rank;
 			}//print rank on the left side
 
 			int piece = no_piece;
@@ -1850,7 +1848,7 @@ std::string Position::to_string() {
 					break;
 				}
 			}
-			stream<< ((piece == no_piece) ? ' .' : ascii_pieces[piece]);
+			stream<< ' ' << ((piece == no_piece) ? '.' : ascii_pieces[piece]);
 		}
 		stream<<"\n";
 	}
@@ -1882,7 +1880,7 @@ std::string Position::square_board_to_string() const {
 			//convert to square index
 
 			if (!file) {
-				stream << 8 - rank;
+				stream << ' ' << 8 - rank;
 			}//print rank on the left side
 
 			int piece = square_board[square];
@@ -1893,7 +1891,7 @@ std::string Position::square_board_to_string() const {
 					break;
 				}
 			}
-			stream << ((piece == no_piece) ? ' .' : ascii_pieces[piece]);
+			stream << ' ' << ((piece == no_piece) ? '.' : ascii_pieces[piece]);
 		}
 		stream << "\n";
 	}
@@ -2066,9 +2064,10 @@ inline void Position::make_move(const unsigned int move) {
 	//	throw Position_Error{str};
 	//}
 	//if (!boardsMatch()) {
-	//	std::string str = to_string();
+	//	std::string str = "\n" + to_string();
 	//	str += "| last move: \n" + move_to_string(move);
 	//	str += square_board_to_string();
+	//	std::cout << get_move_history()<<std::endl;
 	//	throw Position_Error{str};
 	//}
 }
@@ -2134,9 +2133,10 @@ inline void Position::unmake_move() {
 	occupancies[2] = occupancies[0] | occupancies[1];
 	side = !side;
 	//if (!boardsMatch()) {
-	//	std::string str = to_string();
+	//	std::string str = "\n" + to_string();
 	//	str += "| last move: \n" + move_to_string(move);
 	//	str += square_board_to_string();
+	//	std::cout << get_move_history() << std::endl;
 	//	throw Position_Error{str};
 	//}
 }//position fen 8/2k4p/1b6/3P3p/p7/5K1P/P4P2/5q2 w - - 0 39

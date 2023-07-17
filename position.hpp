@@ -68,7 +68,7 @@ struct Position_Error : std::exception {
 class Position {
 	inline bool is_attacked_by_side(const int sq, const bool color);
 	inline U64 get_attacks_by(const bool color);
-	inline int get_piece_type_on(const int sq);
+	inline int get_piece_type_on(const int sq) const;
 	inline int get_piece_type_or_enpassant_on(const int sq) {
 		if (sq == enpassant_square && sq != a8) return (!side) * p;
 		return square_board[sq];
@@ -201,7 +201,7 @@ public:
 	Position();
 	Position(const std::string& fen);
 	void parse_fen(std::string fen);
-	std::string fen();
+	std::string fen() const;
 	void print();
 	void print_square_board() const;
 	std::string to_string();
@@ -669,19 +669,26 @@ public:
 	}
 	inline bool boardsMatch() {
 		for (int i = 0; i < 64; i++) {
-			short type = get_piece_type_on(i);
-			if (i == enpassant_square && i!=a8) {
-				if (type != p && type != P && square_board[i] != no_piece) {
-					std::cout << std::endl<< "mismatch at " << square_coordinates[i] << " : "<<type<<", " << square_board[i] << std::endl;
-					return false;
+			short type = no_piece;
+			for (int j = P; j <= k; j++) {
+				if (get_bit(bitboards[j], i)) {
+					type = j;
+					break;
 				}
 			}
-			else if (type != square_board[i]) {
+			if (type != square_board[i]) {
 				std::cout << std::endl<< "mismatch at " << square_coordinates[i] << " : " << type << ", " << square_board[i] << std::endl;
 				return false;
 			}
 		}
 		return true;
+	}
+	inline std::string get_move_history() {
+		std::string ret = "";
+		for (int i = 0; i < move_history.size(); i++) {
+			ret += uci(move_history[i]) +" ";
+		}
+		return ret;
 	}
 };
 struct invalid_move_exception : std::exception {
