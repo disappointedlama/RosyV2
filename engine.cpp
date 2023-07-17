@@ -124,7 +124,7 @@ MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& mo
 			std::cout << "starting " << uci(moves[move_index][i]) << std::endl;
 		}
 		pos.make_move(moves[move_index][i]);
-		short value = -pv_search(moves, move_index+1, depth - 1, -beta, -alpha);
+		short value = -pv_search(moves, move_index+1, depth - 1, -beta, -alpha,true);
 		pos.unmake_move();
 		if(debug){
 			pos.print();
@@ -159,7 +159,7 @@ MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& mo
 	hash_map[pos.current_hash] = TableEntry{ current_best_move, current_best_eval, EXACT, depth };
 	return MoveWEval{ current_best_move, current_best_eval };
 }
-short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta) {
+short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta, bool isPV) {
 	if (!run) {
 		throw stop_exception("pv search");
 	}
@@ -183,7 +183,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 
 	const short alphaOrigin = alpha;
 	TableEntry entry = lookUp();
-	if (entry.get_depth() >= depth) {
+	if (entry.get_depth() > depth && !isPV) {
 		const short eval= entry.get_eval();
 		if (entry.get_flag() == EXACT) {
 			return eval;
@@ -205,7 +205,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 	const int phase = pos.get_phase();
 	if ((depth >= 1 + Red) && (!in_check) && (phase>=8)) {
 		pos.make_nullmove();
-		short nm_value = -pv_search(moves, move_index + 1, depth - 1 - Red, -beta, -beta + 1);
+		short nm_value = -pv_search(moves, move_index + 1, depth - 1 - Red, -beta, -beta + 1, false);
 		pos.unmake_nullmove();
 		if (nm_value >= beta) {
 			if (depth >= entry.get_depth()) {
@@ -220,7 +220,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 	//std::string before_moves = pos.fen();
 	pos.make_move(moves[move_index][0]);
 	bool in_check_now = pos.currently_in_check();
-	short value = -pv_search(moves, move_index + 1, depth - 1 + (in_check_now), -beta, -alpha);
+	short value = -pv_search(moves, move_index + 1, depth - 1 + (in_check_now), -beta, -alpha, isPV);
 	pos.unmake_move();
 	//if (pos.fen() != before_moves) {
 	//	pos.print();
@@ -254,9 +254,9 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 	for (int i = 1; i < number_of_moves; i++) {
 		pos.make_move(moves[move_index][i]);
 		in_check_now = pos.currently_in_check();
-		value = -pv_search(moves, move_index + 1, depth - 1 + (in_check_now), -alpha - 1, -alpha);
+		value = -pv_search(moves, move_index + 1, depth - 1 + (in_check_now), -alpha - 1, -alpha, false);
 		if ((value > alpha) && (value < beta)) {
-			value = -pv_search(moves, move_index + 1, depth - 1 + (in_check_now), -beta, -alpha);
+			value = -pv_search(moves, move_index + 1, depth - 1 + (in_check_now), -beta, -alpha, false);
 		}
 		pos.unmake_move();
 		//if (pos.fen() != before_moves) {
