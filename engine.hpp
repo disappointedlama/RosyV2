@@ -84,7 +84,7 @@ struct KillerTable {
 
 static std::array<std::array<std::array<U64, 64>, 12>, 2> history = std::array<std::array<std::array<U64, 64>, 12>, 2>{};
 class Engine {
-	std::string logging_path = "RosyV2LOGS.txt";
+	std::string logging_path = "RosyV2.botlogs";
 	Position pos;
 	int current_desired_depth;
 	int max_depth;
