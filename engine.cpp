@@ -111,6 +111,9 @@ inline void Engine::printBestMove(int move) {
 	log<< "bestmove " + uci(move);
 }
 MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta) {
+	if (!run) {
+		throw stop_exception("pv search");
+	}
 	TableEntry entry = lookUp();
 	const int number_of_moves = pos.get_legal_moves(moves[move_index]);
 	order(moves[move_index], entry, number_of_moves);
@@ -217,7 +220,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 	//std::string before_moves = pos.fen();
 	pos.make_move(moves[move_index][0]);
 	bool in_check_now = pos.currently_in_check();
-	short value = -pv_search(moves, move_index + 1, depth - 1, -beta, -alpha);
+	short value = -pv_search(moves, move_index + 1, depth - 1 + (in_check_now), -beta, -alpha);
 	pos.unmake_move();
 	//if (pos.fen() != before_moves) {
 	//	pos.print();
@@ -251,9 +254,9 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 	for (int i = 1; i < number_of_moves; i++) {
 		pos.make_move(moves[move_index][i]);
 		in_check_now = pos.currently_in_check();
-		value = -pv_search(moves, move_index+1, depth - 1, -alpha - 1, -alpha);
+		value = -pv_search(moves, move_index + 1, depth - 1 + (in_check_now), -alpha - 1, -alpha);
 		if ((value > alpha) && (value < beta)) {
-			value = -pv_search(moves, move_index + 1, depth - 1, -beta, -alpha);
+			value = -pv_search(moves, move_index + 1, depth - 1 + (in_check_now), -beta, -alpha);
 		}
 		pos.unmake_move();
 		//if (pos.fen() != before_moves) {
@@ -489,7 +492,7 @@ void Engine::parse_go(std::string str){
 
 		const int increment = (pos.side) * binc + (!pos.side) * winc;
 		const int time = (pos.side) * btime + (!pos.side) * wtime;
-		time_for_next_move = time / 40 + increment / 2;
+		time_for_next_move = time / 25 + increment / 2;
 		if (time_for_next_move >= time) {
 			time_for_next_move = time - 500;
 		}
@@ -499,7 +502,7 @@ void Engine::parse_go(std::string str){
 		std::cout << "Thinking time: " << time_for_next_move << std::endl;
 		time_for_next_move *= 1000000ULL;
 		std::thread time_tracker = std::thread(&Engine::track_time, this, time_for_next_move);
-		max_depth = infinity;
+		max_depth = 100;
 		check_time = true;
 		bestMove();
 		while (true) {
