@@ -204,6 +204,11 @@ POTENTIAL ISSUE POSITIONS
 */
 /*
 ISSUE POSITION
+position fen 1r2k2r/p3pp1p/2p3p1/1pn5/8/1BP2P1P/P1P2P2/3R1RK1 b k - 3 17
+illegal move h1h3
+
+position startpos moves d2d4 e7e6 c2c4 g8f6 g1f3 d7d5 b1c3 c7c6 c1g5 b8d7 e2e3 d8a5 f3d2 d5c4 g5f6 d7f6 d2c4 a5c7 a1c1 f8e7 g2g3 e8g8 f1g2 f8d8 e1g1 b7b6 c4e5 c8b7 c3b5 c7c8 e5c6 b7c6 g2c6 a8b8 b5a7 c8a6 d1a4 a6a4 c6a4 d8f8 a7c6
+
 NOT YET REPLICATED
 position startpos moves d2d4 g8f6 c1f4 c7c5 e2e3 d8b6 b1c3 d7d6 f1b5 c8d7 a2a4 d7b5 a4b5 c5d4 e3d4 e7e6 g1f3 d6d5 e1g1 f8d6 c3a4 b6c7 f4d6 c7d6 a4c5 b7b6 c5a4 b8d7 a4c3 d7f8 a1a6 f8g6 d1a1 e8g8 a6a7 a8a7 a1a7 e6e5 d4e5 g6e5 f3e5 d6e5 a7b6 f8c8 b6e3 e5d6 f1d1 d6h2 g1h2 f6g4 h2g3 g4e3 f2e3 f7f5 b5b6 h7h5 d1d5 c8b8 d5d6 g7g5 c3d5 g8g7 d6d7 g7h6 b6b7 f5f4 e3f4 g5f4 d5f4 h5h4 g3g4
 */

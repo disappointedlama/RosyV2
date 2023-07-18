@@ -207,6 +207,15 @@ public:
 	std::string to_string();
 	std::string square_board_to_string() const;
 	U64 get_hash() const;
+	inline bool valid_move(const unsigned int move) {
+		std::array<unsigned int, 128> legal_moves{};
+		const int number_of_moves = get_legal_moves(legal_moves);
+		bool found = false;
+		for (int i = 0; i < number_of_moves; i++) {
+			if (legal_moves[i] == move) return true;
+		}
+		return false;
+	}
 	constexpr bool get_side() const { return side; };
 	constexpr int get_ply() const { return ply; };
 	inline void update_hash(const unsigned int move);

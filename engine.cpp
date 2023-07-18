@@ -63,15 +63,19 @@ int Engine::bestMove() {
 			std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 			MoveWEval result = pv_root_call(moves,0, current_desired_depth, alpha, beta);
 			const bool fell_outside_window = (result.eval <= alpha) || (result.eval >= beta);
-			if (fell_outside_window) {
+			if (fell_outside_window && run) {
 				nodes = 0;
 				result = pv_root_call(moves,0, current_desired_depth, -infinity, infinity);
 			}
 			std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 			const U64 time = (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-			print_info(current_desired_depth, result.eval, time);
 			old_best = best;
 			best = result;
+			if (!run) {
+				if (best.move == 0) best = old_best;
+				break;
+			}
+			print_info(current_desired_depth, result.eval, time);
 			if (check_time) {
 				const U64 total_time_searched = (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - search_start).count();
 				if (total_time_searched * 2 > time_for_next_move) {
@@ -92,28 +96,19 @@ int Engine::bestMove() {
 			}
 		}
 	}
-	catch (stop_exception e) {
-		std::cout << "caught \"" << e.what() << "\"" << std::endl;
-	}
 	catch (Position_Error e) {
 		log.error(e.what());
 	}
 	reset_position();
-	if (best.move == -1) {
-		throw invalid_move_exception(pos, best.move);
-	}
 	printBestMove(best.move);
 	run = false;
 	return best.move;
 }
 inline void Engine::printBestMove(int move) {
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	log<< "bestmove " + uci(move);
 }
 MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta) {
-	if (!run) {
-		throw stop_exception("pv search");
-	}
 	TableEntry entry = lookUp();
 	const int number_of_moves = pos.get_legal_moves(moves[move_index]);
 	order(moves[move_index], entry, number_of_moves);
@@ -123,9 +118,16 @@ MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& mo
 		if (debug) {
 			std::cout << "starting " << uci(moves[move_index][i]) << std::endl;
 		}
-		pos.make_move(moves[move_index][i]);
-		short value = -pv_search(moves, move_index+1, depth - 1, -beta, -alpha,true);
-		pos.unmake_move();
+		short value = 0;
+		try {
+			pos.make_move(moves[move_index][i]);
+			value = -pv_search(moves, move_index+1, depth - 1, -beta, -alpha,true);
+			pos.unmake_move();
+		}
+		catch (stop_exception e) {
+			if(debug) std::cout << "caught \"" << e.what() << "\"" << std::endl;
+			return MoveWEval{ current_best_move, current_best_eval };
+		}
 		if(debug){
 			pos.print();
 		}
@@ -208,9 +210,9 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 		short nm_value = -pv_search(moves, move_index + 1, depth - 1 - Red, -beta, -beta + 1, false);
 		pos.unmake_nullmove();
 		if (nm_value >= beta) {
-			if (depth >= entry.get_depth()) {
-				hash_map[pos.current_hash] = TableEntry{ moves[move_index][0],nm_value,LOWER,depth };
-			}
+			//if (depth >= entry.get_depth()) {
+			//	hash_map[pos.current_hash] = TableEntry{ moves[move_index][0],nm_value,LOWER,depth };
+			//}
 			return beta;
 		}
 	}
@@ -220,7 +222,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 	//std::string before_moves = pos.fen();
 	pos.make_move(moves[move_index][0]);
 	bool in_check_now = pos.currently_in_check();
-	short value = -pv_search(moves, move_index + 1, depth - 1 + (in_check_now), -beta, -alpha, isPV);
+	short value = -pv_search(moves, move_index + 1, depth - 1, -beta, -alpha, isPV);
 	pos.unmake_move();
 	//if (pos.fen() != before_moves) {
 	//	pos.print();
@@ -254,9 +256,9 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 	for (int i = 1; i < number_of_moves; i++) {
 		pos.make_move(moves[move_index][i]);
 		in_check_now = pos.currently_in_check();
-		value = -pv_search(moves, move_index + 1, depth - 1 + (in_check_now), -alpha - 1, -alpha, false);
+		value = -pv_search(moves, move_index + 1, depth - 1, -alpha - 1, -alpha, false);
 		if ((value > alpha) && (value < beta)) {
-			value = -pv_search(moves, move_index + 1, depth - 1 + (in_check_now), -beta, -alpha, false);
+			value = -pv_search(moves, move_index + 1, depth - 1, -beta, -alpha, false);
 		}
 		pos.unmake_move();
 		//if (pos.fen() != before_moves) {
@@ -379,7 +381,8 @@ void Engine::set_debug(const bool t_debug) {
 	debug = t_debug;
 }
 void Engine::parse_position(std::string fen) {
-	log << fen;
+	if (debug) log << fen;
+	else log.log(fen);
 	std::string moves="";
 	std::string str = " moves ";
 	auto substr_pos = fen.find(str);
@@ -429,13 +432,13 @@ void Engine::parse_position(std::string fen) {
 	catch (invalid_move_exception e) {
 		std::cout << e.what() << std::endl;
 	}
-	pos.print();
+	if(debug) pos.print();
 }
 void Engine::reset_position() {
 	pos = Position{ start_position };
 }
 void Engine::parse_go(std::string str){
-	log << str;
+	if(debug) log << str;
 	check_time = false;
 	std::string command = "depth ";
 	auto substr_pos = str.find(command);
@@ -538,7 +541,7 @@ void Engine::track_time(const U64 max_time) {
 		end = std::chrono::steady_clock::now();
 		if ((U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() >= max_time) {
 			run = false;
-			std::cout << "stopping execution" << std::endl;
+			if(debug)std::cout << "stopping execution" << std::endl;
 		}
 	}
 }
@@ -578,7 +581,7 @@ void Engine::uci_loop(){
 			parse_position("position startpos");
 			hash_map = std::unordered_map<U64, TableEntry>{};
 			history = std::array<std::array<std::array<U64, 64>, 12>, 2>{};
-			std::cout << "Done with cleanup\n";
+			if(debug) std::cout << "Done with cleanup\n";
 		}
 		else if (strncmp(input, "go", 2) == 0) {
 			if (!run) {
