@@ -1101,7 +1101,11 @@ U64 Position::get_pinned_pieces(const int kingpos, const U64 enemy_attacks) {
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_pinner = get_bishop_attacks(occupancies[both], kingpos) & (bitboards[B + offset] | bitboards[Q + offset]);
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
-		pinned_pieces |= (((bool)(pot_pinner)) & ((bool)(isolated & get_bishop_attacks(occupancies[both], static_cast<unsigned long long>(bitscan(pot_pinner)))))) * isolated;
+		while (pot_pinner) {
+			const U64 isolatedPinner = _blsi_u64(pot_pinner);
+			pinned_pieces |= (bool)(isolated & get_bishop_attacks(occupancies[both], static_cast<unsigned long long>(bitscan(pot_pinner)))) * isolated;
+			pot_pinner = _blsr_u64(pot_pinner);
+		}
 		potentially_pinned_by_bishops = _blsr_u64(potentially_pinned_by_bishops);
 	}
 	while (potentially_pinned_by_rooks) {
@@ -1109,8 +1113,11 @@ U64 Position::get_pinned_pieces(const int kingpos, const U64 enemy_attacks) {
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancies
 		U64 pot_pinner = get_rook_attacks(occupancies[both], kingpos) & (bitboards[R + offset] | bitboards[Q + offset]);
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
-		pinned_pieces |= (((bool)(pot_pinner)) & ((bool)(isolated & get_rook_attacks(occupancies[both], static_cast<unsigned long long>(bitscan(pot_pinner)))))) * isolated;
-
+		while (pot_pinner) {
+			const U64 isolatedPinner = _blsi_u64(pot_pinner);
+			pinned_pieces |= (bool)(isolated & get_rook_attacks(occupancies[both], static_cast<unsigned long long>(bitscan(isolatedPinner)))) * isolated;
+			pot_pinner = _blsr_u64(pot_pinner);
+		}
 		potentially_pinned_by_rooks = _blsr_u64(potentially_pinned_by_rooks);
 	}
 	return pinned_pieces;
