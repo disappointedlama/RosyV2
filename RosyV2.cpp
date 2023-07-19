@@ -212,3 +212,7 @@ position startpos moves d2d4 e7e6 c2c4 g8f6 g1f3 d7d5 b1c3 c7c6 c1g5 b8d7 e2e3 d
 NOT YET REPLICATED
 position startpos moves d2d4 g8f6 c1f4 c7c5 e2e3 d8b6 b1c3 d7d6 f1b5 c8d7 a2a4 d7b5 a4b5 c5d4 e3d4 e7e6 g1f3 d6d5 e1g1 f8d6 c3a4 b6c7 f4d6 c7d6 a4c5 b7b6 c5a4 b8d7 a4c3 d7f8 a1a6 f8g6 d1a1 e8g8 a6a7 a8a7 a1a7 e6e5 d4e5 g6e5 f3e5 d6e5 a7b6 f8c8 b6e3 e5d6 f1d1 d6h2 g1h2 f6g4 h2g3 g4e3 f2e3 f7f5 b5b6 h7h5 d1d5 c8b8 d5d6 g7g5 c3d5 g8g7 d6d7 g7h6 b6b7 f5f4 e3f4 g5f4 d5f4 h5h4 g3g4
 */
+/*
+position fen 3r4/ppp1q1pk/4b2p/4Pp2/2Pr4/1P1R2P1/P1Q2P1P/4RBK1 b - - 1 22 moves d4d3 f1d3 d8f8 c4c5 h7g8 b3b4 f5f4 d3c4 a7a5 b4a5 f4f3 c4e6 e7e6 c2b3 e6b3 a2b3 g7g5 e5e6 f8e8 h2h3 e8e7 b3b4 c7c6 g3g4 g8g7 e1e3 g7g6 g1h2 g6f6 h2g3 e7e6 e3e6 f6e6 g3f3 e6d5 f3g3 d5c4 f2f4 g5f4 g3f4 c4b4 h3h4 b4c5 f4f5 c5b5 f5g6 c6c5
+bestmove d1e2
+*/

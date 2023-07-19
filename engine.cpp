@@ -52,7 +52,7 @@ int Engine::bestMove() {
 	killer_table.shift_by(2);
 	const int aspiration_window = 200;
 	std::array<std::array<unsigned int,128>,40> moves{};
-	pos.get_legal_moves(moves[0]);
+	const int number_of_legal_moves = pos.get_legal_moves(moves[0]);
 	MoveWEval best{ moves[0][0],0};
 	MoveWEval old_best = best;
 	short alpha = -infinity;
@@ -100,6 +100,17 @@ int Engine::bestMove() {
 		log.error(e.what());
 	}
 	reset_position();
+	bool found = false;
+	for (int i = 0; i < number_of_legal_moves; i++) {
+		if (moves[0][i] == best.move) {
+			found = true;
+			break;
+		}
+	}
+	if (!found) {
+		log.log(pos.to_string() + "invalid move encountered " + move_to_string(best.move));
+		throw invalid_move_exception{pos, best.move};
+	}
 	printBestMove(best.move);
 	run = false;
 	return best.move;
