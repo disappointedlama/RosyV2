@@ -207,6 +207,9 @@ ISSUE POSITION
 position fen 1r2k2r/p3pp1p/2p3p1/1pn5/8/1BP2P1P/P1P2P2/3R1RK1 b k - 3 17
 illegal move h1h3
 
+position fen 3rk1Q1/p1p1n3/2pb3B/8/3p4/1PPB4/P7/1K2R3 b - - 0 33
+illegal move e7g8
+
 position startpos moves d2d4 e7e6 c2c4 g8f6 g1f3 d7d5 b1c3 c7c6 c1g5 b8d7 e2e3 d8a5 f3d2 d5c4 g5f6 d7f6 d2c4 a5c7 a1c1 f8e7 g2g3 e8g8 f1g2 f8d8 e1g1 b7b6 c4e5 c8b7 c3b5 c7c8 e5c6 b7c6 g2c6 a8b8 b5a7 c8a6 d1a4 a6a4 c6a4 d8f8 a7c6
 
 NOT YET REPLICATED

@@ -139,9 +139,9 @@ MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& mo
 			if(debug) std::cout << "caught \"" << e.what() << "\"" << std::endl;
 			return MoveWEval{ current_best_move, current_best_eval };
 		}
-		if(debug){
-			pos.print();
-		}
+		//if(debug){
+		//	pos.print();
+		//}
 		const bool is_best_move = (value > current_best_eval);
 		current_best_move = (is_best_move)*moves[move_index][i] + (!is_best_move) * current_best_move;
 		current_best_eval = (is_best_move)*value + (!is_best_move) * current_best_eval;
@@ -208,14 +208,14 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 		return quiescence(moves, move_index+1,alpha, beta);
 	}
 	const int phase = pos.get_phase();
-	if ((depth >= 1 + Red) && (!in_check) && (phase>=8)) {
+	if ((!isPV) && (depth >= 1 + Red) && (!in_check) && (phase>=8)) {
 		pos.make_nullmove();
 		short nm_value = -pv_search(moves, move_index + 1, depth - 1 - Red, -beta, -beta + 1, false);
 		pos.unmake_nullmove();
 		if (nm_value >= beta) {
-			//if (depth >= entry.get_depth()) {
-			//	hash_map[pos.current_hash] = TableEntry{ moves[move_index][0],nm_value,LOWER,depth };
-			//}
+			if (depth >= entry.get_depth()) {
+				hash_map[pos.current_hash] = TableEntry{ moves[move_index][0], nm_value, LOWER, depth -Red};
+			}
 			return beta;
 		}
 	}
@@ -246,7 +246,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 				__assume(get_piece_type(moves[move_index][0]) < 12);
 				__assume(get_to_square(moves[move_index][0]) > -1);
 				__assume(get_to_square(moves[move_index][0]) < 64);
-				history[pos.get_side()][get_piece_type(moves[move_index][0])][get_to_square(moves[move_index][0])] += 1 << depth;
+				history[pos.get_side()][get_piece_type(moves[move_index][0])][get_to_square(moves[move_index][0])] += 1ULL << depth;
 			}
 			if (depth >= entry.get_depth()) {
 				hash_map[pos.current_hash] = TableEntry{ moves[move_index][0],value,LOWER,depth };
@@ -284,7 +284,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 					__assume(get_to_square(moves[move_index][i]) > -1);
 					__assume(get_to_square(moves[move_index][i]) < 64);
 					__assume(pos.get_side()==0 || pos.get_side()==1);
-					history[pos.get_side()][get_piece_type(moves[move_index][i])][get_to_square(moves[move_index][i])] += 1 << depth;
+					history[pos.get_side()][get_piece_type(moves[move_index][i])][get_to_square(moves[move_index][i])] += 1ULL << depth;
 				}
 				if (depth >= entry.get_depth()) {
 					hash_map[pos.current_hash] = TableEntry{ moves[move_index][i],value,LOWER,depth };
