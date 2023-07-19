@@ -100,7 +100,7 @@ class Engine {
 	bool use_opening_book;
 	Logger log;
 	MoveWEval pv_root_call(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta);
-	short pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta, bool isPV);
+	short pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta);
 	short quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, short alpha, short beta);
 	inline void order(std::array<unsigned int,128>& moves, TableEntry& entry, int number_of_moves) {
 		int hash_move = 0;
