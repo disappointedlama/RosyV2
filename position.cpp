@@ -1,5 +1,5 @@
 #include "position.hpp"
-invalid_move_exception::invalid_move_exception(const Position t_pos, const int t_move) {
+invalid_move_exception::invalid_move_exception(const Position t_pos, const unsigned int t_move) {
 	pos = t_pos;
 	move = t_move;
 	move_str = uci(t_move);

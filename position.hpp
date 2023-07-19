@@ -704,7 +704,7 @@ struct invalid_move_exception : std::exception {
 	unsigned int move;
 	std::string move_str;
 	Position pos;
-	invalid_move_exception(const Position t_pos, const int t_move);
+	invalid_move_exception(const Position t_pos, const unsigned int t_move);
 	invalid_move_exception(const Position t_pos, const std::string t_move);
 	const std::string what() throw();
 };

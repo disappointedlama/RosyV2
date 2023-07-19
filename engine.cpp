@@ -52,7 +52,7 @@ int Engine::bestMove() {
 	killer_table.shift_by(2);
 	const int aspiration_window = 200;
 	std::array<std::array<unsigned int,128>,40> moves{};
-	pos.get_legal_moves(moves[0]);
+	const int number_of_legal_moves = pos.get_legal_moves(moves[0]);
 	MoveWEval best{ moves[0][0],0};
 	MoveWEval old_best = best;
 	short alpha = -infinity;
@@ -100,6 +100,17 @@ int Engine::bestMove() {
 		log.error(e.what());
 	}
 	reset_position();
+	bool found = false;
+	for (int i = 0; i < number_of_legal_moves; i++) {
+		if (moves[0][i] == best.move) {
+			found = true;
+			break;
+		}
+	}
+	if (!found) {
+		log.log(pos.to_string() + "invalid move encountered " + move_to_string(best.move));
+		throw invalid_move_exception{pos, best.move};
+	}
 	printBestMove(best.move);
 	run = false;
 	return best.move;
@@ -185,18 +196,10 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 
 	const short alphaOrigin = alpha;
 	TableEntry entry = lookUp();
-	if (entry.get_depth() > depth && !isPV) {
+	if (entry.get_depth() >= depth && !isPV) {
 		const short eval= entry.get_eval();
-		if (entry.get_flag() == EXACT) {
-			return eval;
-		}
-		else if ((entry.get_flag() == LOWER) && (eval > alpha)) {
-			alpha = eval;
-		}
-		else if (entry.get_flag() == UPPER) {
-			beta = std::min(beta, eval);
-		}
-		if (alpha >= beta) {
+		const short flag = entry.get_flag();
+		if ((flag == EXACT) || (flag == LOWER && eval>=beta) || (flag==UPPER && eval<=alpha)) {
 			return eval;
 		}
 	}
@@ -222,7 +225,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 	//std::string before_moves = pos.fen();
 	pos.make_move(moves[move_index][0]);
 	bool in_check_now = pos.currently_in_check();
-	short value = -pv_search(moves, move_index + 1, depth - 1, -beta, -alpha, isPV);
+	short value = -pv_search(moves, move_index + 1, depth - 1, -beta, -alpha, true);
 	pos.unmake_move();
 	//if (pos.fen() != before_moves) {
 	//	pos.print();
@@ -258,7 +261,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 		in_check_now = pos.currently_in_check();
 		value = -pv_search(moves, move_index + 1, depth - 1, -alpha - 1, -alpha, false);
 		if ((value > alpha) && (value < beta)) {
-			value = -pv_search(moves, move_index + 1, depth - 1, -beta, -alpha, false);
+			value = -pv_search(moves, move_index + 1, depth - 1, -beta, -alpha, true);
 		}
 		pos.unmake_move();
 		//if (pos.fen() != before_moves) {
