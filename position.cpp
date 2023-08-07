@@ -2147,3 +2147,31 @@ inline void Position::unmake_move() {
 	//	throw Position_Error{str};
 	//}
 }//position fen 8/2k4p/1b6/3P3p/p7/5K1P/P4P2/5q2 w - - 0 39
+std::array<short, 16> Position::wheights{
+	//146, 248, 749, 19, 1, 10, 29, 25, 3, 15// after first instant tuning 146,248,749,19,1,10,29,25,3,15
+	//37,70,440,5,0,10,20,25,3,15
+	//37,99,623,5,0,10,19,25,3,15
+	//37, 99, 623, 0, 0, 10, 19, 25, 3, 15,
+	//146,248,750,18,0,10,28,25,3,15,94,335,376,565,1100
+	//144,247,750,17,0,10,27,25,3,15,92,349,391,576,1153
+	//140, 245, 750, 16, 0, 10, 26, 25, 3, 15, 90, 361, 400, 588, 1194
+	//138, 243, 750, 14, 0, 10, 26, 25, 3, 15, 90, 364, 402, 592, 1206, 15
+	//128, 239, 750, 12, 0, 8, 26, 21, 3, 13, 81, 366, 417, 618, 1233, 15
+	136, 244, 750, 14, 0, 7, 30, 20, 3, 12, 83, 327, 381, 585, 1086, 15
+	//150,//trapped minor piece
+	//250,//trapped rook
+	//750,//trapped queen
+	//20, //bad bishop
+	//2,//knight mobility
+	//10,//doubed pawn
+	//30,//passed pawn
+	//25,//isolated pawn
+	//3,//supported pawn
+	//15,//backwards pawn
+	//100,//base pawn
+	//305,//base knight
+	//333,//base bishop
+	//563,//base rook
+	//950,//base queen
+	//15,//knight outposts
+};

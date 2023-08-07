@@ -11,6 +11,7 @@ constexpr short UPPER = 1;
 constexpr short LOWER = 2;
 
 constexpr short Red = 1;
+constexpr short lateMoveReduction = 2;
 static constexpr int full_depth_moves = 8;
 static constexpr int reduction_limit = 3;
 namespace std {
@@ -84,6 +85,7 @@ struct KillerTable {
 
 static std::array<std::array<std::array<U64, 64>, 12>, 2> history = std::array<std::array<std::array<U64, 64>, 12>, 2>{};
 class Engine {
+	std::array<int, 15> gradient{};
 	std::string logging_path = "RosyV2.botlogs";
 	Position pos;
 	int current_desired_depth;
@@ -111,6 +113,14 @@ class Engine {
 			{
 				if (lhs == hash_move) { return true; }
 				else if (rhs == hash_move) { return false; }
+				const bool lhs_is_promotion = get_promotion_type(lhs) != pos.no_piece;
+				const bool rhs_is_promotion = get_promotion_type(rhs) != pos.no_piece;
+				if (lhs_is_promotion && rhs_is_promotion) {
+					return get_promotion_type(lhs) > get_promotion_type(rhs);
+				}
+				if (lhs_is_promotion || rhs_is_promotion) {
+					return lhs_is_promotion;
+				}
 				const int ply = pos.get_ply();
 				const bool lhs_is_killer = killer_table.find(lhs, ply);
 				const bool rhs_is_killer = killer_table.find(rhs, ply);
@@ -120,14 +130,6 @@ class Engine {
 				if (lhs_is_killer || rhs_is_killer) {
 					return lhs_is_killer;
 				}
-				const bool lhs_is_promotion = get_promotion_type(lhs) != pos.no_piece;
-				const bool rhs_is_promotion = get_promotion_type(rhs) != pos.no_piece;
-				if (lhs_is_promotion && rhs_is_promotion) {
-					return get_promotion_type(lhs) > get_promotion_type(rhs);
-				}
-				if (lhs_is_promotion || rhs_is_promotion) {
-					return lhs_is_promotion;
-				}
 				const bool lhs_is_capture = get_capture_flag(lhs);
 				const bool rhs_is_capture = get_capture_flag(rhs);
 				const int lhs_piece = get_piece_type(lhs);
@@ -135,11 +137,12 @@ class Engine {
 				//assert((lhs_piecs > -1) && (lhs_piece < 12));
 				//assert((lhs_piecs > -1) && (lhs_piece < 12));
 				if (lhs_is_capture && rhs_is_capture) {
-					return (get_captured_type(lhs) - lhs_piece) > (get_captured_type(rhs) - rhs_piece);
+					return pos.seeByMove(lhs) > pos.seeByMove(rhs);
 				}
-				if (lhs_is_capture || rhs_is_capture) {
-					return lhs_is_capture;
+				if (lhs_is_capture) {
+					return pos.seeByMove(lhs) > 0;
 				}
+				if (rhs_is_capture) return false;
 				const size_t index = (size_t)pos.get_side();
 				__assume(get_to_square(lhs) < 64);
 				__assume(get_to_square(rhs) < 64);
@@ -151,7 +154,7 @@ class Engine {
 	inline void quiescence_order(std::array<unsigned int, 128>& moves, int number_of_moves) {
 		std::sort(moves.begin(), (std::array<unsigned int,128>::iterator)(moves.begin()+number_of_moves), [&](const int& lhs, const int& rhs)
 			{
-				return (get_captured_type(lhs) - get_piece_type(lhs)) > (get_captured_type(rhs) - get_piece_type(rhs));
+				return pos.seeByMove(lhs)>pos.seeByMove(rhs);
 			});
 	};
 	inline TableEntry lookUp();
@@ -161,6 +164,7 @@ public:
 	Engine();
 	Engine(const bool t_debug);
 	int bestMove();
+	int evaluate();
 	inline void printBestMove(int move);
 	void set_debug(const bool t_debug);
 	void set_max_depth(const short depth);
@@ -168,4 +172,189 @@ public:
 	void parse_go(std::string str);
 	void reset_position();
 	void uci_loop();
+	int goTune() {
+		//return pos.evaluate(false, false);
+		max_depth = 3;
+		run = true;
+		return evaluate();
+		std::thread time_tracker = std::thread(&Engine::track_time, this, stoull(std::string{"100"}) * 1000000ULL);
+		max_depth = infinity;
+		run = true;
+		const int ret = evaluate();
+		while (true) {
+			if (time_tracker.joinable()) {
+				time_tracker.join();
+				break;
+			}
+		}
+		return ret;
+	}
+	/*
+	void tune() {
+		double previous_relative_err = 100000000000;
+		double total_relative_err = 100000000000;
+		int iterations = 0;
+		while (previous_relative_err > total_relative_err || iterations==0) {
+			std::cout << "Iteration: " << ++iterations << std::endl;
+			int count = 0;
+			previous_relative_err = total_relative_err;
+			total_relative_err = 0;
+			std::ifstream file;
+			file.open("C:\\Users\\Marvin Rosenplänter\\source\\repos\\RosyV2\\tuneData2.txt");
+			if (file.is_open()) {
+				std::string fen = "";
+				int goal = 0;
+				while (file >> fen >> goal) {
+					if (goal == 0) continue;
+					count++;
+					if (count % 1000 == 0) {
+						std::cout << count << "\n";
+						std::cout << "average relative error so far: " << (total_relative_err / count) << std::endl;
+						for (int i = 0; i < pos.wheights.size(); i++) {
+							std::cout << (int)(pos.wheights[i] + (double)gradient[i] * pos.wheights[i] / count) << ",";
+						}
+						std::cout<<std::endl;
+					}
+					std::string trueFen = "";
+					for (int i = 0; i < fen.length(); i++) {
+						if (fen[i] != '?') {
+							trueFen += fen[i];
+						}
+						else {
+							trueFen += ' ';
+						}
+					}
+					fen = trueFen;
+					pos = Position{ fen };
+					const int current = goTune();
+					const int diff = std::max(goal - current, current - goal);
+					double relative_error = (current) / (double)(goal);
+					relative_error = std::max(relative_error, -relative_error);
+					//std::cout << relative_error << std::endl;
+					total_relative_err += relative_error;
+					for (int i = 0; i < pos.wheights.size(); i++) {
+						pos = Position{ fen };
+						pos.wheights[i]++;
+						hash_map = std::unordered_map<U64, TableEntry>{};
+						int after_change = goTune();
+						int diff_now = std::max(goal - after_change, after_change - goal);
+						pos.wheights[i]--;
+						if (diff_now < diff) {
+							gradient[i]++;
+							continue;
+						}
+						pos = Position{ fen };
+						pos.wheights[i]--;
+						hash_map = std::unordered_map<U64, TableEntry>{};
+						after_change = goTune();
+						diff_now = std::max(goal - after_change, after_change - goal);
+						pos.wheights[i]++;
+						if (diff_now < diff) {
+							gradient[i]--;
+							continue;
+						}
+					}
+					//for (int i = 0; i < pos.wheights.size(); i++) {
+					//	std::cout << gradient[i] << ",";
+					//}
+					//std::cout << std::endl;
+					//if (count == 10000) break;
+				}
+				file.close();
+			}
+			std::cout << total_relative_err << std::endl;
+			std::cout << "average relative error: " << (total_relative_err / count) << std::endl;
+			for (int i = 0; i < pos.wheights.size(); i++) {
+				pos.wheights[i] = (int)(pos.wheights[i] + (double)gradient[i] * pos.wheights[i] / count);
+				std::cout << pos.wheights[i] << ",";
+				gradient[i] = 0;
+			}
+			std::cout << std::endl;
+		}
+	}
+	*/
+	void tune() {
+		double previous_relative_err = 100000000000;
+		double total_relative_err = 100000000000;
+		int iterations = 0;
+		std::ifstream file;
+		file.open("C:\\Users\\Marvin Rosenplänter\\source\\repos\\RosyV2\\tuneData2.txt");
+		if (file.is_open()) {
+			while (previous_relative_err > total_relative_err || iterations == 0) {
+				std::cout << "Iteration: " << ++iterations << std::endl;
+				int count = 0;
+				previous_relative_err = total_relative_err;
+				total_relative_err = 0;
+				std::string fen = "";
+				int goal = 0;
+				while (file >> fen >> goal) {
+					if (goal == 0) continue;
+					count++;
+					//if (count % 5 != 0) continue;
+					if (count % 1000 == 0) {
+						std::cout << count << "\n";
+						std::cout << "average relative error so far: " << (total_relative_err / count) << std::endl;
+						for (int i = 0; i < pos.wheights.size(); i++) {
+							std::cout << (int)(pos.wheights[i] + (double)gradient[i] * pos.wheights[i] / count) << ",";
+						}
+						std::cout << std::endl;
+					}
+					if (count % 20000 == 0) break;
+					std::string trueFen = "";
+					for (int i = 0; i < fen.length(); i++) {
+						if (fen[i] != '?') {
+							trueFen += fen[i];
+						}
+						else {
+							trueFen += ' ';
+						}
+					}
+					fen = trueFen;
+					pos = Position{ fen };
+					const int current = goTune();
+					const int diff = std::max(goal - current, current - goal);
+					double relative_error = (current) / (double)(goal);
+					relative_error = std::max(relative_error, -relative_error);
+					//std::cout << relative_error << std::endl;
+					total_relative_err += relative_error;
+					for (int i = 0; i < pos.wheights.size(); i++) {
+						pos = Position{ fen };
+						pos.wheights[i]++;
+						hash_map = std::unordered_map<U64, TableEntry>{};
+						int after_change = goTune();
+						int diff_now = std::max(goal - after_change, after_change - goal);
+						pos.wheights[i]--;
+						if (diff_now < diff) {
+							gradient[i]++;
+							continue;
+						}
+						pos = Position{ fen };
+						pos.wheights[i]--;
+						hash_map = std::unordered_map<U64, TableEntry>{};
+						after_change = goTune();
+						diff_now = std::max(goal - after_change, after_change - goal);
+						pos.wheights[i]++;
+						if (diff_now < diff) {
+							gradient[i]--;
+							continue;
+						}
+					}
+					//for (int i = 0; i < pos.wheights.size(); i++) {
+					//	std::cout << gradient[i] << ",";
+					//}
+					//std::cout << std::endl;
+					//if (count == 20000) break;
+				}
+				std::cout << total_relative_err << std::endl;
+				std::cout << "average relative error: " << (total_relative_err / count) << std::endl;
+				for (int i = 0; i < pos.wheights.size(); i++) {
+					pos.wheights[i] = (int)(pos.wheights[i] + (double)gradient[i] * pos.wheights[i] / count);
+					std::cout << pos.wheights[i] << ",";
+					gradient[i] = 0;
+				}
+				std::cout << std::endl;
+			}
+		}
+		file.close();
+	}
 };

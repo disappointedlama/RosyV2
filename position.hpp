@@ -103,11 +103,11 @@ class Position {
 	inline void get_castles(std::array<unsigned int,128>& ptr, const U64 enemy_attacks, int& ind);
 	inline short raw_material(const short phase) {
 		short ret = (((openingKingTableWhite[bitscan(bitboards[K])] - openingKingTableBlack[bitscan(bitboards[k])]) * (256 - phase)) + ((endgameKingTable[bitscan(bitboards[K])] - endgameKingTable[bitscan(bitboards[k])]) * phase)) / 256
-					+ (count_bits(bitboards[P]) - count_bits(bitboards[p])) * basePieceValue[P]
-					+ (count_bits(bitboards[N]) - count_bits(bitboards[n])) * basePieceValue[N]
-					+ (count_bits(bitboards[B]) - count_bits(bitboards[b])) * basePieceValue[B]
-					+ (count_bits(bitboards[R]) - count_bits(bitboards[r])) * basePieceValue[R]
-					+ (count_bits(bitboards[Q]) - count_bits(bitboards[q])) * basePieceValue[Q];
+					+ (count_bits(bitboards[P]) - count_bits(bitboards[p])) * wheights[10]
+					+ (count_bits(bitboards[N]) - count_bits(bitboards[n])) * wheights[11]
+					+ (count_bits(bitboards[B]) - count_bits(bitboards[b])) * wheights[12]
+					+ (count_bits(bitboards[R]) - count_bits(bitboards[r])) * wheights[13]
+					+ (count_bits(bitboards[Q]) - count_bits(bitboards[q])) * wheights[14];
 		U64 whitePawns = bitboards[P];
 		short pawnOpening = 0;
 		short pawnEndgame = 0;
@@ -198,6 +198,7 @@ public:
 	const static short infinity = 32767 - 1;//one less than max(short)
 	const static short no_piece = 15;
 	U64 current_hash;
+	static std::array<short, 16> wheights;
 	Position();
 	Position(const std::string& fen);
 	void parse_fen(std::string fen);
@@ -285,8 +286,28 @@ public:
 		}
 		const int phase = get_phase();
 		const int sign = (side) ? (-1) : (1);
-		return sign * (raw_material(phase) + pawn_eval() + king_shield(phase) + king_attack_zones() + knight_mobility() + bad_bishop() + trapped());
-	}
+		return sign * (raw_material(phase) + pawn_eval() + king_shield(phase) + outposts() + king_attack_zones() + knight_mobility() + bad_bishop() + trapped());
+	};
+	inline short outposts() {
+		short outposts = 0;
+		U64 whiteAttacks = ((bitboards[P] >> 7) & notAFile) | ((bitboards[P] >> 9) & notHFile);
+		U64 tempKnights = bitboards[N] & whiteAttacks & (rank5 | rank6 | rank7 | rank8 | centralSquares);
+		while (tempKnights) {
+			U64 isolated = _blsi_u64(tempKnights);
+			U64 attackSpans = front_pawn_attack_spans[white][bitscan(isolated)];
+			outposts += (!((bool)(attackSpans & bitboards[p])));
+			tempKnights = _blsr_u64(tempKnights);
+		}
+		U64	blackAttacks = ((bitboards[p] << 7) & notHFile) | ((bitboards[p] << 9) & notAFile);
+		tempKnights = bitboards[n] & blackAttacks & (rank1 | rank2 | rank3 | rank4 | centralSquares);
+		while (tempKnights) {
+			U64 isolated = _blsi_u64(tempKnights);
+			U64 attackSpans = front_pawn_attack_spans[black][bitscan(isolated)];
+			outposts -= (!((bool)(attackSpans & bitboards[P])));
+			tempKnights = _blsr_u64(tempKnights);
+		}
+		return outposts * wheights[15];
+	};
 	inline U64 get_pawn_hash() {
 		U64 ret = 0ULL;
 
@@ -330,7 +351,7 @@ public:
 			ret += count_bits(blackPawns & doubled_pawn_masks[sq]);
 			blackPawns = blackPawns & (~doubled_pawn_reset_masks[sq]);
 		}
-		return 10 * ret;
+		return wheights[5] * ret;
 	}
 	inline short pawn_structure() {
 		U64 whiteStops = bitboards[P] >> 8;
@@ -352,13 +373,13 @@ public:
 
 		short backwards = -count_bits(whiteBackwardPawns) + count_bits(blackBackwardPawns);
 		short passed = 0;
-		short isolated = 0;
+		short isolatedPawns = 0;
 		short supported = 0;
 		U64 tempPawns = bitboards[P];
 		while (tempPawns) {
 			U64 isolated = _blsi_u64(tempPawns);
 			passed += (!((bool)(passed_pawn_masks[white][bitscan(isolated)] & bitboards[p])));//passed pawns
-			isolated -= ((neighbour_pawn_masks[bitscan(isolated) % 8] & bitboards[P]) == 0);//isolated pawns
+			isolatedPawns -= ((neighbour_pawn_masks[bitscan(isolated) % 8] & bitboards[P]) == 0);//isolated pawns
 			supported += count_bits(pawn_attacks[black][bitscan(isolated)] & bitboards[P]);//check if pawn is supported by pears
 			tempPawns = _blsr_u64(tempPawns);
 		}
@@ -366,11 +387,11 @@ public:
 		while (tempPawns) {
 			U64 isolated = _blsi_u64(tempPawns);
 			passed -= (!((bool)(passed_pawn_masks[black][bitscan(isolated)] & bitboards[P])));//passed pawns
-			isolated += ((neighbour_pawn_masks[bitscan(isolated) % 8] & bitboards[p]) == 0);//isolated pawns
+			isolatedPawns += ((neighbour_pawn_masks[bitscan(isolated) % 8] & bitboards[p]) == 0);//isolated pawns
 			supported -= count_bits(pawn_attacks[white][bitscan(isolated)] & bitboards[p]);//check if pawn is supported by pears
 			tempPawns = _blsr_u64(tempPawns);
 		}
-		return 30 * passed + 25 * isolated + 3 * supported + no_piece * backwards;
+		return wheights[6] * passed + wheights[7] * isolatedPawns + wheights[8] * supported + wheights[9] * backwards;
 	}
 	inline short knight_mobility() {
 		U64	blackPawnAttacks = ((bitboards[p] << 7) & notHFile) | ((bitboards[p] << 9) & notAFile);
@@ -388,7 +409,7 @@ public:
 			ret = count_bits(knight_attacks[bitscan(isolated)] & whitePawnAttacks);
 			blackKnights = _blsr_u64(blackKnights);
 		}
-		return 2 * ret;
+		return wheights[4] * ret;
 	}
 	inline short rook_on_semi_open_file() {
 		short ret = 0;
@@ -422,7 +443,7 @@ public:
 			ret += count_bits(pawn_attacks[black][bitscan(isolated)] & bitboards[p]);
 			blackBishops = _blsr_u64(blackBishops);
 		}
-		return 20 * ret;
+		return wheights[3] * ret;
 	}
 	inline short trapped() {
 		short minor = 0;
@@ -488,7 +509,7 @@ public:
 			queens += (squares & white_attacks) == squares;
 			blackQueens = _blsr_u64(blackQueens);
 		}
-		return 150 * minor + 350  * rooks + 750 * queens;
+		return wheights[0] * minor + wheights[1]  * rooks + wheights[2] * queens;
 	}
 	inline short king_attack_zones() {
 		U64 black_king_zone = blackKingZones[bitscan(bitboards[k])];
@@ -671,9 +692,17 @@ public:
 		if (move) {
 			make_move(move);
 			/* Do not consider captures if they lose material, therefor max zero */
-			value = std::max(-infinity, basePieceValue[basePiece[get_captured_type(move)]] - see(square));
+			value = std::max(0, basePieceValue[basePiece[get_captured_type(move)]] - see(square));
 			unmake_move();
 		}
+		return value;
+	}
+	inline int seeByMove(const int move) {
+		int value;
+		make_move(move);
+		/* Do not consider captures if they lose material, therefor max zero */
+		value = std::max(0, basePieceValue[basePiece[get_captured_type(move)]] - see(get_to_square(move)));
+		unmake_move();
 		return value;
 	}
 	inline bool boardsMatch() {

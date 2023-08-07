@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 
 static constexpr short SafetyTable[100] = {
 	0,  0,   1,   2,   3,   5,   7,   9,  12,  15,
@@ -173,7 +174,7 @@ static constexpr short endgamePawnTableBlack[64] = {
 	100,100,100,100,100,100,100,100,
 	0,0,0,0,0,0,0,0,
 };
-static constexpr short basePieceValue[6] = { 100,305,333,563,950,0 };
+static short basePieceValue[6] = { 100,305,333,563,950,0 };
 static constexpr short basePiece[16] = { 0,1,2,3,4,5,0,1,2,3,4,5,0,0,0,0 };
 static const std::unordered_map<short, short> pawn_shield = {
 	{0,0},
