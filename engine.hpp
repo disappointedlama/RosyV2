@@ -83,7 +83,7 @@ struct KillerTable {
 	}
 };
 
-static std::array<std::array<std::array<U64, 64>, 12>, 2> history = std::array<std::array<std::array<U64, 64>, 12>, 2>{};
+static std::array<std::array<U64, 64>, 12> history = std::array<std::array<U64, 64>, 12>{};
 class Engine {
 	std::array<int, 15> gradient{};
 	std::string logging_path = "RosyV2.botlogs";
@@ -143,12 +143,11 @@ class Engine {
 					return pos.seeByMove(lhs) > 0;
 				}
 				if (rhs_is_capture) return false;
-				const size_t index = (size_t)pos.get_side();
 				__assume(get_to_square(lhs) < 64);
 				__assume(get_to_square(rhs) < 64);
 				__assume(get_to_square(lhs) > -1);
 				__assume(get_to_square(rhs) > -1);
-				return (history[index][(size_t)(lhs_piece)][(size_t)(get_to_square(lhs))] > history[index][(size_t)(rhs_piece)][(size_t)(get_to_square(rhs))]);
+				return (history[(size_t)(lhs_piece)][(size_t)(get_to_square(lhs))] > history[(size_t)(rhs_piece)][(size_t)(get_to_square(rhs))]);
 			});
 	}
 	inline void quiescence_order(std::array<unsigned int, 128>& moves, int number_of_moves) {

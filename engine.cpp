@@ -311,7 +311,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 				__assume(get_piece_type(moves[move_index][0]) < 12);
 				__assume(get_to_square(moves[move_index][0]) > -1);
 				__assume(get_to_square(moves[move_index][0]) < 64);
-				history[pos.get_side()][get_piece_type(moves[move_index][0])][get_to_square(moves[move_index][0])] += 1ULL << depth;
+				history[get_piece_type(moves[move_index][0])][get_to_square(moves[move_index][0])] += 1ULL << depth;
 			}
 			if (depth >= entry.get_depth()) {
 				hash_map[pos.current_hash] = TableEntry{ moves[move_index][0],value,LOWER,depth };
@@ -350,7 +350,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 					__assume(get_to_square(moves[move_index][i]) > -1);
 					__assume(get_to_square(moves[move_index][i]) < 64);
 					__assume(pos.get_side()==0 || pos.get_side()==1);
-					history[pos.get_side()][get_piece_type(moves[move_index][i])][get_to_square(moves[move_index][i])] += 1ULL << depth;
+					history[get_piece_type(moves[move_index][i])][get_to_square(moves[move_index][i])] += 1ULL << depth;
 				}
 				if (depth >= entry.get_depth()) {
 					hash_map[pos.current_hash] = TableEntry{ moves[move_index][i],value,LOWER,depth };
@@ -649,7 +649,7 @@ void Engine::uci_loop(){
 		else if (strncmp(input, "ucinewgame", 10) == 0) {
 			parse_position("position startpos");
 			hash_map = std::unordered_map<U64, TableEntry>{};
-			history = std::array<std::array<std::array<U64, 64>, 12>, 2>{};
+			history = std::array<std::array<U64, 64>, 12>{};
 			if(debug) std::cout << "Done with cleanup\n";
 		}
 		else if (strncmp(input, "tune", 4) == 0) {
