@@ -16,9 +16,9 @@ inline bool Position::is_attacked_by_side(const int sq, const bool color) {
 	return (color) ? ((get_rook_attacks(occupancies[both], sq) & (bitboards[9] | bitboards[10])) | (get_bishop_attacks(occupancies[both], sq) & (bitboards[8] | bitboards[10])) | (pawn_attacks[!color][sq] & bitboards[6]) | (king_attacks[sq] & bitboards[11]) | (knight_attacks[sq] & bitboards[7])) :
 		((get_rook_attacks(occupancies[both], sq) & (bitboards[3] | bitboards[4])) | (get_bishop_attacks(occupancies[both], sq) & (bitboards[2] | bitboards[4])) | (pawn_attacks[!color][sq] & bitboards[0]) | (king_attacks[sq] & bitboards[5]) | (knight_attacks[sq] & bitboards[1]));
 }
-inline U64 Position::get_attacks_by(const bool color) {
+inline U64 Position::get_attacks_by(const U64 color) {
 
-	int offset = (color) * 6;
+	int offset = 6 & color;
 	U64 attacks = ((bool)(bitboards[K + offset])) * king_attacks[bitscan(bitboards[K + offset])];
 	int type = N + offset;
 	U64 tempKnights = bitboards[type];
@@ -29,7 +29,7 @@ inline U64 Position::get_attacks_by(const bool color) {
 		tempKnights = _blsr_u64(tempKnights);
 	}
 	//knight attacks individually
-	attacks |= (color) ? (((bitboards[p] << 7) & notHFile) | ((bitboards[p] << 9) & notAFile)) : (((bitboards[P] >> 7) & notAFile) | ((bitboards[P] >> 9) & notHFile));
+	attacks |= ((((bitboards[p] << 7) & notHFile) | ((bitboards[p] << 9) & notAFile)) & color) | ((((bitboards[P] >> 7) & notAFile) | ((bitboards[P] >> 9) & notHFile)) & ~color);
 	//setwise pawn attacks
 
 	U64 rooks_w_queens = bitboards[R + offset] | bitboards[Q + offset];
@@ -52,16 +52,16 @@ inline int Position::get_piece_type_on(const int sq)const {
 }
 void Position::try_out_move(std::array<unsigned int,128>& ret, unsigned int move, int& ind) {
 	make_move(move);
-	if (!is_attacked_by_side(bitscan(bitboards[11 - (side) * 6]), side)) ret[ind++]=move;
+	if (!is_attacked_by_side(bitscan(bitboards[11 - (int)(side & 6)]), side)) ret[ind++] = move;
 	//append move if the king is not attacked after playing the move
 	unmake_move();
 }
 
 int Position::get_legal_moves(std::array<unsigned int,128>& ret) {
-	const int kingpos = bitscan(bitboards[K + (side) * 6]);
-	const bool in_check = is_attacked_by_side(kingpos, !side);
+	const int kingpos = bitscan(bitboards[K + (int)(side & 6)]);
+	const bool in_check = is_attacked_by_side(kingpos, ~side);
 	const U64 kings_queen_scope = get_queen_attacks(occupancies[both], kingpos);
-	const U64 enemy_attacks = get_attacks_by(!side);
+	const U64 enemy_attacks = get_attacks_by(~side);
 	int ind = 0;
 	(in_check) ? (legal_in_check_move_generator(ret, kingpos, kings_queen_scope, enemy_attacks,ind)) : (legal_move_generator(ret, kingpos, kings_queen_scope, enemy_attacks,ind));
 	return ind;
@@ -70,10 +70,10 @@ void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int
 	get_castles(ret, enemy_attacks, ind);
 	const U64 pinned = get_moves_for_pinned_pieces(ret, kingpos, enemy_attacks, ind);
 	const U64 not_pinned = ~pinned;
-	const U64 enemy_pieces = occupancies[(!side)];
+	const U64 enemy_pieces = occupancies[1 & ~side];
 	const U64 valid_targets = (~occupancies[both]) | enemy_pieces;
 	unsigned int move;
-	int type = (side) ? n : N;
+	int type = (n & side) | (N & ~side);
 	__m256i _pieces = _mm256_loadu_epi64((__m256i*) & bitboards[type]);
 	__m256i _not_pinned = _mm256_set1_epi64x(not_pinned);
 	_pieces = _mm256_and_si256(_pieces, _not_pinned);
@@ -189,7 +189,7 @@ void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int
 
 
 	type++;
-	U64 attacks = king_attacks[kingpos] & (~(occupancies[(side)] | enemy_attacks));
+	U64 attacks = king_attacks[kingpos] & (~(occupancies[1 & side] | enemy_attacks));
 	while (attacks) {
 
 		const U64 isolated = _blsi_u64(attacks);
@@ -211,13 +211,13 @@ void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int
 }
 void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind){
 	const U64 pinned = get_pinned_pieces(kingpos, enemy_attacks);
-	const U64 enemy_pieces = occupancies[(!side)];
+	const U64 enemy_pieces = occupancies[1 & ~side];
 	const U64 checkers = get_checkers(kingpos);
 	const bool not_double_check = count_bits(checkers) < 2;
 	const U64 valid_targets = (not_double_check) * (get_checking_rays(kingpos) | checkers);
 	const U64 valid_pieces = (~pinned) * (not_double_check);
 	unsigned int move;
-	int type = (side) ? n : N;
+	int type = (n & side) | (N & ~side);
 	__m256i _pieces = _mm256_loadu_epi64((__m256i*) & bitboards[type]);
 	__m256i _valid_pieces = _mm256_set1_epi64x(valid_pieces);
 	_pieces = _mm256_and_si256(_pieces, _valid_pieces);
@@ -334,9 +334,9 @@ void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret,
 
 	type++;
 	pop_bit(occupancies[both], kingpos);
-	const U64 enemy_attacks_without_king = get_attacks_by(!side);
+	const U64 enemy_attacks_without_king = get_attacks_by(~side);
 	set_bit(occupancies[both], kingpos);
-	U64 attacks = king_attacks[kingpos] & (~(enemy_attacks_without_king | occupancies[(side)]));
+	U64 attacks = king_attacks[kingpos] & (~(enemy_attacks_without_king | occupancies[1 & side]));
 	while (attacks) {
 
 		const U64 isolated = _blsi_u64(attacks);
@@ -358,21 +358,21 @@ void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret,
 }
 
 int Position::get_legal_captures(std::array<unsigned int,128>& ret) {
-	const int kingpos = bitscan(bitboards[K + (side) * 6]);
-	const bool in_check = is_attacked_by_side(kingpos, !side);
+	const int kingpos = bitscan(bitboards[K + (int)(side & 6)]);
+	const bool in_check = is_attacked_by_side(kingpos, ~side);
 	const U64 kings_queen_scope = get_queen_attacks(occupancies[both], kingpos);
-	const U64 enemy_attacks = get_attacks_by(!side);
+	const U64 enemy_attacks = get_attacks_by(~side);
 	int ind = 0;
 	(in_check) ? (legal_in_check_capture_gen(ret, kings_queen_scope, enemy_attacks, ind)) : (legal_capture_gen(ret, kings_queen_scope, enemy_attacks, ind));
 	return ind;
 }
 void Position::legal_capture_gen(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind) {
-	const int kingpos = bitscan(bitboards[K + (side) * 6]);
+	const int kingpos = bitscan(bitboards[K + (int)(side & 6)]);
 	const U64 pinned = get_captures_for_pinned_pieces(ret, kingpos, enemy_attacks, ind);
-	const U64 enemy_pieces = occupancies[(!side)];
+	const U64 enemy_pieces = occupancies[1 & ~side];
 	const U64 not_pinned = ~pinned;
 	unsigned int move;
-	int type = (side) ? n : N;
+	int type = (n & side) | (N & ~side);
 	U64 tempKnights = bitboards[type] & not_pinned;
 
 	while (tempKnights) {
@@ -476,14 +476,14 @@ void Position::legal_capture_gen(std::array<unsigned int,128>& ret, const U64 ki
 	get_pawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, ind);
 }
 void Position::legal_in_check_capture_gen(std::array<unsigned int, 128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind) {
-	const int kingpos = bitscan(bitboards[K + (side) * 6]);
+	const int kingpos = bitscan(bitboards[K + (int)(side & 6)]);
 	const U64 pinned = get_pinned_pieces(kingpos, enemy_attacks);
 	const U64 checkers = get_checkers(kingpos);
 	const bool not_double_check = count_bits(checkers) < 2;
 	const U64 valid_pieces = (~pinned) * (not_double_check);
 	unsigned int move;
 
-	int type = (side) ? n : N;
+	int type = (n & side) | (N & ~side);
 	U64 tempKnights = bitboards[type] & valid_pieces;
 
 	while (tempKnights) {
@@ -579,9 +579,9 @@ void Position::legal_in_check_capture_gen(std::array<unsigned int, 128>& ret, co
 	U64 tempKing = bitboards[type];
 
 	pop_bit(occupancies[both], kingpos);
-	const U64 enemy_attacks_without_king = get_attacks_by(!side);
+	const U64 enemy_attacks_without_king = get_attacks_by(~side);
 	set_bit(occupancies[both], kingpos);
-	U64 attacks = (king_attacks[kingpos] & occupancies[(!side)]) & (~(enemy_attacks_without_king | occupancies[(side)]));
+	U64 attacks = (king_attacks[kingpos] & occupancies[1 & ~side]) & (~(enemy_attacks_without_king | occupancies[1 & side]));
 	while (attacks) {
 
 		U64 isolated = _blsi_u64(attacks);
@@ -1061,17 +1061,17 @@ inline void Position::in_check_legal_wpawn_captures(std::array<unsigned int, 128
 inline void Position::get_castles(std::array<unsigned int,128>& ptr, const U64 enemy_attacks, int& ind) {
 	const U64 empty = ~(occupancies[both]);
 
-	const int king_index = 5 + (side) * 6;
+	const int king_index = 5 + (int)(side & 6);
 	const int kingpos = bitscan(bitboards[king_index]);
 	const bool king_on_valid_square = (side) ? (kingpos == e8) : (kingpos == e1);
 
 	const int enemy_color = (side) ? white : black;
 	
 	const bool king_in_valid_state = king_on_valid_square && (!(int)_bittest64((long long*)&enemy_attacks, kingpos));
-	bool queenside = king_in_valid_state && (get_bit(castling_rights, 1 + 2 * (side)));
-	bool kingside = king_in_valid_state && (get_bit(castling_rights, 2 * (side)));
+	bool queenside = king_in_valid_state && (get_bit(castling_rights, 1 + (int)(2 & side)));
+	bool kingside = king_in_valid_state && (get_bit(castling_rights, (int)(2 & side)));
 
-	const int square_offset = 56 * (side);
+	const int square_offset = 56 & side;
 
 	queenside &= (((bitboards[king_index]) >> 1) & empty) && (!(bool)_bittest64((long long*)&enemy_attacks, d1 - square_offset));
 	queenside &= (((bitboards[king_index]) >> 2) & empty) && (!(bool)_bittest64((long long*)&enemy_attacks, c1 - square_offset));
@@ -1092,10 +1092,10 @@ inline void Position::get_castles(std::array<unsigned int,128>& ptr, const U64 e
 }
 
 U64 Position::get_pinned_pieces(const int kingpos, const U64 enemy_attacks) {
-	U64 potentially_pinned_by_bishops = enemy_attacks & get_bishop_attacks(occupancies[both], kingpos) & occupancies[(side)];
-	U64 potentially_pinned_by_rooks = enemy_attacks & get_rook_attacks(occupancies[both], kingpos) & occupancies[(side)];
+	U64 potentially_pinned_by_bishops = enemy_attacks & get_bishop_attacks(occupancies[both], kingpos) & occupancies[1 & side];
+	U64 potentially_pinned_by_rooks = enemy_attacks & get_rook_attacks(occupancies[both], kingpos) & occupancies[1 & side];
 	U64 pinned_pieces = 0ULL;
-	const int offset = 6 * (!side);
+	const int offset = 6 & ~side;
 	while (potentially_pinned_by_bishops) {
 		const U64 isolated = _blsi_u64(potentially_pinned_by_bishops);
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
@@ -1123,7 +1123,7 @@ U64 Position::get_pinned_pieces(const int kingpos, const U64 enemy_attacks) {
 	return pinned_pieces;
 }
 U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind) {
-	const int piece_offset = 6 * (side);
+	const int piece_offset = 6 & side;
 	const U64 bishop_attacks = get_bishop_attacks(occupancies[both], kingpos);
 	const U64 rook_attacks = get_rook_attacks(occupancies[both], kingpos);
 	const U64 pot_pinned_by_bishops = enemy_attacks & bishop_attacks;
@@ -1152,7 +1152,7 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 
 	U64 pinned_pieces = 0ULL;
 
-	const int offset = 6 * (!side);
+	const int offset = 6 & ~side;
 
 	const U64 rook_and_queen_mask=bitboards[R + offset] | bitboards[Q + offset];
 	const U64 bishop_and_queen_mask= bitboards[B + offset] | bitboards[Q + offset];
@@ -1168,10 +1168,10 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 			_BitScanForward64(&from, isolated);
 			unsigned long to = 0UL;
 			_BitScanForward64(&to, pinner);
-			U64 attacks = pawn_attacks[(side)][from];
+			U64 attacks = pawn_attacks[1 & side][from];
 			if (attacks & pinner) {
 				unsigned int move = encode_move(from, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
-				if ((side && get_bit(rank1,to)) || ((!side) && get_bit(rank8,to))) {
+				if ((side & get_bit(rank1,to)) || (~side & get_bit(rank8,to))) {
 					set_promotion_type(move, N + piece_offset);
 					ret[ind++]=move;
 					set_promotion_type(move, B + piece_offset);
@@ -1187,7 +1187,7 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 
 		pawns_pot_pinned_by_bishops = _blsr_u64(pawns_pot_pinned_by_bishops);
 	}
-	const int sign = (side)-(!side);
+	const int sign = (1 & (int)(side)) | ((-1) & (int)(~side));
 	while (pawns_pot_pinned_by_rooks) {
 		const U64 isolated = _blsi_u64(pawns_pot_pinned_by_rooks);
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
@@ -1204,7 +1204,7 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 			const int double_push_target = from + 16 * sign;
 			if (get_bit(valid_targets, push_target)) {
 				unsigned int move = encode_move(from, push_target, type, no_piece, no_piece, false, false, false, false);
-				if ((side && get_bit(rank1, to)) || ((!side) && get_bit(rank8, to))) {
+				if ((side & get_bit(rank1, to)) || (~side & get_bit(rank8, to))) {
 					set_promotion_type(move, N + piece_offset);
 					ret[ind++]=move;
 					set_promotion_type(move, B + piece_offset);
@@ -1215,7 +1215,7 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 				}
 				ret[ind++]=move;
 			}
-			if ((get_bit(valid_targets, push_target) && get_bit(valid_targets,double_push_target)) && ((side && get_bit(rank5, double_push_target)) || (!side && get_bit(rank4, double_push_target)))) {
+			if ((get_bit(valid_targets, push_target) && get_bit(valid_targets,double_push_target)) && ((side & get_bit(rank5, double_push_target)) || (~side & get_bit(rank4, double_push_target)))) {
 				unsigned int move = encode_move(from, double_push_target, type, no_piece, no_piece, false, true, false, false);
 				ret[ind++] = move;
 			}
@@ -1357,7 +1357,7 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 	return pinned_pieces;
 }
 U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind) {
-	const int piece_offset = 6 * (side);
+	const int piece_offset = 6 & side;
 	const U64 bishop_attacks = get_bishop_attacks(occupancies[both], kingpos);
 	const U64 rook_attacks = get_rook_attacks(occupancies[both], kingpos);
 	const U64 pot_pinned_by_bishops = enemy_attacks & bishop_attacks;
@@ -1386,7 +1386,7 @@ U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>& ret, 
 
 	U64 pinned_pieces = 0ULL;
 
-	const int offset = 6 * (!side);
+	const int offset = 6 & ~side;
 	const U64 bishop_and_queen_mask = bitboards[B + offset] | bitboards[Q + offset];
 	const U64 rook_and_queen_mask = bitboards[R + offset] | bitboards[Q + offset];
 	type = B + piece_offset;
@@ -1481,10 +1481,10 @@ U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>& ret, 
 		if (pinner) {
 			const int from = bitscan(isolated);
 			const int to = bitscan(pinner);
-			U64 attacks = pawn_attacks[(side)][from];
+			U64 attacks = pawn_attacks[1 & side][from];
 			if (attacks & pinner) {
 				unsigned int move = encode_move(from, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
-				if ((side && get_bit(rank1, to)) || ((!side) && get_bit(rank8, to))) {
+				if ((side & get_bit(rank1, to)) || (~side & get_bit(rank8, to))) {
 					set_promotion_type(move, N + piece_offset);
 					ret[ind++]=move;
 					set_promotion_type(move, B + piece_offset);
@@ -1533,11 +1533,11 @@ U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>& ret, 
 	return pinned_pieces;
 }
 U64 Position::get_checkers(const int kingpos) {
-	const int offset = 6 * (!side);
-	return (get_bishop_attacks(occupancies[both], kingpos) & (bitboards[B + offset] | bitboards[Q + offset])) | (get_rook_attacks(occupancies[both], kingpos) & (bitboards[R + offset] | bitboards[Q + offset])) | (knight_attacks[kingpos] & bitboards[N + offset]) | (pawn_attacks[(side)][kingpos] & bitboards[P + offset]);
+	const int offset = 6 & ~side;
+	return (get_bishop_attacks(occupancies[both], kingpos) & (bitboards[B + offset] | bitboards[Q + offset])) | (get_rook_attacks(occupancies[both], kingpos) & (bitboards[R + offset] | bitboards[Q + offset])) | (knight_attacks[kingpos] & bitboards[N + offset]) | (pawn_attacks[1 & side][kingpos] & bitboards[P + offset]);
 }
 U64 Position::get_checking_rays(const int kingpos) {
-	const int offset = 6 * (!side);
+	const int offset = 6 & ~side;
 	const U64 kings_rook_scope = get_rook_attacks(occupancies[both], kingpos);
 	const U64 kings_bishop_scope = get_bishop_attacks(occupancies[both], kingpos);
 	const U64 checking_rooks = kings_rook_scope & (bitboards[R + offset] | bitboards[Q + offset]);
@@ -1549,7 +1549,7 @@ U64 Position::get_checking_rays(const int kingpos) {
 Position::Position() {
 	bitboards = std::array<U64, 12>{ { 71776119061217280ULL, 4755801206503243776ULL, 2594073385365405696ULL, 9295429630892703744ULL, 576460752303423488ULL, 1152921504606846976ULL, 65280ULL, 66ULL, 36ULL, 129ULL, 8ULL, 16ULL } };
 	occupancies = std::array<U64, 3>{ { 18446462598732840960ULL, 65535ULL, 18446462598732906495ULL} };
-	side = white;
+	side = falseMask;
 	ply = 1;
 	enpassant_square = a8;
 	castling_rights = 15;
@@ -1629,10 +1629,10 @@ void Position::parse_fen(std::string fen) {
 	if (strList.size() >= 2)
 	{
 		if (strList[1] == "w") {
-			side = white;
+			side = falseMask;
 		}
 		else if (strList[1] == "b") {
-			side = black;
+			side = trueMask;
 		}
 	}
 
@@ -1682,7 +1682,7 @@ void Position::parse_fen(std::string fen) {
 	hash_history.reserve(256);
 
 	no_pawns_or_captures = stoi(strList[4]);
-	ply = 2 * stoi(fen) - (side == white);
+	ply = 2 * stoi(fen) - (side == falseMask);
 	occupancies[0] = bitboards[0] | bitboards[1] | bitboards[2] | bitboards[3] | bitboards[4] | bitboards[5];
 	occupancies[1] = bitboards[6] | bitboards[7] | bitboards[8] | bitboards[9] | bitboards[10] | bitboards[11];
 	occupancies[2] = occupancies[0] | occupancies[1];
@@ -1799,7 +1799,7 @@ void Position::print() {
 
 	printf("    halfmoves since last pawn move or capture: %d\n", no_pawns_or_captures);
 	printf("    current halfclock turn: %d\n", ply);
-	printf("    current game turn: %d\n", (int)ply / 2 + (side == white));
+	printf("    current game turn: %d\n", (int)ply / 2 + (side == falseMask));
 	std::cout << "    current hash: " << current_hash << "\n";
 	std::cout << "    fen: " << fen() << "\n";
 }
@@ -1831,7 +1831,7 @@ void Position::print_square_board() const {
 
 	printf("    halfmoves since last pawn move or capture: %d\n", no_pawns_or_captures);
 	printf("    current halfclock turn: %d\n", ply);
-	printf("    current game turn: %d\n", (int)ply / 2 + (side == white));
+	printf("    current game turn: %d\n", (int)ply / 2 + (side == falseMask));
 	std::cout << "    current hash: " << current_hash << "\n";
 }
 std::string Position::to_string() {
@@ -1871,7 +1871,7 @@ std::string Position::to_string() {
 
 	stream << "    halfmoves since last pawn move or capture: "<< no_pawns_or_captures <<"\n";;
 	stream<<"    current halfclock turn: "<< ply<<"\n";
-	stream << "    current game turn: " << ((int)ply / 2 + (side == white)) << "\n";
+	stream << "    current game turn: " << ((int)ply / 2 + (side == falseMask)) << "\n";
 	stream << "    current hash: " << current_hash << "\n";
 	stream << "    fen: " << fen() << "\n";
 	std::string ret = std::move(stream).str();
@@ -1914,7 +1914,7 @@ std::string Position::square_board_to_string() const {
 
 	stream << "    halfmoves since last pawn move or capture: " << no_pawns_or_captures << "\n";;
 	stream << "    current halfclock turn: " << ply << "\n";
-	stream << "    current game turn: " << ((int)ply / 2 + (side == white)) << "\n";
+	stream << "    current game turn: " << ((int)ply / 2 + (side == falseMask)) << "\n";
 	stream << "    current hash: " << current_hash << "\n";
 	std::string ret = std::move(stream).str();
 	return ret;
@@ -1936,7 +1936,7 @@ U64 Position::get_hash() const {
 	ret ^= (get_bit(castling_rights, 2)) * keys[12 * 64 + 2];
 	ret ^= (get_bit(castling_rights, 3)) * keys[12 * 64 + 3];
 
-	ret ^= side * keys[772];
+	ret ^= side & keys[772];
 	assert(773 + enpassant_square % 8<781);
 	ret ^= ((enpassant_square != a8) && (enpassant_square != 64)) * keys[static_cast<std::array<size_t, 781Ui64>::size_type>(773 + (enpassant_square % 8))];
 	return ret % 4294967296;
@@ -2009,25 +2009,9 @@ inline void Position::make_move(const unsigned int move) {
 	enpassant_square = (double_pawn_push) * ((is_black_pawn) * (to_square - 8) + (is_white_pawn) * (to_square + 8));
 	//branchlessly set enpassant square
 
-	const int offset = 6 * (side);
+	const int offset = 6 & side;
 
-	if (is_castle) {
-		const int square_offset = 56 * (side);
-		const bool is_kingside = to_square > from_square;
-		const int rook_source = (is_kingside) ? (h1 - square_offset) : (a1 - square_offset);
-		const int rook_target = from_square + (to_square == g1 - square_offset) - (to_square == c1 - square_offset);
-		pop_bit(bitboards[piece_type - 2], rook_source);
-		//pop rooks if move is castling
-		bitboards[piece_type - 2] |= ((1ULL) << (rook_target));
-		//set rook if move is castling
-		castling_rights &= ~((1ULL) << (2 * (piece_type == k)));
-		castling_rights &= ~((1ULL) << (1 + 2 * (piece_type == k)));
-		//pop castle right bits if move is castling
-
-		square_board[rook_source] = no_piece;
-		square_board[rook_target] = piece_type - 2;
-	}
-	else {
+	if (!is_castle) {
 		const bool bK = (piece_type == k);
 		const bool bR = (piece_type == r);
 		pop_bit(castling_rights, (bK || (bR && (from_square == a8)) || (to_square == a8)) ? 3 : 4);
@@ -2037,25 +2021,50 @@ inline void Position::make_move(const unsigned int move) {
 		pop_bit(castling_rights, (wK || (wR && (from_square == a1)) || (to_square == a1)) ? 1 : 4);
 		pop_bit(castling_rights, (wK || (wR && (from_square == h1)) || (to_square == h1)) ? 0 : 4);
 		//pop castle right bits
-	}
-	if (capture) {
-		if (is_enpassant) {
-			const int captured_pawn_sqare = 8 * ((!side) - (side));
-			square_board[to_square + captured_pawn_sqare] = no_piece;
-			pop_bit(bitboards[captured_type], to_square + captured_pawn_sqare);
+		if (capture) {
+			if (!is_enpassant) {
+				pop_bit(bitboards[captured_type], to_square);
+			}
+			else {
+				const int captured_pawn_sqare = (8 & (~side)) | ((-8) & side);
+				square_board[to_square + captured_pawn_sqare] = no_piece;
+				pop_bit(bitboards[captured_type], to_square + captured_pawn_sqare);
+			}
 		}
-		else pop_bit(bitboards[captured_type], to_square);
-	}
 
-	const bool is_promotion = promoted_type != no_piece;
-	const int true_piece_type = (!(is_promotion)) * piece_type + (is_promotion) * (promoted_type);
-	pop_bit(bitboards[piece_type], from_square);
-	set_bit(bitboards[true_piece_type], to_square);
-	square_board[from_square] = no_piece;
-	square_board[to_square] = true_piece_type;
+		const U32 not_promotion = (promoted_type == no_piece) * trueMask32;
+		if (not_promotion) {
+			bitboards[piece_type] ^= (1ULL << from_square) | (1ULL << to_square);
+			square_board[from_square] = no_piece;
+			square_board[to_square] = piece_type;
+		}
+		else {
+			const int true_piece_type = promoted_type;
+			pop_bit(bitboards[piece_type], from_square);
+			set_bit(bitboards[true_piece_type], to_square);
+			square_board[from_square] = no_piece;
+			square_board[to_square] = true_piece_type;
+		}
+	}
+	else {
+		const int square_offset = 56 & side;
+		const U32 is_kingside = (to_square > from_square) * trueMask32;
+		const int rook_source = (int)((h1 & is_kingside) | (a1 & ~is_kingside)) - square_offset;
+		const int rook_target = from_square + (to_square == g1 - square_offset) - (to_square == c1 - square_offset);
+		bitboards[piece_type-2] ^= (1ULL << rook_source) | (1ULL << rook_target);
+		castling_rights &= ~((1ULL) << (2 * (piece_type == k)));
+		castling_rights &= ~((1ULL) << (1 + 2 * (piece_type == k)));
+		//pop castle right bits if move is castling
+
+		square_board[rook_source] = no_piece;
+		square_board[rook_target] = piece_type - 2;
+		square_board[from_square] = no_piece;
+		square_board[to_square] = piece_type;
+		bitboards[piece_type] ^= (1ULL << from_square) | (1ULL << to_square);
+	}
 	//make move of piece
 
-	side = !side;
+	side = ~side;
 	occupancies[0] = (bitboards[0] | bitboards[1]) | (bitboards[2] | bitboards[3]) | (bitboards[4] | bitboards[5]);
 	occupancies[1] = bitboards[6] | bitboards[7] | bitboards[8] | bitboards[9] | bitboards[10] | bitboards[11];
 	occupancies[2] = occupancies[0] | occupancies[1];
@@ -2113,7 +2122,7 @@ inline void Position::unmake_move() {
 
 	if (capture) {//set the captured piece
 		if (is_enpassant) {
-			const int captured_square = to_square + 8 * ((side)-(!side));
+			const int captured_square = to_square + (int)((8 & side) | ((-8) & (~side)));
 			square_board[captured_square] = captured_type;
 			bitboards[captured_type] |= (1ULL << captured_square);
 		}
@@ -2124,7 +2133,7 @@ inline void Position::unmake_move() {
 	}
 
 	if (is_castle) {
-		const int square_offset = 56 * (side);
+		const int square_offset = 56 & side;
 		const bool is_kingside = to_square > from_square;
 		const int rook_source = (is_kingside) ? (h8 + square_offset) : (a8 + square_offset);
 		const int rook_target = (is_kingside) ? (f8 + square_offset) : (d8 + square_offset);
@@ -2138,7 +2147,7 @@ inline void Position::unmake_move() {
 	occupancies[0] = bitboards[0] | bitboards[1] | bitboards[2] | bitboards[3] | bitboards[4] | bitboards[5];
 	occupancies[1] = bitboards[6] | bitboards[7] | bitboards[8] | bitboards[9] | bitboards[10] | bitboards[11];
 	occupancies[2] = occupancies[0] | occupancies[1];
-	side = !side;
+	side = ~side;
 	//if (!boardsMatch()) {
 	//	std::string str = "\n" + to_string();
 	//	str += "| last move: \n" + move_to_string(move);

@@ -9,6 +9,11 @@
 #define twos_complement(bitboard) ((~bitboard) + 1)
 #define count_bits(bitboard) (std::_Popcount(bitboard))
 #define bitscan(bitboard) (index64[((bitboard & twos_complement(bitboard)) * debruijn64) >> 58])
+constexpr U64 falseMask = 0ULL;
+constexpr U64 trueMask = ~falseMask;
+#define U32 unsigned __int32
+constexpr U32 falseMask32 = 0;
+constexpr U32 trueMask32 = ~0;
 constexpr U64 debruijn64 = 0x07EDD5E59A4E28C2;
 constexpr int index64[64] = {
    63,  0, 58,  1, 59, 47, 53,  2,

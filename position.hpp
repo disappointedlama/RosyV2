@@ -67,10 +67,10 @@ struct Position_Error : std::exception {
 };
 class Position {
 	inline bool is_attacked_by_side(const int sq, const bool color);
-	inline U64 get_attacks_by(const bool color);
+	inline U64 get_attacks_by(const U64 color);
 	inline int get_piece_type_on(const int sq) const;
 	inline int get_piece_type_or_enpassant_on(const int sq) {
-		if (sq == enpassant_square && sq != a8) return (!side) * p;
+		if (sq == enpassant_square && sq != a8) return ~side & p;
 		return square_board[sq];
 	};
 
@@ -184,7 +184,7 @@ public:
 	std::array<U64, 12> bitboards; // P, N, B, R, Q, K, p, n, b, r, q, k
 	std::array<U64, 3> occupancies;
 	std::array<short, 64> square_board;
-	bool side;//white: false, black: true
+	U64 side;//white: false, black: true
 	int ply;
 	short enpassant_square;
 	short castling_rights;//wk,wq,bk,bq
@@ -217,7 +217,7 @@ public:
 		}
 		return false;
 	}
-	constexpr bool get_side() const { return side; };
+	constexpr U64 get_side() const { return side; };
 	constexpr int get_ply() const { return ply; };
 	inline void update_hash(const unsigned int move);
 	inline void make_move(const unsigned int move);
@@ -232,7 +232,7 @@ public:
 		ply++;
 		current_hash = get_hash();
 		enpassant_square = a8;
-		side = !side;
+		side = ~side;
 	}
 	inline void unmake_nullmove() {
 		no_pawns_or_captures = no_pawns_or_captures_history.back();
@@ -245,7 +245,7 @@ public:
 		hash_history.pop_back();
 		move_history.pop_back();
 		ply--;
-		side = !side;
+		side = ~side;
 	}
 	int get_legal_moves(std::array<unsigned int,128>& ret);
 	int get_legal_captures(std::array<unsigned int,128>& ret);
@@ -256,7 +256,7 @@ public:
 		return no_pawns_or_captures >= 50;
 	}
 	inline bool currently_in_check() {
-		return is_attacked_by_side(bitscan(bitboards[5 + (side) * 6]), !side);
+		return is_attacked_by_side(bitscan(bitboards[K + (int)(side & 6)]), ~side);
 	}
 	inline int get_phase() {
 		const short PawnPhase = 0;
@@ -285,7 +285,7 @@ public:
 			return -infinity;
 		}
 		const int phase = get_phase();
-		const int sign = (side) ? (-1) : (1);
+		const int sign = (side & (-1)) | (side & 1);
 		return sign * (raw_material(phase) + pawn_eval() + king_shield(phase) + outposts() + king_attack_zones() + knight_mobility() + bad_bishop() + trapped());
 	};
 	inline short outposts() {
@@ -447,8 +447,8 @@ public:
 	}
 	inline short trapped() {
 		short minor = 0;
-		const U64 black_attacks = get_attacks_by(black);
-		const U64 white_attacks = get_attacks_by(white);
+		const U64 black_attacks = get_attacks_by(trueMask);
+		const U64 white_attacks = get_attacks_by(falseMask);
 		U64 whiteKnights = bitboards[N];
 		while (whiteKnights) {
 			U64 isolated = _blsi_u64(whiteKnights);
@@ -642,15 +642,15 @@ public:
 		const bool is_enpassant = (sq == enpassant_square);
 		return no_piece * (!(found_piece || is_enpassant)) + (found_piece)*piece_type;
 	}
-	inline int get_smallest_attack(const int sq, const bool color) {
+	inline int get_smallest_attack(const int sq, const U64 color) {
 		if (get_bit(occupancies[both], sq)) {
 			unsigned int move = 0;
 			set_promotion_type(move, no_piece);
 			set_to_square(move, sq);
 			set_captured_type(move, get_piece_type_on(sq));
 			set_capture_flag(move, true);
-			const int offset = 6 * (color);
-			U64 pot_pawns = pawn_attacks[(color)][sq] & bitboards[offset];
+			const int offset = 6 & color;
+			U64 pot_pawns = pawn_attacks[1 & color][sq] & bitboards[offset];
 			if (pot_pawns) {
 				set_piece_type(move, P + offset);
 				set_from_square(move, bitscan(pot_pawns));
