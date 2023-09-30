@@ -279,7 +279,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 		pos.unmake_nullmove();
 		if (nm_value >= beta) {
 			if (depth >= entry.get_depth()) {
-				hash_map[pos.current_hash] = TableEntry{ moves[move_index][0], nm_value, LOWER, depth - Red};
+				hash_map[pos.current_hash] = TableEntry{ moves[move_index][0], nm_value, LOWER, (short)(depth - Red) };
 			}
 			return beta;
 		}
@@ -652,10 +652,12 @@ void Engine::uci_loop(){
 			history = std::array<std::array<U64, 64>, 12>{};
 			if(debug) std::cout << "Done with cleanup\n";
 		}
+#if tune
 		else if (strncmp(input, "tune", 4) == 0) {
 			tune();
 			break;
 		}
+#endif
 		else if (strncmp(input, "go", 2) == 0) {
 			if (!run) {
 				run = true;

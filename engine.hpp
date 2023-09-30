@@ -9,8 +9,8 @@
 constexpr short EXACT = 0;
 constexpr short UPPER = 1;
 constexpr short LOWER = 2;
-
-constexpr short Red = 1;
+# define tuning false
+constexpr short Red = (short)1;
 constexpr short lateMoveReduction = 2;
 static constexpr int full_depth_moves = 8;
 static constexpr int reduction_limit = 3;
@@ -171,6 +171,7 @@ public:
 	void parse_go(std::string str);
 	void reset_position();
 	void uci_loop();
+#if tuning
 	int goTune() {
 		//return pos.evaluate(false, false);
 		max_depth = 3;
@@ -356,4 +357,5 @@ public:
 		}
 		file.close();
 	}
+#endif
 };
