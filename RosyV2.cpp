@@ -182,8 +182,8 @@ void position_test() {
 int main()
 {
 #if testingMoveGen
-    test();
-    //position_test();
+    //test();
+    position_test();
 #else
     try {
         Engine rosy{false};
