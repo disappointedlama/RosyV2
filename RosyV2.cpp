@@ -156,7 +156,7 @@ void position_test() {
         out = (correct) ? ("Passed Test") : ("Failed Test");
         std::cout << out << "\n";
     }
-    pos = Position{ "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1 " };
+    pos = Position{ "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1" };
     for (int i = 0; i < 5; i++) {
         reset_test_parameters();
         std::string out = "";
@@ -182,8 +182,8 @@ void position_test() {
 int main()
 {
 #if testingMoveGen
-    //test();
-    position_test();
+    test();
+    //position_test();
 #else
     try {
         Engine rosy{false};

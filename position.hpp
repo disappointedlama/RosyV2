@@ -70,7 +70,7 @@ class Position {
 	inline U64 get_attacks_by(const U64 color);
 	inline int get_piece_type_on(const int sq) const;
 	inline int get_piece_type_or_enpassant_on(const int sq) {
-		if (sq == enpassant_square && sq != a8) return ~side & p;
+		if (sq == enpassant_square && sq != a8) return ~sideMask & p;
 		return square_board[sq];
 	};
 
@@ -184,7 +184,8 @@ public:
 	std::array<U64, 12> bitboards; // P, N, B, R, Q, K, p, n, b, r, q, k
 	std::array<U64, 3> occupancies;
 	std::array<short, 64> square_board;
-	U64 side;//white: false, black: true
+	U64 sideMask;//white: false, black: true
+	bool side;
 	int ply;
 	short enpassant_square;
 	short castling_rights;//wk,wq,bk,bq
@@ -217,7 +218,7 @@ public:
 		}
 		return false;
 	}
-	constexpr U64 get_side() const { return side; };
+	constexpr U64 get_side() const { return sideMask; };
 	constexpr int get_ply() const { return ply; };
 	inline void update_hash(const unsigned int move);
 	inline void make_move(const unsigned int move);
@@ -232,7 +233,8 @@ public:
 		ply++;
 		current_hash = get_hash();
 		enpassant_square = a8;
-		side = ~side;
+		sideMask = ~sideMask;
+		side = !side;
 	}
 	inline void unmake_nullmove() {
 		no_pawns_or_captures = no_pawns_or_captures_history.back();
@@ -245,7 +247,8 @@ public:
 		hash_history.pop_back();
 		move_history.pop_back();
 		ply--;
-		side = ~side;
+		sideMask = ~sideMask;
+		side = !side;
 	}
 	int get_legal_moves(std::array<unsigned int,128>& ret);
 	int get_legal_captures(std::array<unsigned int,128>& ret);
@@ -256,7 +259,7 @@ public:
 		return no_pawns_or_captures >= 50;
 	}
 	inline bool currently_in_check() {
-		return is_attacked_by_side(bitscan(bitboards[K + (int)(side & 6)]), ~side);
+		return is_attacked_by_side(bitscan(bitboards[K + (int)(sideMask & 6)]), ~sideMask);
 	}
 	inline int get_phase() {
 		const short PawnPhase = 0;
@@ -285,7 +288,7 @@ public:
 			return -infinity;
 		}
 		const int phase = get_phase();
-		const int sign = (side & (-1)) | (side & 1);
+		const int sign = ((int)sideMask & -1) | ((int)sideMask & 1);
 		return sign * (raw_material(phase) + pawn_eval() + king_shield(phase) + outposts() + king_attack_zones() + knight_mobility() + bad_bishop() + trapped());
 	};
 	inline short outposts() {
@@ -687,7 +690,7 @@ public:
 	}
 	inline int see(const int square) {
 		int value = 0;
-		unsigned int move = get_smallest_attack(square, side);
+		unsigned int move = get_smallest_attack(square, sideMask);
 		/* skip if the square isn't attacked anymore by this side */
 		if (move) {
 			make_move(move);

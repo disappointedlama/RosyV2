@@ -349,7 +349,6 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 					__assume(get_piece_type(moves[move_index][i]) < 12);
 					__assume(get_to_square(moves[move_index][i]) > -1);
 					__assume(get_to_square(moves[move_index][i]) < 64);
-					__assume(pos.get_side()==0 || pos.get_side()==1);
 					history[get_piece_type(moves[move_index][i])][get_to_square(moves[move_index][i])] += 1ULL << depth;
 				}
 				if (depth >= entry.get_depth()) {
@@ -562,8 +561,8 @@ void Engine::parse_go(std::string str){
 		time_str = str.substr(0, str.find(" "));
 		const int binc = stoi(time_str);
 
-		const int increment = (pos.side) * binc + (!pos.side) * winc;
-		const int time = (pos.side) * btime + (!pos.side) * wtime;
+		const int increment = ((pos.side) * binc) + (!(pos.side) * winc);
+		const int time = ((pos.side) * btime) + ((!pos.sideMask) * wtime);
 		time_for_next_move = time / 25 + increment / 2;
 		if (time_for_next_move >= time) {
 			time_for_next_move = time - 500;
