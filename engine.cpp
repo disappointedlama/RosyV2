@@ -562,7 +562,7 @@ void Engine::parse_go(std::string str){
 		const int binc = stoi(time_str);
 
 		const int increment = ((pos.side) * binc) + (!(pos.side) * winc);
-		const int time = ((pos.side) * btime) + ((!pos.sideMask) * wtime);
+		const int time = ((pos.side) * btime) + ((!pos.side) * wtime);
 		time_for_next_move = time / 25 + increment / 2;
 		if (time_for_next_move >= time) {
 			time_for_next_move = time - 500;

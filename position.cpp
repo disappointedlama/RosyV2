@@ -2013,37 +2013,28 @@ inline void Position::make_move(const unsigned int move) {
 	if (!is_castle) {
 		const bool bK = (piece_type == k);
 		const bool bR = (piece_type == r);
-		pop_bit(castling_rights, (bK || (bR && (from_square == a8)) || (to_square == a8)) ? 3 : 4);
-		pop_bit(castling_rights, (bK || (bR && (from_square == h8)) || (to_square == h8)) ? 2 : 4);
 		const bool wK = (piece_type == K);
 		const bool wR = (piece_type == R);
-		pop_bit(castling_rights, (wK || (wR && (from_square == a1)) || (to_square == a1)) ? 1 : 4);
-		pop_bit(castling_rights, (wK || (wR && (from_square == h1)) || (to_square == h1)) ? 0 : 4);
+		castling_rights &= ~(
+			((int)(bK || (bR && (from_square == a8)) || (to_square == a8)) << 3)
+			| ((int)(bK || (bR && (from_square == h8)) || (to_square == h8)) << 2)
+			| ((int)(wK || (wR && (from_square == a1)) || (to_square == a1)) << 1)
+			| ((int)(wK || (wR && (from_square == h1)) || (to_square == h1)))
+			);
 		//pop castle right bits
 		if (capture) {
-			if (!is_enpassant) {
-				pop_bit(bitboards[captured_type], to_square);
-			}
-			else {
-				const int captured_pawn_sqare = (8 & ~sideMask) | ((-8) & sideMask);
-				square_board[to_square + captured_pawn_sqare] = no_piece;
-				pop_bit(bitboards[captured_type], to_square + captured_pawn_sqare);
-			}
+			int actualCaptureSquare = to_square + (is_enpassant) * (int)((8 & ~sideMask) | ((-8) & sideMask));
+			square_board[actualCaptureSquare] = no_piece;
+			pop_bit(bitboards[captured_type], actualCaptureSquare);
+			occupancies[(!side)] ^= (1ULL << actualCaptureSquare);
 		}
 
 		const bool not_promotion = promoted_type == no_piece;
-		if (not_promotion) {
-			bitboards[piece_type] ^= (1ULL << from_square) | (1ULL << to_square);
-			square_board[from_square] = no_piece;
-			square_board[to_square] = piece_type;
-		}
-		else {
-			const int true_piece_type = promoted_type;
-			pop_bit(bitboards[piece_type], from_square);
-			set_bit(bitboards[true_piece_type], to_square);
-			square_board[from_square] = no_piece;
-			square_board[to_square] = true_piece_type;
-		}
+		const int true_piece_type = (!not_promotion) * promoted_type | (not_promotion) * piece_type;
+		bitboards[piece_type] ^= (1ULL << from_square) | ((U64)(not_promotion) << to_square);
+		bitboards[true_piece_type] |= (U64)(!not_promotion) << to_square;
+		square_board[to_square] = true_piece_type;
+		occupancies[(side)] ^= (1ULL << to_square) | (1ULL << from_square);
 	}
 	else {
 		const int square_offset = 56 & sideMask;
@@ -2051,22 +2042,21 @@ inline void Position::make_move(const unsigned int move) {
 		const int rook_source = (int)((h1 & is_kingside) | (a1 & ~is_kingside)) - square_offset;
 		const int rook_target = from_square + (to_square == g1 - square_offset) - (to_square == c1 - square_offset);
 		bitboards[piece_type-2] ^= (1ULL << rook_source) | (1ULL << rook_target);
-		castling_rights &= ~((1ULL) << (2 * (piece_type == k)));
-		castling_rights &= ~((1ULL) << (1 + 2 * (piece_type == k)));
+		const int bit_offset = 2 * (side);
+		castling_rights &= ~(3ULL << bit_offset);
 		//pop castle right bits if move is castling
 
 		square_board[rook_source] = no_piece;
 		square_board[rook_target] = piece_type - 2;
-		square_board[from_square] = no_piece;
 		square_board[to_square] = piece_type;
 		bitboards[piece_type] ^= (1ULL << from_square) | (1ULL << to_square);
+		occupancies[(side)] ^= (1ULL << to_square) | (1ULL << from_square) | (1ULL << rook_source) | (1ULL << rook_target);
 	}
+	square_board[from_square] = no_piece;
 	//make move of piece
 
 	sideMask = ~sideMask;
 	side = !side;
-	occupancies[0] = (bitboards[0] | bitboards[1]) | (bitboards[2] | bitboards[3]) | (bitboards[4] | bitboards[5]);
-	occupancies[1] = bitboards[6] | bitboards[7] | bitboards[8] | bitboards[9] | bitboards[10] | bitboards[11];
 	occupancies[2] = occupancies[0] | occupancies[1];
 
 	current_hash = get_hash();
@@ -2117,22 +2107,17 @@ inline void Position::unmake_move() {
 	square_board[to_square] = no_piece;
 
 	const bool is_promotion = promoted_type != no_piece;
-	bitboards[(is_promotion)*promoted_type] &= ~(((is_promotion) * 1ULL) << (to_square));
+	bitboards[(is_promotion)*promoted_type] &= ~(((U64)(is_promotion)) << (to_square));
 	//branchlessly pop the piece that was promoted. if move was not a promotion the white pawns are and'ed with a bitboard of ones, thus it would not change
-
-	if (capture) {//set the captured piece
-		int captured_square = to_square;
-		if (is_enpassant) {
-			captured_square = to_square + -8 + (16 & sideMask);
+	if (!is_castle) {
+		if (capture) {//set the captured piece
+			const int captured_square = to_square + (is_enpassant) * (-8 + (16 & sideMask));
 			square_board[captured_square] = captured_type;
+			bitboards[captured_type] |= (1ULL << captured_square);
+			occupancies[(side)] |= (1ULL << captured_square);
 		}
-		else {
-			square_board[to_square] = captured_type;
-		}
-		bitboards[captured_type] |= (1ULL << captured_square);
 	}
-
-	if (is_castle) {
+	else {
 		const int square_offset = 56 & sideMask;
 		const int is_kingside = (to_square > from_square) * trueMask32;
 		const int rook_source = square_offset + a8 + 7 * (1 & is_kingside);
@@ -2142,9 +2127,9 @@ inline void Position::unmake_move() {
 		//branchlessly set and pop rook bits if move was castling
 		square_board[rook_target] = no_piece;
 		square_board[rook_source] = rook_type;
+		occupancies[(!side)] ^= (1ULL << rook_source) | (1ULL << rook_target);
 	}
-	occupancies[0] = bitboards[0] | bitboards[1] | bitboards[2] | bitboards[3] | bitboards[4] | bitboards[5];
-	occupancies[1] = bitboards[6] | bitboards[7] | bitboards[8] | bitboards[9] | bitboards[10] | bitboards[11];
+	occupancies[(!side)] ^= (1ULL << to_square) | (1ULL << from_square);
 	occupancies[2] = occupancies[0] | occupancies[1];
 	sideMask = ~sideMask;
 	side = !side;

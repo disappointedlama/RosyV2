@@ -288,7 +288,7 @@ public:
 			return -infinity;
 		}
 		const int phase = get_phase();
-		const int sign = ((int)sideMask & -1) | ((int)sideMask & 1);
+		const int sign = 1 - 2 * (side);
 		return sign * (raw_material(phase) + pawn_eval() + king_shield(phase) + outposts() + king_attack_zones() + knight_mobility() + bad_bishop() + trapped());
 	};
 	inline short outposts() {
