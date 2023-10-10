@@ -65,6 +65,7 @@ struct Position_Error : std::exception {
 	}
 
 };
+#define timing true
 class Position {
 	inline bool is_attacked_by_side(const int sq, const bool color);
 	inline U64 get_attacks_by(const U64 color);
@@ -82,11 +83,11 @@ class Position {
 	void in_check_get_pawn_captures(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, int& ind);
 	void get_pawn_captures(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind);
 
-	U64 get_pinned_pieces(const int kingpos, const U64 enemy_attacks);
-	U64 get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks,int &ind);
-	U64 get_captures_for_pinned_pieces(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind);
-	U64 get_checkers(const int kingpos);
-	U64 get_checking_rays(const int kingpos);
+	inline U64 get_pinned_pieces(const int kingpos, const U64 enemy_attacks);
+	inline U64 get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks,int &ind);
+	inline U64 get_captures_for_pinned_pieces(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind);
+	inline U64 get_checkers(const int kingpos);
+	inline U64 get_checking_rays(const int kingpos);
 	void try_out_move(std::array<unsigned int,128>& ret, unsigned int move, int& ind);
 	inline void get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind);
 	inline void legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind);
@@ -184,6 +185,14 @@ public:
 	std::array<U64, 12> bitboards; // P, N, B, R, Q, K, p, n, b, r, q, k
 	std::array<U64, 3> occupancies;
 	std::array<short, 64> square_board;
+#if timing
+	U64 totalTime;
+	U64 pawnGeneration;
+	U64 slidingGeneration;
+	U64 PinnedGeneration;
+	U64 moveMaking;
+	U64 moveUnmaking;
+#endif
 	U64 sideMask;//white: false, black: true
 	bool side;
 	int ply;

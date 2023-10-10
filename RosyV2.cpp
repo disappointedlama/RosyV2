@@ -5,6 +5,15 @@ U64 captures = 0ULL;
 U64 en_passant = 0ULL;
 U64 castles = 0ULL;
 U64 promotions = 0ULL;
+void printTimingInfo(Position& pos) {
+#if timing
+    std::cout << "Time spend:\nPawn generation: " << ((double)pos.pawnGeneration / pos.totalTime) * 100.0 << "%\n";
+    std::cout << "Sliding generation: " << ((double)pos.slidingGeneration / pos.totalTime) * 100.0 << "%\n";
+    std::cout << "Pinned generation: " << ((double)pos.PinnedGeneration / pos.totalTime) * 100.0 << "%\n";
+    std::cout << "Move making: " << ((double)pos.moveMaking / pos.totalTime) * 100.0 << "%\n";
+    std::cout << "Move unmaking: " << ((double)pos.moveUnmaking / pos.totalTime) * 100.0 << "%\n";
+#endif
+}
 void tree(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, Position& pos, const int depth, const int ind, std::vector<unsigned long long>* nodes_ptr) {
 
     const int number_of_moves = pos.get_legal_moves(moves[move_index]); 
@@ -77,21 +86,25 @@ void test() {
     std::array<std::array<unsigned int, 128>, 40> moves{};
     perf(moves, 0, pos, 3);
     std::cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
+    printTimingInfo(pos);
     lookedAt = 0;
     mates = 0;
     pos = Position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
     perf(moves, 0, pos, 4);
     std::cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
+    printTimingInfo(pos);
     lookedAt = 0;
     mates = 0;
     pos = Position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
     perf(moves, 0, pos, 5);
     std::cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
+    printTimingInfo(pos);
     lookedAt = 0;
     mates = 0;
     pos = Position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
     perf(moves, 0, pos, 6);
     std::cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
+    printTimingInfo(pos);
 }
 void position_test() {
     bool passedAllTests = true;
@@ -116,6 +129,7 @@ void position_test() {
         out = (correct) ? ("Passed Test") : ("Failed Test");
         std::cout << out << "\n";
     }
+    printTimingInfo(pos);
     pos = Position{ "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 0" };
     expected_nodes = std::array<int, 6>{ 14, 191, 2812, 43238, 674624, 11030083 };
     expected_mates = std::array<int, 6>{ 0, 0, 0, 17, 0, 2733 };
@@ -136,6 +150,7 @@ void position_test() {
         out = (correct) ? ("Passed Test") : ("Failed Test");
         std::cout << out << "\n";
     }
+    printTimingInfo(pos);
     pos = Position{ "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1" };
     expected_nodes = std::array<int, 6>{ 6, 264, 9467, 422333, 15833292, 706045033 };
     expected_mates = std::array<int, 6>{ 0, 0, 22, 5, 50562, 81076 };
@@ -156,6 +171,7 @@ void position_test() {
         out = (correct) ? ("Passed Test") : ("Failed Test");
         std::cout << out << "\n";
     }
+    printTimingInfo(pos);
     pos = Position{ "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1" };
     for (int i = 0; i < 5; i++) {
         reset_test_parameters();
@@ -171,6 +187,7 @@ void position_test() {
         out = (correct) ? ("Passed Test") : ("Failed Test");
         std::cout << out << "\n";
     }
+    printTimingInfo(pos);
     if (passedAllTests) {
         std::cout<< "All Tests passed" << std::endl;
     }
@@ -178,7 +195,7 @@ void position_test() {
         std::cout << "Not all Tests passed" << std::endl;
     }
 }
-#define testingMoveGen false
+#define testingMoveGen true
 int main()
 {
 #if testingMoveGen

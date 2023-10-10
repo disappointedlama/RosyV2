@@ -13,8 +13,12 @@ const std::string invalid_move_exception::what() throw() {
 	return std::format("Found invalid move {} in position {}", move_str, pos.fen());
 }
 inline bool Position::is_attacked_by_side(const int sq, const bool color) {
-	return (color) ? ((get_rook_attacks(occupancies[both], sq) & (bitboards[9] | bitboards[10])) | (get_bishop_attacks(occupancies[both], sq) & (bitboards[8] | bitboards[10])) | (pawn_attacks[!color][sq] & bitboards[6]) | (king_attacks[sq] & bitboards[11]) | (knight_attacks[sq] & bitboards[7])) :
-		((get_rook_attacks(occupancies[both], sq) & (bitboards[3] | bitboards[4])) | (get_bishop_attacks(occupancies[both], sq) & (bitboards[2] | bitboards[4])) | (pawn_attacks[!color][sq] & bitboards[0]) | (king_attacks[sq] & bitboards[5]) | (knight_attacks[sq] & bitboards[1]));
+	const int offset = 6 * color;
+	U64 attacks = get_rook_attacks(occupancies[both], sq) & (bitboards[R + offset] | bitboards[Q + offset]);
+	attacks|= get_bishop_attacks(occupancies[both], sq) & (bitboards[B + offset] | bitboards[Q + offset]);
+	attacks |= (king_attacks[sq] & bitboards[K + offset]) | (knight_attacks[sq] & bitboards[N + offset]);
+	attacks |= (pawn_attacks[!color][sq] & bitboards[offset]);
+	return attacks;
 }
 inline U64 Position::get_attacks_by(const U64 color) {
 
@@ -58,17 +62,31 @@ void Position::try_out_move(std::array<unsigned int,128>& ret, unsigned int move
 }
 
 int Position::get_legal_moves(std::array<unsigned int,128>& ret) {
+#if timing
+	auto start = std::chrono::steady_clock::now();
+#endif
 	const int kingpos = bitscan(bitboards[K + (int)(sideMask & 6)]);
 	const bool in_check = is_attacked_by_side(kingpos, ~sideMask);
 	const U64 kings_queen_scope = get_queen_attacks(occupancies[both], kingpos);
 	const U64 enemy_attacks = get_attacks_by(~sideMask);
 	int ind = 0;
 	(in_check) ? (legal_in_check_move_generator(ret, kingpos, kings_queen_scope, enemy_attacks,ind)) : (legal_move_generator(ret, kingpos, kings_queen_scope, enemy_attacks,ind));
+#if timing
+	auto end = std::chrono::steady_clock::now();
+	totalTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 	return ind;
 }
 void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind) {
 	get_castles(ret, enemy_attacks, ind);
+#if timing
+	auto start = std::chrono::steady_clock::now();
+#endif
 	const U64 pinned = get_moves_for_pinned_pieces(ret, kingpos, enemy_attacks, ind);
+#if timing
+	auto end = std::chrono::steady_clock::now();
+	PinnedGeneration += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 	const U64 not_pinned = ~pinned;
 	const U64 enemy_pieces = occupancies[(!side)];
 	const U64 valid_targets = (~occupancies[both]) | enemy_pieces;
@@ -108,6 +126,9 @@ void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int
 
 	type++;
 
+#if timing
+	start = std::chrono::steady_clock::now();
+#endif
 	while (tempBishops) {
 		const U64 isolated = _blsi_u64(tempBishops);
 		unsigned long sq = 0UL;
@@ -186,6 +207,10 @@ void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int
 		}
 		tempQueens = _blsr_u64(tempQueens);
 	}
+#if timing
+	end = std::chrono::steady_clock::now();
+	slidingGeneration += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 
 
 	type++;
@@ -210,7 +235,14 @@ void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int
 	get_legal_pawn_moves(ret, kings_queen_scope, enemy_attacks, pinned,ind);
 }
 void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind){
+#if timing
+	auto start = std::chrono::steady_clock::now();
+#endif
 	const U64 pinned = get_pinned_pieces(kingpos, enemy_attacks);
+#if timing
+	auto end = std::chrono::steady_clock::now();
+	PinnedGeneration += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 	const U64 enemy_pieces = occupancies[(!side)];
 	const U64 checkers = get_checkers(kingpos);
 	const bool not_double_check = count_bits(checkers) < 2;
@@ -253,6 +285,9 @@ void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret,
 
 	type++;
 
+#if timing
+	start = std::chrono::steady_clock::now();
+#endif
 	while (tempBishops) {
 		const U64 isolated = _blsi_u64(tempBishops);
 		const int sq = bitscan(isolated);
@@ -332,6 +367,10 @@ void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret,
 		tempQueens = _blsr_u64(tempQueens);
 	}
 
+#if timing
+	end = std::chrono::steady_clock::now();
+	slidingGeneration += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 	type++;
 	pop_bit(occupancies[both], kingpos);
 	const U64 enemy_attacks_without_king = get_attacks_by(~sideMask);
@@ -604,8 +643,15 @@ void Position::in_check_get_pawn_captures(std::array<unsigned int,128>& ret, con
 }
 
 inline void Position::get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind) {
+#if timing
+	auto start = std::chrono::steady_clock::now();
+#endif
 	(sideMask) ? (legal_bpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned, ind)) : (legal_wpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned, ind));
 	(sideMask) ? (legal_bpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, ind)) : (legal_wpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, ind));
+#if timing
+	auto end = std::chrono::steady_clock::now();
+	pawnGeneration += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 }
 inline void Position::legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind) {
 	U64 valid_targets = ~occupancies[both];
@@ -846,8 +892,15 @@ inline void Position::legal_wpawn_captures(std::array<unsigned int,128>& ret, co
 }
 
 inline void Position::in_check_get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind) {
+#if timing
+	auto start = std::chrono::steady_clock::now();
+#endif
 	(sideMask) ? (in_check_legal_bpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned, targets, in_check_valid, ind)) : (in_check_legal_wpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned, targets, in_check_valid, ind));
 	(sideMask) ? (in_check_legal_bpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, targets, ind)) : (in_check_legal_wpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, targets, ind));
+#if timing
+	auto end = std::chrono::steady_clock::now();
+	pawnGeneration += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 }
 inline void Position::in_check_legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind) {
 	const U64 valid_targets = ~occupancies[both];
@@ -1089,7 +1142,7 @@ inline void Position::get_castles(std::array<unsigned int,128>& ptr, const U64 e
 	}
 }
 
-U64 Position::get_pinned_pieces(const int kingpos, const U64 enemy_attacks) {
+inline U64 Position::get_pinned_pieces(const int kingpos, const U64 enemy_attacks) {
 	U64 potentially_pinned_by_bishops = enemy_attacks & get_bishop_attacks(occupancies[both], kingpos) & occupancies[(side)];
 	U64 potentially_pinned_by_rooks = enemy_attacks & get_rook_attacks(occupancies[both], kingpos) & occupancies[(side)];
 	U64 pinned_pieces = 0ULL;
@@ -1120,7 +1173,7 @@ U64 Position::get_pinned_pieces(const int kingpos, const U64 enemy_attacks) {
 	}
 	return pinned_pieces;
 }
-U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind) {
+inline U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind) {
 	const int piece_offset = 6 & sideMask;
 	const U64 bishop_attacks = get_bishop_attacks(occupancies[both], kingpos);
 	const U64 rook_attacks = get_rook_attacks(occupancies[both], kingpos);
@@ -1185,7 +1238,7 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 
 		pawns_pot_pinned_by_bishops = _blsr_u64(pawns_pot_pinned_by_bishops);
 	}
-	const int sign = (sideMask) ? 1 : -1;
+	const int sign = -1 + (2 & sideMask);
 	while (pawns_pot_pinned_by_rooks) {
 		const U64 isolated = _blsi_u64(pawns_pot_pinned_by_rooks);
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
@@ -1352,7 +1405,7 @@ U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, con
 	}
 	return pinned_pieces;
 }
-U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind) {
+inline U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind) {
 	const int piece_offset = 6 & sideMask;
 	const U64 bishop_attacks = get_bishop_attacks(occupancies[both], kingpos);
 	const U64 rook_attacks = get_rook_attacks(occupancies[both], kingpos);
@@ -1528,11 +1581,11 @@ U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>& ret, 
 	}
 	return pinned_pieces;
 }
-U64 Position::get_checkers(const int kingpos) {
+inline U64 Position::get_checkers(const int kingpos) {
 	const int offset = 6 & ~sideMask;
 	return (get_bishop_attacks(occupancies[both], kingpos) & (bitboards[B + offset] | bitboards[Q + offset])) | (get_rook_attacks(occupancies[both], kingpos) & (bitboards[R + offset] | bitboards[Q + offset])) | (knight_attacks[kingpos] & bitboards[N + offset]) | (pawn_attacks[(side)][kingpos] & bitboards[P + offset]);
 }
-U64 Position::get_checking_rays(const int kingpos) {
+inline U64 Position::get_checking_rays(const int kingpos) {
 	const int offset = 6 & ~sideMask;
 	const U64 kings_rook_scope = get_rook_attacks(occupancies[both], kingpos);
 	const U64 kings_bishop_scope = get_bishop_attacks(occupancies[both], kingpos);
@@ -1981,12 +2034,15 @@ inline void Position::update_hash(const unsigned int move) {
 	current_hash = current_hash % 4294967296;
 }
 inline void Position::make_move(const unsigned int move) {
+#if timing
+	auto start = std::chrono::steady_clock::now();
+#endif
 	no_pawns_or_captures_history.push_back(no_pawns_or_captures);
 	enpassant_history.push_back(enpassant_square);
 	move_history.push_back(move);
 	castling_rights_history.push_back(castling_rights);
 	hash_history.push_back(current_hash);
-	ply++;//33520021
+	ply++;
 	
 	const int piece_type = get_piece_type(move);
 	const int from_square = get_from_square(move);
@@ -2005,7 +2061,7 @@ inline void Position::make_move(const unsigned int move) {
 	no_pawns_or_captures = (!(is_white_pawn || is_black_pawn || capture)) * (no_pawns_or_captures + 1);
 	//branchlessly increment the counter if move was not a pawn move^or a capture
 
-	enpassant_square = (double_pawn_push) * ((is_black_pawn) * (to_square - 8) + (is_white_pawn) * (to_square + 8));
+	enpassant_square = (double_pawn_push) * (to_square + 8 - (16 & sideMask));
 	//branchlessly set enpassant square
 
 	const int offset = 6 & sideMask;
@@ -2023,7 +2079,7 @@ inline void Position::make_move(const unsigned int move) {
 			);
 		//pop castle right bits
 		if (capture) {
-			int actualCaptureSquare = to_square + (is_enpassant) * (int)((8 & ~sideMask) | ((-8) & sideMask));
+			int actualCaptureSquare = to_square + (is_enpassant) * (8 - (16 & sideMask));
 			square_board[actualCaptureSquare] = no_piece;
 			pop_bit(bitboards[captured_type], actualCaptureSquare);
 			occupancies[(!side)] ^= (1ULL << actualCaptureSquare);
@@ -2057,9 +2113,13 @@ inline void Position::make_move(const unsigned int move) {
 
 	sideMask = ~sideMask;
 	side = !side;
-	occupancies[2] = occupancies[0] | occupancies[1];
+	occupancies[both] = occupancies[white] | occupancies[black];
 
 	current_hash = get_hash();
+#if timing
+	auto end = std::chrono::steady_clock::now();
+	moveMaking += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 	//IN CASE I WANT TO FIX HASH UPDATING
 	//update_hash(move);
 	//const U64 hash = get_hash();
@@ -2078,6 +2138,9 @@ inline void Position::make_move(const unsigned int move) {
 	//}
 }
 inline void Position::unmake_move() {
+#if timing
+	auto start = std::chrono::steady_clock::now();
+#endif
 	const unsigned int move = move_history.back();
 	move_history.pop_back();
 	no_pawns_or_captures = no_pawns_or_captures_history.back();
@@ -2130,9 +2193,13 @@ inline void Position::unmake_move() {
 		occupancies[(!side)] ^= (1ULL << rook_source) | (1ULL << rook_target);
 	}
 	occupancies[(!side)] ^= (1ULL << to_square) | (1ULL << from_square);
-	occupancies[2] = occupancies[0] | occupancies[1];
+	occupancies[both] = occupancies[white] | occupancies[black];
 	sideMask = ~sideMask;
 	side = !side;
+#if timing
+	auto end = std::chrono::steady_clock::now();
+	moveUnmaking += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 	//if (!boardsMatch()) {
 	//	std::string str = "\n" + to_string();
 	//	str += "| last move: \n" + move_to_string(move);
