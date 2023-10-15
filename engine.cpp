@@ -326,7 +326,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 #endif
 	}
 	const int phase = pos.get_phase();
-	if ((!isPV) && (depth >= 1 + Red) && (!in_check) && (phase>=8)) {
+	if ((!isPV) && (depth >= 1 + Red) && (!in_check) && (phase>=14)) {
 		pos.make_nullmove();
 		short nm_value = -pv_search(moves, move_index + 1, depth - 1 - Red, -beta, -beta + 1, false);
 		pos.unmake_nullmove();
