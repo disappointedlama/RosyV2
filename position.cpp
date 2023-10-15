@@ -62,7 +62,7 @@ void Position::try_out_move(std::array<unsigned int,128>& ret, unsigned int move
 }
 
 int Position::get_legal_moves(std::array<unsigned int,128>& ret) {
-#if timing
+#if timingPosition
 	auto start = std::chrono::steady_clock::now();
 #endif
 	const int kingpos = bitscan(bitboards[K + (int)(sideMask & 6)]);
@@ -71,7 +71,7 @@ int Position::get_legal_moves(std::array<unsigned int,128>& ret) {
 	const U64 enemy_attacks = get_attacks_by(~sideMask);
 	int ind = 0;
 	(in_check) ? (legal_in_check_move_generator(ret, kingpos, kings_queen_scope, enemy_attacks,ind)) : (legal_move_generator(ret, kingpos, kings_queen_scope, enemy_attacks,ind));
-#if timing
+#if timingPosition
 	auto end = std::chrono::steady_clock::now();
 	totalTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
@@ -79,11 +79,11 @@ int Position::get_legal_moves(std::array<unsigned int,128>& ret) {
 }
 void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind) {
 	get_castles(ret, enemy_attacks, ind);
-#if timing
+#if timingPosition
 	auto start = std::chrono::steady_clock::now();
 #endif
 	const U64 pinned = get_moves_for_pinned_pieces(ret, kingpos, enemy_attacks, ind);
-#if timing
+#if timingPosition
 	auto end = std::chrono::steady_clock::now();
 	PinnedGeneration += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
@@ -126,7 +126,7 @@ void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int
 
 	type++;
 
-#if timing
+#if timingPosition
 	start = std::chrono::steady_clock::now();
 #endif
 	while (tempBishops) {
@@ -207,7 +207,7 @@ void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int
 		}
 		tempQueens = _blsr_u64(tempQueens);
 	}
-#if timing
+#if timingPosition
 	end = std::chrono::steady_clock::now();
 	slidingGeneration += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
@@ -235,11 +235,11 @@ void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int
 	get_legal_pawn_moves(ret, kings_queen_scope, enemy_attacks, pinned,ind);
 }
 void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind){
-#if timing
+#if timingPosition
 	auto start = std::chrono::steady_clock::now();
 #endif
 	const U64 pinned = get_pinned_pieces(kingpos, enemy_attacks);
-#if timing
+#if timingPosition
 	auto end = std::chrono::steady_clock::now();
 	PinnedGeneration += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
@@ -285,7 +285,7 @@ void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret,
 
 	type++;
 
-#if timing
+#if timingPosition
 	start = std::chrono::steady_clock::now();
 #endif
 	while (tempBishops) {
@@ -367,7 +367,7 @@ void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret,
 		tempQueens = _blsr_u64(tempQueens);
 	}
 
-#if timing
+#if timingPosition
 	end = std::chrono::steady_clock::now();
 	slidingGeneration += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
@@ -643,12 +643,12 @@ void Position::in_check_get_pawn_captures(std::array<unsigned int,128>& ret, con
 }
 
 inline void Position::get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind) {
-#if timing
+#if timingPosition
 	auto start = std::chrono::steady_clock::now();
 #endif
 	(sideMask) ? (legal_bpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned, ind)) : (legal_wpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned, ind));
 	(sideMask) ? (legal_bpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, ind)) : (legal_wpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, ind));
-#if timing
+#if timingPosition
 	auto end = std::chrono::steady_clock::now();
 	pawnGeneration += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
@@ -892,12 +892,12 @@ inline void Position::legal_wpawn_captures(std::array<unsigned int,128>& ret, co
 }
 
 inline void Position::in_check_get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind) {
-#if timing
+#if timingPosition
 	auto start = std::chrono::steady_clock::now();
 #endif
 	(sideMask) ? (in_check_legal_bpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned, targets, in_check_valid, ind)) : (in_check_legal_wpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned, targets, in_check_valid, ind));
 	(sideMask) ? (in_check_legal_bpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, targets, ind)) : (in_check_legal_wpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, targets, ind));
-#if timing
+#if timingPosition
 	auto end = std::chrono::steady_clock::now();
 	pawnGeneration += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
@@ -1621,7 +1621,7 @@ Position::Position() {
 	for (int i = 0; i < square_board.size(); i++) {
 		square_board[i] = no_piece;
 	}
-#if timing
+#if timingPosition
 	totalTime = 0ULL;
 	pawnGeneration = 0ULL;
 	slidingGeneration = 0ULL;
@@ -1731,7 +1731,7 @@ void Position::parse_fen(std::string fen) {
 	fen = fen.substr(fen.find(delimiter));
 	fen = fen.substr(1);
 
-#if timing
+#if timingPosition
 	totalTime = 0ULL;
 	pawnGeneration = 0ULL;
 	slidingGeneration = 0ULL;
@@ -2066,7 +2066,7 @@ inline void Position::update_hash(const unsigned int move) {
 	current_hash = current_hash % 4294967296;
 }
 inline void Position::make_move(const unsigned int move) {
-#if timing
+#if timingPosition
 	auto start = std::chrono::steady_clock::now();
 #endif
 	no_pawns_or_captures_history.push_back(no_pawns_or_captures);
@@ -2148,7 +2148,7 @@ inline void Position::make_move(const unsigned int move) {
 	occupancies[both] = occupancies[white] | occupancies[black];
 
 	update_hash(move);
-#if timing
+#if timingPosition
 	auto end = std::chrono::steady_clock::now();
 	moveMaking += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
@@ -2161,7 +2161,7 @@ inline void Position::make_move(const unsigned int move) {
 	//}
 }
 inline void Position::unmake_move() {
-#if timing
+#if timingPosition
 	auto start = std::chrono::steady_clock::now();
 #endif
 	const unsigned int move = move_history.back();
@@ -2219,7 +2219,7 @@ inline void Position::unmake_move() {
 	occupancies[both] = occupancies[white] | occupancies[black];
 	sideMask = ~sideMask;
 	side = !side;
-#if timing
+#if timingPosition
 	auto end = std::chrono::steady_clock::now();
 	moveUnmaking += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif

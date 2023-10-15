@@ -65,7 +65,7 @@ struct Position_Error : std::exception {
 	}
 
 };
-#define timing false
+#define timingPosition false
 class Position {
 	inline bool is_attacked_by_side(const int sq, const bool color);
 	inline U64 get_attacks_by(const U64 color);
@@ -185,7 +185,7 @@ public:
 	std::array<U64, 12> bitboards; // P, N, B, R, Q, K, p, n, b, r, q, k
 	std::array<U64, 3> occupancies;
 	std::array<short, 64> square_board;
-#if timing
+#if timingPosition
 	U64 totalTime;
 	U64 pawnGeneration;
 	U64 slidingGeneration;

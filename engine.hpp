@@ -9,7 +9,8 @@
 constexpr short EXACT = 0;
 constexpr short UPPER = 1;
 constexpr short LOWER = 2;
-# define tuning false
+#define tuning false
+#define timingEngine false
 constexpr short Red = (short)1;
 constexpr short lateMoveReduction = 2;
 static constexpr int full_depth_moves = 8;
@@ -85,7 +86,13 @@ struct KillerTable {
 
 static std::array<std::array<U64, 64>, 12> history = std::array<std::array<U64, 64>, 12>{};
 class Engine {
+#if tuning
 	std::array<int, 15> gradient{};
+#endif
+#if timingEngine
+	U64 totalEngineTime = 0ULL;
+	U64 moveGenerationTime = 0ULL;
+#endif
 	std::string logging_path = "RosyV2.botlogs";
 	Position pos;
 	int current_desired_depth;

@@ -6,7 +6,7 @@ U64 en_passant = 0ULL;
 U64 castles = 0ULL;
 U64 promotions = 0ULL;
 void printTimingInfo(Position& pos) {
-#if timing
+#if timingPosition
     std::cout << "Time spend:\nPawn generation: " << ((double)pos.pawnGeneration / pos.totalTime) * 100.0 << "%\n";
     std::cout << "Sliding generation: " << ((double)pos.slidingGeneration / pos.totalTime) * 100.0 << "%\n";
     std::cout << "Pinned generation: " << ((double)pos.PinnedGeneration / pos.totalTime) * 100.0 << "%\n";

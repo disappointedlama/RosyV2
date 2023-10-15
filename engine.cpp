@@ -57,6 +57,9 @@ int Engine::bestMove() {
 	MoveWEval old_best = best;
 	short alpha = -infinity;
 	short beta = infinity;
+#if timingEngine
+	auto start = std::chrono::steady_clock::now();
+#endif
 	try {
 		for (current_desired_depth = 1; current_desired_depth < max_depth + 1; current_desired_depth++) {
 			nodes = 0;
@@ -99,6 +102,13 @@ int Engine::bestMove() {
 	catch (Position_Error e) {
 		log.error(e.what());
 	}
+#if timingEngine
+	auto end = std::chrono::steady_clock::now();
+	totalEngineTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+	std::cout << "Time spend on move generation: " << ((double)moveGenerationTime / totalEngineTime) * 100.0 << "%\n";
+	moveGenerationTime = 0ULL;
+	totalEngineTime = 0ULL;
+#endif
 	reset_position();
 	bool found = false;
 	for (int i = 0; i < number_of_legal_moves; i++) {
@@ -186,7 +196,14 @@ inline void Engine::printBestMove(int move) {
 }
 MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta) {
 	TableEntry entry = lookUp();
+#if timingEngine
+	auto start = std::chrono::steady_clock::now();
+#endif
 	const int number_of_moves = pos.get_legal_moves(moves[move_index]);
+#if timingEngine
+	auto end = std::chrono::steady_clock::now();
+	moveGenerationTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 	order(moves[move_index], entry, number_of_moves);
 	unsigned int current_best_move = 0;
 	short current_best_eval = -infinity-1;
@@ -242,8 +259,15 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 		throw stop_exception("pv search");
 	}
 	nodes++;
-	
+
+#if timingEngine
+	auto start = std::chrono::steady_clock::now();
+#endif
 	const int number_of_moves = pos.get_legal_moves(moves[move_index]);
+#if timingEngine
+	auto end = std::chrono::steady_clock::now();
+	moveGenerationTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 
 	const bool draw_by_repetition = pos.is_draw_by_repetition();
 	const bool draw_by_fifty_move_rule = pos.is_draw_by_fifty_moves();
@@ -370,7 +394,14 @@ short Engine::quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, i
 	}
 	nodes++;
 	const short alphaOrigin = alpha;
+#if timingEngine
+	auto start = std::chrono::steady_clock::now();
+#endif
 	const int number_of_captures = pos.get_legal_captures(moves[move_index]);
+#if timingEngine
+	auto end = std::chrono::steady_clock::now();
+	moveGenerationTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 
 	const bool draw_by_repetition = pos.is_draw_by_repetition();
 	const bool draw_by_fifty_move_rule = pos.is_draw_by_fifty_moves();
@@ -381,7 +412,14 @@ short Engine::quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, i
 		return eval;
 	}
 	if (number_of_captures == 0) {
+#if timingEngine
+		start = std::chrono::steady_clock::now();
+#endif
 		const int number_of_moves = pos.get_legal_moves(moves[move_index]);
+#if timingEngine
+		end = std::chrono::steady_clock::now();
+		moveGenerationTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 		const bool no_moves_left = number_of_moves == 0;
 		const bool in_check = pos.currently_in_check();
 		const bool draw_by_stalemate = no_moves_left && (!in_check);
