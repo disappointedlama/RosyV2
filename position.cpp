@@ -231,7 +231,7 @@ void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int
 
 		attacks = _blsr_u64(attacks);
 	}
-	get_legal_pawn_moves(ret, enemy_attacks, pinned,ind);
+	get_legal_pawn_moves(ret, pinned, ind);
 }
 void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret, const int kingpos, const U64 enemy_attacks, int& ind){
 #if timingPosition
@@ -640,7 +640,7 @@ void Position::in_check_get_pawn_captures(std::array<unsigned int,128>& ret, con
 	(sideMask) ? (in_check_legal_bpawn_captures(ret, pinned, targets, ind)) : (in_check_legal_wpawn_captures(ret, pinned, targets, ind));
 }
 
-inline void Position::get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, int& ind) {
+inline void Position::get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 pinned, int& ind) {
 #if timingPosition
 	auto start = std::chrono::steady_clock::now();
 #endif

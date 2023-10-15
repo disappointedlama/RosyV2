@@ -89,7 +89,7 @@ class Position {
 	inline U64 get_checkers(const int kingpos);
 	inline U64 get_checking_rays(const int kingpos);
 	void try_out_move(std::array<unsigned int,128>& ret, unsigned int move, int& ind);
-	inline void get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, int& ind);
+	inline void get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 pinned, int& ind);
 	inline void legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, int& ind);
 	inline void legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, int& ind);
 	inline void legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, int& ind);
