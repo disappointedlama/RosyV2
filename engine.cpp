@@ -583,6 +583,47 @@ void Engine::parse_go(std::string str){
 			}
 		}
 	}
+	command = "perft ";
+	substr_pos = str.find(command);
+	if (substr_pos != std::string::npos) {
+		str = str.substr(substr_pos + command.size(), str.size());
+		max_depth = stoi(str);
+		perft();
+		return;
+	}
+}
+void Engine::perft() {
+	pos.print();
+	std::array<std::array<unsigned int, 128>, 40> moves{};
+	const int number_of_moves = pos.get_legal_moves(moves[0]);
+	std::vector<unsigned long long> nodeList{};
+	std::cout << "Nodes from different branches:\n";
+	U64 total_nodes = 0ULL;
+	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+	for (int i = 0; i < number_of_moves; i++) {
+		pos.make_move(moves[0][i]);
+		perft_traversal(moves, 1, max_depth - 1);
+		pos.unmake_move();
+		std::cout << "\t" << uci(moves[0][i]) << ": " << nodes << " Nodes\n";
+		total_nodes += nodes;
+		nodes = 0ULL;
+	}
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	U64 totalTime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+	std::cout << "Total Nodes: " << total_nodes << "\n";
+	std::cout << "Time: " << totalTime/1000000000.0 << "s (" << 1000.0 * total_nodes / totalTime << " MHz)\n";
+}
+void Engine::perft_traversal(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const int depth) {
+	if (depth == 0) {
+		nodes++;
+		return;
+	}
+	const int number_of_moves = pos.get_legal_moves(moves[move_index]);
+	for (int i = 0; i < number_of_moves; i++) {
+		pos.make_move(moves[move_index][i]);
+		perft_traversal(moves, move_index + 1, depth - 1);
+		pos.unmake_move();
+	}
 }
 void Engine::print_info(const short depth, const int eval, const U64 time) {
 	std::stringstream stream{};

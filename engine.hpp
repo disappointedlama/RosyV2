@@ -162,6 +162,8 @@ class Engine {
 public:
 	Engine();
 	Engine(const bool t_debug);
+	void perft();
+	void perft_traversal(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const int depth);
 	int bestMove();
 	int evaluate();
 	inline void printBestMove(int move);

@@ -15,18 +15,11 @@ void printTimingInfo(Position& pos) {
 #endif
 }
 void tree(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, Position& pos, const int depth, const int ind, std::vector<unsigned long long>* nodes_ptr) {
-
     const int number_of_moves = pos.get_legal_moves(moves[move_index]); 
     if (depth == 0) {
         (nodes_ptr->at(ind)) += 1;
         mates += (number_of_moves == 0);
     }
-    /*
-    if (depth == 0) {
-        mates += (moves.size() == 0);
-        return;
-    }
-    */
     if (depth > 0) {
         for (int i = 0; i < number_of_moves; i++) {
             if (depth == 1) {
@@ -34,7 +27,7 @@ void tree(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, 
                     captures++;
                     if (get_enpassant_flag(moves[move_index][i])) en_passant++;
                 }
-                if (get_castling_flag(moves[move_index][i])) castles++;
+                else if (get_castling_flag(moves[move_index][i])) castles++;
                 if (get_promotion_type(moves[move_index][i]) != 15) promotions++;
             }
             pos.make_move(moves[move_index][i]);
@@ -57,7 +50,7 @@ void perf(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, 
                 captures++;
                 if (get_enpassant_flag(moves[move_index][i])) en_passant++;
             }
-            if (get_castling_flag(moves[move_index][i])) castles++;
+            else if (get_castling_flag(moves[move_index][i])) castles++;
             if (get_promotion_type(moves[move_index][i]) != 15) promotions++;
         }
         pos.make_move(moves[move_index][i]);
@@ -69,7 +62,7 @@ void perf(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     U64 totalTime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     std::cout << "\tTotal Nodes: " << total_nodes << "\n";
-    std::cout << "\tTime: " << totalTime << "  (" << 1000000000 * total_nodes / totalTime << " 1/s)\n";
+    std::cout << "\tTime: " << totalTime / 1000000000.0 << "s (" << 1000.0 * total_nodes / totalTime << " MHz)\n";
     lookedAt = total_nodes;
 }
 void reset_test_parameters() {
