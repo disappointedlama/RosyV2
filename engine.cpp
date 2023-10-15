@@ -105,9 +105,23 @@ int Engine::bestMove() {
 #if timingEngine
 	auto end = std::chrono::steady_clock::now();
 	totalEngineTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-	std::cout << "Time spend on move generation: " << ((double)moveGenerationTime / totalEngineTime) * 100.0 << "%\n";
-	moveGenerationTime = 0ULL;
+	std::cout << "Time spend:\n";
+	std::cout << "pv search: " << (1 - (double)quiescenceTime / totalEngineTime) * 100.0 << "%\n";
+	std::cout<<"move generation : " << ((double)moveGenerationTime / totalEngineTime) * 100.0 << " % \n";
+	std::cout << "move ordering: " << ((double)moveOrderingTime / totalEngineTime) * 100.0 << "%\n";
+	std::cout << "quiescence: " << ((double)quiescenceTime / totalEngineTime) * 100.0 << "%\n";
+	std::cout << "move generation quiescence: " << ((double)moveGenerationQuiescenceTime / totalEngineTime) * 100.0 << "%\n";
+	std::cout << "capture generation : " << ((double)captureGenerationTime / totalEngineTime) * 100.0 << " % \n";
+	std::cout << "capture ordering: " << ((double)captureOrderingTime / totalEngineTime) * 100.0 << "%\n";
+	std::cout << "evaluation: " << ((double)evaluationTime / totalEngineTime) * 100.0 << "%\n";
 	totalEngineTime = 0ULL;
+	moveGenerationTime = 0ULL;
+	captureGenerationTime = 0ULL;
+	quiescenceTime = 0ULL;
+	moveOrderingTime = 0ULL;
+	captureOrderingTime = 0ULL;
+	moveGenerationQuiescenceTime = 0ULL;
+	evaluationTime = 0ULL;
 #endif
 	reset_position();
 	bool found = false;
@@ -278,7 +292,14 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 	const bool is_lost = no_moves_left && in_check;
 
 	if (is_draw || is_lost) {
+#if timingEngine
+		start = std::chrono::steady_clock::now();
+#endif
 		const short eval = pos.evaluate(is_draw, is_lost);
+#if timingEngine
+		end = std::chrono::steady_clock::now();
+		evaluationTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 		hash_map[pos.current_hash] = TableEntry{ 0,eval,EXACT,depth };
 		return eval;
 	}
@@ -294,7 +315,15 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 	}
 
 	if (depth <= 0) {
+#if timingEngine
+		start = std::chrono::steady_clock::now();
+		short eval = quiescence(moves, move_index + 1, alpha, beta);
+		end = std::chrono::steady_clock::now();
+		quiescenceTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+		return eval;
+#else
 		return quiescence(moves, move_index+1,alpha, beta);
+#endif
 	}
 	const int phase = pos.get_phase();
 	if ((!isPV) && (depth >= 1 + Red) && (!in_check) && (phase>=8)) {
@@ -400,7 +429,7 @@ short Engine::quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, i
 	const int number_of_captures = pos.get_legal_captures(moves[move_index]);
 #if timingEngine
 	auto end = std::chrono::steady_clock::now();
-	moveGenerationTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+	captureGenerationTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
 
 	const bool draw_by_repetition = pos.is_draw_by_repetition();
@@ -408,7 +437,14 @@ short Engine::quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, i
 	bool is_draw = draw_by_fifty_move_rule || draw_by_repetition;
 
 	if (is_draw) {
+#if timingEngine
+		start = std::chrono::steady_clock::now();
+#endif
 		const short eval = pos.evaluate(is_draw, false);
+#if timingEngine
+		end = std::chrono::steady_clock::now();
+		evaluationTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 		return eval;
 	}
 	if (number_of_captures == 0) {
@@ -418,17 +454,31 @@ short Engine::quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, i
 		const int number_of_moves = pos.get_legal_moves(moves[move_index]);
 #if timingEngine
 		end = std::chrono::steady_clock::now();
-		moveGenerationTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+		moveGenerationQuiescenceTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
 		const bool no_moves_left = number_of_moves == 0;
 		const bool in_check = pos.currently_in_check();
 		const bool draw_by_stalemate = no_moves_left && (!in_check);
 		is_draw = is_draw || draw_by_stalemate;
 		const bool is_lost = no_moves_left && in_check;
+#if timingEngine
+		start = std::chrono::steady_clock::now();
+#endif
 		const short eval = pos.evaluate(is_draw, is_lost);
+#if timingEngine
+		end = std::chrono::steady_clock::now();
+		evaluationTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 		return eval;
 	}
+#if timingEngine
+	start = std::chrono::steady_clock::now();
+#endif
 	short eval = pos.evaluate(false, false);
+#if timingEngine
+	end = std::chrono::steady_clock::now();
+	evaluationTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 	if (eval < alpha - 950) {//delta pruning
 		return alpha;
 	}

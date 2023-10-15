@@ -92,6 +92,12 @@ class Engine {
 #if timingEngine
 	U64 totalEngineTime = 0ULL;
 	U64 moveGenerationTime = 0ULL;
+	U64 captureGenerationTime = 0ULL;
+	U64 quiescenceTime = 0ULL;
+	U64 moveOrderingTime = 0ULL;
+	U64 captureOrderingTime = 0ULL;
+	U64 moveGenerationQuiescenceTime = 0ULL;
+	U64 evaluationTime = 0ULL;
 #endif
 	std::string logging_path = "RosyV2.botlogs";
 	Position pos;
@@ -112,6 +118,9 @@ class Engine {
 	short pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta, bool isPV);
 	short quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, short alpha, short beta);
 	inline void order(std::array<unsigned int,128>& moves, TableEntry& entry, int number_of_moves) {
+#if timingEngine
+		auto start = std::chrono::steady_clock::now();
+#endif
 		int hash_move = 0;
 		if (((bool)(entry.get_move())) && (std::find(moves.begin(), moves.end(), entry.get_move()) != moves.end())&&entry.get_move()!=0) {
 			hash_move = entry.get_move();
@@ -156,12 +165,23 @@ class Engine {
 				__assume(get_to_square(rhs) > -1);
 				return (history[(size_t)(lhs_piece)][(size_t)(get_to_square(lhs))] > history[(size_t)(rhs_piece)][(size_t)(get_to_square(rhs))]);
 			});
+#if timingEngine
+		auto end = std::chrono::steady_clock::now();
+		moveOrderingTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 	}
 	inline void quiescence_order(std::array<unsigned int, 128>& moves, int number_of_moves) {
+#if timingEngine
+		auto start = std::chrono::steady_clock::now();
+#endif
 		std::sort(moves.begin(), (std::array<unsigned int,128>::iterator)(moves.begin()+number_of_moves), [&](const int& lhs, const int& rhs)
 			{
 				return pos.seeByMove(lhs)>pos.seeByMove(rhs);
 			});
+#if timingEngine
+		auto end = std::chrono::steady_clock::now();
+		captureOrderingTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+#endif
 	};
 	inline TableEntry lookUp();
 	void print_info(const short depth, const int eval, const U64 time);
