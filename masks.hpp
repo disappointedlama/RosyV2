@@ -111,7 +111,7 @@ static constexpr std::array<std::array<U64, 64>, 2> front_pawn_attack_spans = in
 static constexpr std::array<std::array<U64, 64>, 64> init_checkingRays(std::array<std::array<U64, 64>, 64>ret) {
 	for (int i = 0; i < 64; i++) {
 		for (int j = 0; j < 64; j++) {
-			ret[i][j] = 0;
+			ret[i][j] = 0ULL;
 		}
 	}
 	for (int i = 0; i < 64; i++) {
