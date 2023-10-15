@@ -75,13 +75,13 @@ class Position {
 		return square_board[sq];
 	};
 
-	void legal_move_generator(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind);
-	void legal_in_check_move_generator(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind);
+	int legal_move_generator(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int ind);
+	int legal_in_check_move_generator(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int ind);
 
-	void legal_capture_gen(std::array<unsigned int,128>& ret, const U64 enemy_attacks, int& ind);
-	void legal_in_check_capture_gen(std::array<unsigned int,128>& ret, const U64 enemy_attacks, int& ind);
-	void in_check_get_pawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int& ind);
-	void get_pawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, int& ind);
+	int legal_capture_gen(std::array<unsigned int,128>& ret, const U64 enemy_attacks, int ind);
+	int legal_in_check_capture_gen(std::array<unsigned int,128>& ret, const U64 enemy_attacks, int ind);
+	int in_check_get_pawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int ind);
+	int get_pawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, int ind);
 
 	inline U64 get_pinned_pieces(const int kingpos, const U64 enemy_attacks);
 	inline U64 get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks,int &ind);
@@ -89,19 +89,19 @@ class Position {
 	inline U64 get_checkers(const int kingpos);
 	inline U64 get_checking_rays(const int kingpos);
 	void try_out_move(std::array<unsigned int,128>& ret, unsigned int move, int& ind);
-	inline void get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 pinned, int& ind);
-	inline void legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, int& ind);
-	inline void legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, int& ind);
-	inline void legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, int& ind);
-	inline void legal_wpawn_captures(std::array<unsigned int, 128>& ret, const U64 pinned, int& ind);
+	inline int get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 pinned, int ind);
+	inline int legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, int ind);
+	inline int legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, int ind);
+	inline int legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, int ind);
+	inline int legal_wpawn_captures(std::array<unsigned int, 128>& ret, const U64 pinned, int ind);
 
-	inline void in_check_get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind);
-	inline void in_check_legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind);
-	inline void in_check_legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind);
-	inline void in_check_legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int& ind);
-	inline void in_check_legal_wpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int& ind);
+	inline int in_check_get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int ind);
+	inline int in_check_legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int ind);
+	inline int in_check_legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int ind);
+	inline int in_check_legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int ind);
+	inline int in_check_legal_wpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int ind);
 
-	inline void get_castles(std::array<unsigned int,128>& ptr, const U64 enemy_attacks, int& ind);
+	inline int get_castles(std::array<unsigned int,128>& ptr, const U64 enemy_attacks, int ind);
 	inline short raw_material(const short phase) {
 		short ret = (((openingKingTableWhite[bitscan(bitboards[K])] - openingKingTableBlack[bitscan(bitboards[k])]) * (256 - phase)) + ((endgameKingTable[bitscan(bitboards[K])] - endgameKingTable[bitscan(bitboards[k])]) * phase)) / 256
 					+ (count_bits(bitboards[P]) - count_bits(bitboards[p])) * wheights[10]
