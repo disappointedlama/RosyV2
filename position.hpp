@@ -75,11 +75,11 @@ class Position {
 		return square_board[sq];
 	};
 
-	void legal_move_generator(std::array<unsigned int,128>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind);
-	void legal_in_check_move_generator(std::array<unsigned int,128>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind);
+	void legal_move_generator(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind);
+	void legal_in_check_move_generator(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind);
 
-	void legal_capture_gen(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind);
-	void legal_in_check_capture_gen(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind);
+	void legal_capture_gen(std::array<unsigned int,128>& ret, const U64 enemy_attacks, int& ind);
+	void legal_in_check_capture_gen(std::array<unsigned int,128>& ret, const U64 enemy_attacks, int& ind);
 	void in_check_get_pawn_captures(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, const U64 targets, int& ind);
 	void get_pawn_captures(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, int& ind);
 

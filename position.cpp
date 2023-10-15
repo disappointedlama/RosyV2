@@ -67,17 +67,16 @@ int Position::get_legal_moves(std::array<unsigned int,128>& ret) {
 #endif
 	const int kingpos = bitscan(bitboards[K + (int)(sideMask & 6)]);
 	const bool in_check = is_attacked_by_side(kingpos, ~sideMask);
-	const U64 kings_queen_scope = get_queen_attacks(occupancies[both], kingpos);
 	const U64 enemy_attacks = get_attacks_by(~sideMask);
 	int ind = 0;
-	(in_check) ? (legal_in_check_move_generator(ret, kingpos, kings_queen_scope, enemy_attacks,ind)) : (legal_move_generator(ret, kingpos, kings_queen_scope, enemy_attacks,ind));
+	(in_check) ? (legal_in_check_move_generator(ret, kingpos, enemy_attacks,ind)) : (legal_move_generator(ret, kingpos, enemy_attacks,ind));
 #if timingPosition
 	auto end = std::chrono::steady_clock::now();
 	totalTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
 	return ind;
 }
-void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind) {
+void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind) {
 	get_castles(ret, enemy_attacks, ind);
 #if timingPosition
 	auto start = std::chrono::steady_clock::now();
@@ -234,7 +233,7 @@ void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int
 	}
 	get_legal_pawn_moves(ret, enemy_attacks, pinned,ind);
 }
-void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind){
+void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret, const int kingpos, const U64 enemy_attacks, int& ind){
 #if timingPosition
 	auto start = std::chrono::steady_clock::now();
 #endif
@@ -399,13 +398,12 @@ void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret,
 int Position::get_legal_captures(std::array<unsigned int,128>& ret) {
 	const int kingpos = bitscan(bitboards[K + (int)(sideMask & 6)]);
 	const bool in_check = is_attacked_by_side(kingpos, ~sideMask);
-	const U64 kings_queen_scope = get_queen_attacks(occupancies[both], kingpos);
 	const U64 enemy_attacks = get_attacks_by(~sideMask);
 	int ind = 0;
-	(in_check) ? (legal_in_check_capture_gen(ret, kings_queen_scope, enemy_attacks, ind)) : (legal_capture_gen(ret, kings_queen_scope, enemy_attacks, ind));
+	(in_check) ? (legal_in_check_capture_gen(ret, enemy_attacks, ind)) : (legal_capture_gen(ret, enemy_attacks, ind));
 	return ind;
 }
-void Position::legal_capture_gen(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind) {
+void Position::legal_capture_gen(std::array<unsigned int,128>& ret, const U64 enemy_attacks, int& ind) {
 	const int kingpos = bitscan(bitboards[K + (int)(sideMask & 6)]);
 	const U64 pinned = get_captures_for_pinned_pieces(ret, kingpos, enemy_attacks, ind);
 	const U64 enemy_pieces = occupancies[(!side)];
@@ -514,7 +512,7 @@ void Position::legal_capture_gen(std::array<unsigned int,128>& ret, const U64 ki
 	}
 	get_pawn_captures(ret, enemy_attacks, pinned, ind);
 }
-void Position::legal_in_check_capture_gen(std::array<unsigned int, 128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind) {
+void Position::legal_in_check_capture_gen(std::array<unsigned int, 128>& ret, const U64 enemy_attacks, int& ind) {
 	const int kingpos = bitscan(bitboards[K + (int)(sideMask & 6)]);
 	const U64 pinned = get_pinned_pieces(kingpos, enemy_attacks);
 	const U64 checkers = get_checkers(kingpos);
