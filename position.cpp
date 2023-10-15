@@ -392,7 +392,7 @@ void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret,
 
 		attacks = _blsr_u64(attacks);
 	}
-	in_check_get_legal_pawn_moves(ret, enemy_attacks, pinned, (not_double_check)*checkers, (not_double_check)*valid_targets, ind);
+	in_check_get_legal_pawn_moves(ret, pinned, (not_double_check)*checkers, (not_double_check)*valid_targets, ind);
 }
 
 int Position::get_legal_captures(std::array<unsigned int,128>& ret) {
@@ -510,7 +510,7 @@ void Position::legal_capture_gen(std::array<unsigned int,128>& ret, const U64 en
 
 		attacks = _blsr_u64(attacks);
 	}
-	get_pawn_captures(ret, enemy_attacks, pinned, ind);
+	get_pawn_captures(ret, pinned, ind);
 }
 void Position::legal_in_check_capture_gen(std::array<unsigned int, 128>& ret, const U64 enemy_attacks, int& ind) {
 	const int kingpos = bitscan(bitboards[K + (int)(sideMask & 6)]);
@@ -630,28 +630,28 @@ void Position::legal_in_check_capture_gen(std::array<unsigned int, 128>& ret, co
 
 		attacks = _blsr_u64(attacks);
 	}
-	in_check_get_pawn_captures(ret, enemy_attacks,pinned, (not_double_check)*checkers, ind);
+	in_check_get_pawn_captures(ret, pinned, (not_double_check)*checkers, ind);
 }
 
-void Position::get_pawn_captures(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, int& ind) {
-	(sideMask) ? (legal_bpawn_captures(ret, enemy_attacks, pinned, ind)) : (legal_wpawn_captures(ret, enemy_attacks, pinned, ind));
+void Position::get_pawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, int& ind) {
+	(sideMask) ? (legal_bpawn_captures(ret, pinned, ind)) : (legal_wpawn_captures(ret, pinned, ind));
 }
-void Position::in_check_get_pawn_captures(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, const U64 targets, int& ind) {
-	(sideMask) ? (in_check_legal_bpawn_captures(ret, enemy_attacks, pinned, targets, ind)) : (in_check_legal_wpawn_captures(ret, enemy_attacks, pinned, targets, ind));
+void Position::in_check_get_pawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int& ind) {
+	(sideMask) ? (in_check_legal_bpawn_captures(ret, pinned, targets, ind)) : (in_check_legal_wpawn_captures(ret, pinned, targets, ind));
 }
 
 inline void Position::get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, int& ind) {
 #if timingPosition
 	auto start = std::chrono::steady_clock::now();
 #endif
-	(sideMask) ? (legal_bpawn_pushes(ret, enemy_attacks, pinned, ind)) : (legal_wpawn_pushes(ret, enemy_attacks, pinned, ind));
-	(sideMask) ? (legal_bpawn_captures(ret, enemy_attacks, pinned, ind)) : (legal_wpawn_captures(ret, enemy_attacks, pinned, ind));
+	(sideMask) ? (legal_bpawn_pushes(ret, pinned, ind)) : (legal_wpawn_pushes(ret, pinned, ind));
+	(sideMask) ? (legal_bpawn_captures(ret, pinned, ind)) : (legal_wpawn_captures(ret, pinned, ind));
 #if timingPosition
 	auto end = std::chrono::steady_clock::now();
 	pawnGeneration += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
 }
-inline void Position::legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, int& ind) {
+inline void Position::legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, int& ind) {
 	U64 valid_targets = ~occupancies[both];
 	U64 promoters = bitboards[6] & (~pinned) & rank2;
 	U64 push_promotions = (promoters << 8) & valid_targets;
@@ -693,7 +693,7 @@ inline void Position::legal_bpawn_pushes(std::array<unsigned int,128>& ret, cons
 		doublePushes = _blsr_u64(doublePushes);
 	}
 }
-inline void Position::legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, int& ind) {
+inline void Position::legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, int& ind) {
 	U64 valid_targets = ~occupancies[both];
 	U64 promoters = bitboards[0] & (~pinned) & rank7;
 	U64 push_promotions = (promoters >> 8) & valid_targets;
@@ -738,7 +738,7 @@ inline void Position::legal_wpawn_pushes(std::array<unsigned int,128>& ret, cons
 		doublePushes = _blsr_u64(doublePushes);
 	}
 }
-inline void Position::legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, int& ind) {
+inline void Position::legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, int& ind) {
 	const U64 targets = occupancies[white];
 	U64 promoters = bitboards[6] & (~pinned) & rank2;
 	U64 captures = ((bitboards[6] & ~(pinned | promoters)) << 7) & notHFile & targets;
@@ -813,7 +813,7 @@ inline void Position::legal_bpawn_captures(std::array<unsigned int,128>& ret, co
 		promotion_captures = _blsr_u64(promotion_captures);
 	}
 }
-inline void Position::legal_wpawn_captures(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, int& ind) {
+inline void Position::legal_wpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, int& ind) {
 	U64 promoters = bitboards[0] & (~pinned) & rank7;
 	const U64 targets = occupancies[black];
 	U64 captures = ((bitboards[0] & ~(pinned | promoters)) >> 7) & notAFile & targets;
@@ -889,18 +889,18 @@ inline void Position::legal_wpawn_captures(std::array<unsigned int,128>& ret, co
 	}
 }
 
-inline void Position::in_check_get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind) {
+inline void Position::in_check_get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind) {
 #if timingPosition
 	auto start = std::chrono::steady_clock::now();
 #endif
-	(sideMask) ? (in_check_legal_bpawn_pushes(ret, enemy_attacks, pinned, targets, in_check_valid, ind)) : (in_check_legal_wpawn_pushes(ret, enemy_attacks, pinned, targets, in_check_valid, ind));
-	(sideMask) ? (in_check_legal_bpawn_captures(ret, enemy_attacks, pinned, targets, ind)) : (in_check_legal_wpawn_captures(ret, enemy_attacks, pinned, targets, ind));
+	(sideMask) ? (in_check_legal_bpawn_pushes(ret, pinned, targets, in_check_valid, ind)) : (in_check_legal_wpawn_pushes(ret, pinned, targets, in_check_valid, ind));
+	(sideMask) ? (in_check_legal_bpawn_captures(ret, pinned, targets, ind)) : (in_check_legal_wpawn_captures(ret, pinned, targets, ind));
 #if timingPosition
 	auto end = std::chrono::steady_clock::now();
 	pawnGeneration += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
 }
-inline void Position::in_check_legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind) {
+inline void Position::in_check_legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind) {
 	const U64 valid_targets = ~occupancies[both];
 	U64 promoters = bitboards[6] & (~pinned) & rank2;
 	U64 push_promotions = (promoters << 8) & in_check_valid & valid_targets;
@@ -939,7 +939,7 @@ inline void Position::in_check_legal_bpawn_pushes(std::array<unsigned int,128>& 
 		doublePushes = _blsr_u64(doublePushes);
 	}
 }
-inline void Position::in_check_legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind) {
+inline void Position::in_check_legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind) {
 	U64 valid_targets = ~occupancies[both];
 	U64 promoters = bitboards[0] & (~pinned) & rank7;
 	U64 push_promotions = (promoters >> 8) & in_check_valid & valid_targets;
@@ -978,7 +978,7 @@ inline void Position::in_check_legal_wpawn_pushes(std::array<unsigned int,128>& 
 		doublePushes = _blsr_u64(doublePushes);
 	}
 }
-inline void Position::in_check_legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, const U64 targets, int& ind) {
+inline void Position::in_check_legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int& ind) {
 	U64 promoters = bitboards[6] & (~pinned) & rank2;
 	U64 captures = ((bitboards[6] & (~(pinned | promoters))) << 7) & notHFile & targets;
 
@@ -1044,7 +1044,7 @@ inline void Position::in_check_legal_bpawn_captures(std::array<unsigned int,128>
 		promotion_captures = promotion_captures & ones_decrement(promotion_captures);
 	}
 }
-inline void Position::in_check_legal_wpawn_captures(std::array<unsigned int, 128>& ret, const U64 enemy_attacks, const U64 pinned, const U64 targets, int& ind) {
+inline void Position::in_check_legal_wpawn_captures(std::array<unsigned int, 128>& ret, const U64 pinned, const U64 targets, int& ind) {
 	U64 promoters = bitboards[0] & (~pinned) & rank7;
 	U64 captures = ((bitboards[0] & (~(pinned | promoters))) >> 7) & notAFile & targets;
 
