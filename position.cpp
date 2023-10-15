@@ -2000,10 +2000,16 @@ U64 Position::get_hash() const {
 		}
 	}
 
-	ret ^= ((bool)get_bit(castling_rights, 0)) * keys[12 * 64];
-	ret ^= ((bool)get_bit(castling_rights, 1)) * keys[12 * 64 + 1];
-	ret ^= ((bool)get_bit(castling_rights, 2)) * keys[12 * 64 + 2];
-	ret ^= ((bool)get_bit(castling_rights, 3)) * keys[12 * 64 + 3];
+	ret ^= (get_bit(castling_rights, 0)) * keys[12 * 64];
+	ret ^= (get_bit(castling_rights, 1)) * keys[12 * 64 + 1];
+	ret ^= (get_bit(castling_rights, 2)) * keys[12 * 64 + 2];
+	ret ^= (get_bit(castling_rights, 3)) * keys[12 * 64 + 3];
+	//should be:
+	//current_hash ^= ((bool)get_bit(different_rights, 0)) * keys[12 * 64];
+	//current_hash ^= ((bool)get_bit(different_rights, 1)) * keys[12 * 64 + 1];
+	//current_hash ^= ((bool)get_bit(different_rights, 2)) * keys[12 * 64 + 2];
+	//current_hash ^= ((bool)get_bit(different_rights, 3)) * keys[12 * 64 + 3];
+	//but the opening book was generated with the mistake, thus it is kept
 
 	ret ^= sideMask & keys[772];
 	assert(773 + enpassant_square % 8<781);
@@ -2040,10 +2046,16 @@ inline void Position::update_hash(const unsigned int move) {
 		current_hash ^= keys[rookOffset + rookTarget];
 	}
 	const int different_rights = castling_rights ^ castling_rights_history.back();
-	current_hash ^= ((bool)get_bit(different_rights, 0)) * keys[12 * 64];
-	current_hash ^= ((bool)get_bit(different_rights, 1)) * keys[12 * 64 + 1];
-	current_hash ^= ((bool)get_bit(different_rights, 2)) * keys[12 * 64 + 2];
-	current_hash ^= ((bool)get_bit(different_rights, 3)) * keys[12 * 64 + 3];
+	current_hash ^= (get_bit(different_rights, 0)) * keys[12 * 64];
+	current_hash ^= (get_bit(different_rights, 1)) * keys[12 * 64 + 1];
+	current_hash ^= (get_bit(different_rights, 2)) * keys[12 * 64 + 2];
+	current_hash ^= (get_bit(different_rights, 3)) * keys[12 * 64 + 3];
+	//should be:
+	//current_hash ^= ((bool)get_bit(different_rights, 0)) * keys[12 * 64];
+	//current_hash ^= ((bool)get_bit(different_rights, 1)) * keys[12 * 64 + 1];
+	//current_hash ^= ((bool)get_bit(different_rights, 2)) * keys[12 * 64 + 2];
+	//current_hash ^= ((bool)get_bit(different_rights, 3)) * keys[12 * 64 + 3];
+	//but the opening book was generated with the mistake, thus it is kept
 	const int old_enpassant_square = enpassant_history.back();
 	current_hash ^= ((old_enpassant_square != a8) && (old_enpassant_square != 64)) * keys[static_cast<std::array<size_t, 781Ui64>::size_type>(773) + old_enpassant_square % 8];
 	//undo old enpassant key
