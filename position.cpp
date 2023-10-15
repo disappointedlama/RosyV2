@@ -2135,30 +2135,11 @@ inline void Position::make_move(const unsigned int move) {
 	side = !side;
 	occupancies[both] = occupancies[white] | occupancies[black];
 
-	//current_hash = get_hash();
+	update_hash(move);
 #if timing
 	auto end = std::chrono::steady_clock::now();
 	moveMaking += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
-	//IN CASE I WANT TO FIX HASH UPDATING
-	update_hash(move);
-	const U64 hash = get_hash();
-	if (current_hash != hash) {
-		print();
-		print_move(move);
-		std::stringstream stream{};
-		stream<<"Updating hash did not yield correct result. Got " << current_hash<<" when fully calculating the hash yields "<<hash<<std::endl;
-		const U64 diff = current_hash ^ hash;
-		stream << "difference: " << diff <<std::endl;
-		for (int i = 0; i < keys.size(); i++) {
-			if (diff == keys[i]) {
-				stream << "differing key index: " << i << std::endl;
-				break;
-			}
-		}
-		std::string str = std::move(stream).str();
-		throw Position_Error{str};
-	}
 	//if (!boardsMatch()) {
 	//	std::string str = "\n" + to_string();
 	//	str += "| last move: \n" + move_to_string(move);

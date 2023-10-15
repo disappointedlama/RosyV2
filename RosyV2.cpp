@@ -195,13 +195,13 @@ void position_test() {
         std::cout << "Not all Tests passed" << std::endl;
     }
 }
-#define testingMoveGen true
+#define testingMoveGen false
 int main()
 {
     try {
 #if testingMoveGen
-    test();
-    //position_test();
+    //test();
+    position_test();
 #else
         Engine rosy{false};
         rosy.uci_loop();
