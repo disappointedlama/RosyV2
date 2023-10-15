@@ -65,7 +65,7 @@ struct Position_Error : std::exception {
 	}
 
 };
-#define timing true
+#define timing false
 class Position {
 	inline bool is_attacked_by_side(const int sq, const bool color);
 	inline U64 get_attacks_by(const U64 color);
@@ -240,10 +240,10 @@ public:
 		hash_history.push_back(current_hash);
 		no_pawns_or_captures++;
 		ply++;
-		current_hash = get_hash();
 		enpassant_square = a8;
 		sideMask = ~sideMask;
 		side = !side;
+		current_hash = get_hash();
 	}
 	inline void unmake_nullmove() {
 		no_pawns_or_captures = no_pawns_or_captures_history.back();

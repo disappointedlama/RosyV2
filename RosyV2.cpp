@@ -198,20 +198,20 @@ void position_test() {
 #define testingMoveGen true
 int main()
 {
-#if testingMoveGen
-    //test();
-    position_test();
-#else
     try {
+#if testingMoveGen
+    test();
+    //position_test();
+#else
         Engine rosy{false};
         rosy.uci_loop();
+#endif
     }
-    catch(std::exception e) {
+    catch(Position_Error e) {
         std::cout << e.what() << std::endl;
         std::cout << "Whoopsie" << std::endl;
     }
     return 0;
-#endif
 }
 
 /*

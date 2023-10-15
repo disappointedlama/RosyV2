@@ -1,5 +1,9 @@
 #pragma once
 #include "bitboard.hpp"
+#include "rookAttacks.hpp"
+#include "bishopAttacks.hpp"
+#include "immintrin.h"
+#include "intrin.h"
 #include <array>
 static constexpr U64 rank8 = (1ULL << 8) - 1ULL;
 static constexpr U64 rank7 = rank8 << 8;
@@ -104,3 +108,62 @@ static constexpr std::array<std::array<U64, 64>, 2> init_front_pawn_attack_spans
 	return ret;
 }
 static constexpr std::array<std::array<U64, 64>, 2> front_pawn_attack_spans = init_front_pawn_attack_spans(std::array<std::array<U64, 64>, 2>{});
+static constexpr std::array<std::array<U64, 64>, 64> init_checkingRays(std::array<std::array<U64, 64>, 64>ret) {
+	for (int i = 0; i < 64; i++) {
+		for (int j = 0; j < 64; j++) {
+			ret[i][j] = 0;
+		}
+	}
+	for (int i = 0; i < 64; i++) {
+		U64 rookAttacks = get_rook_attacks(0ULL, i);
+		while (rookAttacks) {
+			const U64 isolated = _blsi_u64(rookAttacks);
+			const int square = bitscan(isolated);
+			U64 tmpAttacks = get_rook_attacks(1ULL << square, i);
+			const U64 other = get_rook_attacks(1ULL<<i, square);
+			ret[i][square] = (other | isolated) & tmpAttacks;
+			rookAttacks = _blsr_u64(rookAttacks);
+		}
+		U64 bishopAttacks = get_bishop_attacks(0ULL, i);
+		while (bishopAttacks) {
+			const U64 isolated = _blsi_u64(bishopAttacks);
+			const int square = bitscan(isolated);
+			U64 tmpAttacks = get_bishop_attacks(1ULL << square, i);
+			const U64 other = get_bishop_attacks(1ULL<<i, square);
+			ret[i][square] = (other | isolated) & tmpAttacks;
+			bishopAttacks = _blsr_u64(bishopAttacks);
+		}
+	}
+	return ret;
+}
+static const std::array<std::array<U64, 64>, 64> checkingRays = init_checkingRays(std::array<std::array<U64, 64>, 64>{});
+static constexpr std::array<std::array<U64, 64>, 64> init_connectionRays(std::array<std::array<U64, 64>, 64>ret) {
+	for (int i = 0; i < 64; i++) {
+		for (int j = 0; j < 64; j++) {
+			ret[i][j] = 0;
+		}
+	}
+	for (int i = 0; i < 64; i++) {
+		const U64 sq = 1ULL << i;
+		U64 rookAttacks = get_rook_attacks(0ULL, i);
+		while (rookAttacks) {
+			const U64 isolated = _blsi_u64(rookAttacks);
+			const int square = bitscan(isolated);
+			U64 tmpAttacks = get_rook_attacks(1ULL << square, i);
+			const U64 other = get_rook_attacks(1ULL<<i, square);
+			ret[i][square] = (other | isolated) & (tmpAttacks | sq);
+			rookAttacks = _blsr_u64(rookAttacks);
+		}
+		U64 bishopAttacks = get_bishop_attacks(0ULL, i);
+		while (bishopAttacks) {
+			const U64 isolated = _blsi_u64(bishopAttacks);
+			const int square = bitscan(isolated);
+			U64 tmpAttacks = get_bishop_attacks(1ULL << square, i);
+			const U64 other = get_bishop_attacks(1ULL<<i, square);
+			ret[i][square] = (other | isolated) & (tmpAttacks | sq);
+			bishopAttacks = _blsr_u64(bishopAttacks);
+		}
+	}
+	return ret;
+}
+static const std::array<std::array<U64, 64>, 64> connectionRays = init_connectionRays(std::array<std::array<U64, 64>, 64>{});

@@ -664,7 +664,7 @@ inline void Position::legal_bpawn_pushes(std::array<unsigned int,128>& ret, cons
 		U64 isolated = _blsi_u64(push_promotions);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		move = encode_move(sq - 8, sq, p, no_piece, n, false, false, false, true);
+		move = encode_move(sq - 8, sq, p, no_piece, n, false, false, false, false);
 		ret[ind++]=move;
 		set_promotion_type(move, b);
 		ret[ind++]=move;
@@ -706,7 +706,7 @@ inline void Position::legal_wpawn_pushes(std::array<unsigned int,128>& ret, cons
 		U64 isolated = _blsi_u64(push_promotions);
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
-		move = encode_move(sq + 8, sq, P, no_piece, N, false, false, false, true);
+		move = encode_move(sq + 8, sq, P, no_piece, N, false, false, false, false);
 		ret[ind++]=move;
 		set_promotion_type(move, B);
 		ret[ind++]=move;
@@ -1591,8 +1591,10 @@ inline U64 Position::get_checking_rays(const int kingpos) {
 	const U64 kings_bishop_scope = get_bishop_attacks(occupancies[both], kingpos);
 	const U64 checking_rooks = kings_rook_scope & (bitboards[R + offset] | bitboards[Q + offset]);
 	const U64 checking_bishops = kings_bishop_scope & (bitboards[B + offset] | bitboards[Q + offset]);
-
-	return (((bool)(checking_rooks)) * (checking_rooks | (get_rook_attacks(occupancies[both], bitscan(checking_rooks)) & kings_rook_scope))) | (((bool)(checking_bishops)) * (checking_bishops | (get_bishop_attacks(occupancies[both], bitscan(checking_bishops)) & kings_bishop_scope)));
+	U64 ret = 0ULL;
+	ret |= ((bool)checking_rooks) * (checkingRays[kingpos][bitscan(checking_rooks)] | checking_rooks);
+	ret |= ((bool)checking_bishops) * (checkingRays[kingpos][bitscan(checking_bishops)] | checking_bishops);
+	return ret;
 }
 
 Position::Position() {
@@ -1619,6 +1621,14 @@ Position::Position() {
 	for (int i = 0; i < square_board.size(); i++) {
 		square_board[i] = no_piece;
 	}
+#if timing
+	totalTime = 0ULL;
+	pawnGeneration = 0ULL;
+	slidingGeneration = 0ULL;
+	PinnedGeneration = 0ULL;
+	moveMaking = 0ULL;
+	moveUnmaking = 0ULL;
+#endif
 }
 Position::Position(const std::string& fen) {
 	parse_fen(fen);
@@ -1721,6 +1731,14 @@ void Position::parse_fen(std::string fen) {
 	fen = fen.substr(fen.find(delimiter));
 	fen = fen.substr(1);
 
+#if timing
+	totalTime = 0ULL;
+	pawnGeneration = 0ULL;
+	slidingGeneration = 0ULL;
+	PinnedGeneration = 0ULL;
+	moveMaking = 0ULL;
+	moveUnmaking = 0ULL;
+#endif
 	move_history.clear();
 	no_pawns_or_captures_history.clear();
 	castling_rights_history.clear();
@@ -1972,21 +1990,20 @@ std::string Position::square_board_to_string() const {
 	return ret;
 }
 U64 Position::get_hash() const {
-
-	size_t ret = 0;
+	U64 ret = 0ULL;
 	for (int i = 0; i < 12; i++) {
 		U64 board = bitboards[i];
 		while (board) {
-			U64 isolated = board & twos_complement(board);
+			U64 isolated = _blsi_u64(board);
 			ret ^= keys[bitscan(isolated) + i * 64];
-			board = board & ones_decrement(board);
+			board = _blsr_u64(board);
 		}
 	}
 
-	ret ^= (get_bit(castling_rights, 0)) * keys[12 * 64];
-	ret ^= (get_bit(castling_rights, 1)) * keys[12 * 64 + 1];
-	ret ^= (get_bit(castling_rights, 2)) * keys[12 * 64 + 2];
-	ret ^= (get_bit(castling_rights, 3)) * keys[12 * 64 + 3];
+	ret ^= ((bool)get_bit(castling_rights, 0)) * keys[12 * 64];
+	ret ^= ((bool)get_bit(castling_rights, 1)) * keys[12 * 64 + 1];
+	ret ^= ((bool)get_bit(castling_rights, 2)) * keys[12 * 64 + 2];
+	ret ^= ((bool)get_bit(castling_rights, 3)) * keys[12 * 64 + 3];
 
 	ret ^= sideMask & keys[772];
 	assert(773 + enpassant_square % 8<781);
@@ -2004,33 +2021,36 @@ inline void Position::update_hash(const unsigned int move) {
 	const int to_square = get_to_square(move);
 	const int captured_type = (capture)*get_captured_type(move);
 	const int promoted_type = get_promotion_type(move);
+	const bool isPromotion = promoted_type != no_piece;
 
-	const int offset = piece_type * 64;
-
-	current_hash ^= keys[offset + from_square];
-	current_hash ^= (capture) * ((is_enpassant) ? keys[to_square + ((sideMask) ? (6 * 64 + 8) : (-8))] : keys[captured_type * 64 + to_square]);
-	current_hash ^= keys[offset + to_square];
-
-	if (is_castle) {
-		const int rook_source = ((piece_type == k) * ((to_square == g8) * h8 + (to_square == c8) * a8) + (piece_type == K) * ((to_square == g1) * h1 + (to_square == c1) * a1));
-		const int rook_target = (from_square + ((to_square == g8) | (to_square == g1)) - ((to_square == c8) | (to_square == c1)));
-		current_hash ^= keys[offset - 128 + rook_source];
-		current_hash ^= keys[offset - 128 + rook_target];
+	const int pieceOffset = 64 * piece_type;
+	current_hash ^= keys[pieceOffset + from_square];
+	const int afterPotentialPromotionOffset = 64 * ((isPromotion) * promoted_type + (!isPromotion) * piece_type);
+	current_hash ^= keys[afterPotentialPromotionOffset + to_square];
+	if (capture) {
+		int actualCaptureSquare = to_square + (is_enpassant) * (-8 + (16 * (side)));
+		current_hash ^= keys[captured_type * 64 + actualCaptureSquare];
 	}
-
-	//const auto size = static_cast<std::vector<int, std::allocator<int>>::size_type>(enpassant_history.size() - 2);
+	else if (is_castle) {
+		const int squareOffset = 56 * (side);
+		const int rookSource = squareOffset + h8 * (to_square == (g8 + squareOffset));
+		const int rookTarget = squareOffset + d8 + 2 * (to_square == (g8 + squareOffset));
+		const int rookOffset = (piece_type - 2) * 64;
+		current_hash ^= keys[rookOffset + rookSource];
+		current_hash ^= keys[rookOffset + rookTarget];
+	}
 	const int different_rights = castling_rights ^ castling_rights_history.back();
-	current_hash ^= (get_bit(different_rights, 0)) * keys[12 * 64];
-	current_hash ^= (get_bit(different_rights, 1)) * keys[12 * 64 + 1];
-	current_hash ^= (get_bit(different_rights, 2)) * keys[12 * 64 + 2];
-	current_hash ^= (get_bit(different_rights, 3)) * keys[12 * 64 + 3];
-	current_hash ^= keys[772];
-
+	current_hash ^= ((bool)get_bit(different_rights, 0)) * keys[12 * 64];
+	current_hash ^= ((bool)get_bit(different_rights, 1)) * keys[12 * 64 + 1];
+	current_hash ^= ((bool)get_bit(different_rights, 2)) * keys[12 * 64 + 2];
+	current_hash ^= ((bool)get_bit(different_rights, 3)) * keys[12 * 64 + 3];
 	const int old_enpassant_square = enpassant_history.back();
 	current_hash ^= ((old_enpassant_square != a8) && (old_enpassant_square != 64)) * keys[static_cast<std::array<size_t, 781Ui64>::size_type>(773) + old_enpassant_square % 8];
 	//undo old enpassant key
 	current_hash ^= (is_double_push)*keys[773 + (from_square % 8)];
 
+	current_hash ^= keys[772];
+	
 	current_hash = current_hash % 4294967296;
 }
 inline void Position::make_move(const unsigned int move) {
@@ -2115,20 +2135,30 @@ inline void Position::make_move(const unsigned int move) {
 	side = !side;
 	occupancies[both] = occupancies[white] | occupancies[black];
 
-	current_hash = get_hash();
+	//current_hash = get_hash();
 #if timing
 	auto end = std::chrono::steady_clock::now();
 	moveMaking += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
 	//IN CASE I WANT TO FIX HASH UPDATING
-	//update_hash(move);
-	//const U64 hash = get_hash();
-	//if (current_hash != get_hash()) {
-	//	std::stringstream stream{};
-	//	stream<<"Updating hash did not yield correct result. Got " << current_hash<<" when fully calculating the hash yields "<<hash;
-	//	std::string str = std::move(stream).str();
-	//	throw Position_Error{str};
-	//}
+	update_hash(move);
+	const U64 hash = get_hash();
+	if (current_hash != hash) {
+		print();
+		print_move(move);
+		std::stringstream stream{};
+		stream<<"Updating hash did not yield correct result. Got " << current_hash<<" when fully calculating the hash yields "<<hash<<std::endl;
+		const U64 diff = current_hash ^ hash;
+		stream << "difference: " << diff <<std::endl;
+		for (int i = 0; i < keys.size(); i++) {
+			if (diff == keys[i]) {
+				stream << "differing key index: " << i << std::endl;
+				break;
+			}
+		}
+		std::string str = std::move(stream).str();
+		throw Position_Error{str};
+	}
 	//if (!boardsMatch()) {
 	//	std::string str = "\n" + to_string();
 	//	str += "| last move: \n" + move_to_string(move);
