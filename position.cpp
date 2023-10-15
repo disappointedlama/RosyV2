@@ -232,7 +232,7 @@ void Position::legal_move_generator(std::array<unsigned int,128>& ret, const int
 
 		attacks = _blsr_u64(attacks);
 	}
-	get_legal_pawn_moves(ret, kings_queen_scope, enemy_attacks, pinned,ind);
+	get_legal_pawn_moves(ret, enemy_attacks, pinned,ind);
 }
 void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret, const int kingpos, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind){
 #if timingPosition
@@ -393,7 +393,7 @@ void Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret,
 
 		attacks = _blsr_u64(attacks);
 	}
-	in_check_get_legal_pawn_moves(ret, kings_queen_scope | knight_attacks[kingpos], enemy_attacks, pinned, (not_double_check)*checkers, (not_double_check)*valid_targets, ind);
+	in_check_get_legal_pawn_moves(ret, enemy_attacks, pinned, (not_double_check)*checkers, (not_double_check)*valid_targets, ind);
 }
 
 int Position::get_legal_captures(std::array<unsigned int,128>& ret) {
@@ -512,7 +512,7 @@ void Position::legal_capture_gen(std::array<unsigned int,128>& ret, const U64 ki
 
 		attacks = _blsr_u64(attacks);
 	}
-	get_pawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, ind);
+	get_pawn_captures(ret, enemy_attacks, pinned, ind);
 }
 void Position::legal_in_check_capture_gen(std::array<unsigned int, 128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, int& ind) {
 	const int kingpos = bitscan(bitboards[K + (int)(sideMask & 6)]);
@@ -632,28 +632,28 @@ void Position::legal_in_check_capture_gen(std::array<unsigned int, 128>& ret, co
 
 		attacks = _blsr_u64(attacks);
 	}
-	in_check_get_pawn_captures(ret, kings_queen_scope, enemy_attacks,pinned, (not_double_check)*checkers, ind);
+	in_check_get_pawn_captures(ret, enemy_attacks,pinned, (not_double_check)*checkers, ind);
 }
 
-void Position::get_pawn_captures(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind) {
-	(sideMask) ? (legal_bpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, ind)) : (legal_wpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, ind));
+void Position::get_pawn_captures(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, int& ind) {
+	(sideMask) ? (legal_bpawn_captures(ret, enemy_attacks, pinned, ind)) : (legal_wpawn_captures(ret, enemy_attacks, pinned, ind));
 }
-void Position::in_check_get_pawn_captures(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, int& ind) {
-	(sideMask) ? (in_check_legal_bpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, targets, ind)) : (in_check_legal_wpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, targets, ind));
+void Position::in_check_get_pawn_captures(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, const U64 targets, int& ind) {
+	(sideMask) ? (in_check_legal_bpawn_captures(ret, enemy_attacks, pinned, targets, ind)) : (in_check_legal_wpawn_captures(ret, enemy_attacks, pinned, targets, ind));
 }
 
-inline void Position::get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind) {
+inline void Position::get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, int& ind) {
 #if timingPosition
 	auto start = std::chrono::steady_clock::now();
 #endif
-	(sideMask) ? (legal_bpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned, ind)) : (legal_wpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned, ind));
-	(sideMask) ? (legal_bpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, ind)) : (legal_wpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, ind));
+	(sideMask) ? (legal_bpawn_pushes(ret, enemy_attacks, pinned, ind)) : (legal_wpawn_pushes(ret, enemy_attacks, pinned, ind));
+	(sideMask) ? (legal_bpawn_captures(ret, enemy_attacks, pinned, ind)) : (legal_wpawn_captures(ret, enemy_attacks, pinned, ind));
 #if timingPosition
 	auto end = std::chrono::steady_clock::now();
 	pawnGeneration += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
 }
-inline void Position::legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind) {
+inline void Position::legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, int& ind) {
 	U64 valid_targets = ~occupancies[both];
 	U64 promoters = bitboards[6] & (~pinned) & rank2;
 	U64 push_promotions = (promoters << 8) & valid_targets;
@@ -695,7 +695,7 @@ inline void Position::legal_bpawn_pushes(std::array<unsigned int,128>& ret, cons
 		doublePushes = _blsr_u64(doublePushes);
 	}
 }
-inline void Position::legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind) {
+inline void Position::legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, int& ind) {
 	U64 valid_targets = ~occupancies[both];
 	U64 promoters = bitboards[0] & (~pinned) & rank7;
 	U64 push_promotions = (promoters >> 8) & valid_targets;
@@ -740,7 +740,7 @@ inline void Position::legal_wpawn_pushes(std::array<unsigned int,128>& ret, cons
 		doublePushes = _blsr_u64(doublePushes);
 	}
 }
-inline void Position::legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind) {
+inline void Position::legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, int& ind) {
 	const U64 targets = occupancies[white];
 	U64 promoters = bitboards[6] & (~pinned) & rank2;
 	U64 captures = ((bitboards[6] & ~(pinned | promoters)) << 7) & notHFile & targets;
@@ -815,7 +815,7 @@ inline void Position::legal_bpawn_captures(std::array<unsigned int,128>& ret, co
 		promotion_captures = _blsr_u64(promotion_captures);
 	}
 }
-inline void Position::legal_wpawn_captures(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, int& ind) {
+inline void Position::legal_wpawn_captures(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, int& ind) {
 	U64 promoters = bitboards[0] & (~pinned) & rank7;
 	const U64 targets = occupancies[black];
 	U64 captures = ((bitboards[0] & ~(pinned | promoters)) >> 7) & notAFile & targets;
@@ -891,18 +891,18 @@ inline void Position::legal_wpawn_captures(std::array<unsigned int,128>& ret, co
 	}
 }
 
-inline void Position::in_check_get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind) {
+inline void Position::in_check_get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind) {
 #if timingPosition
 	auto start = std::chrono::steady_clock::now();
 #endif
-	(sideMask) ? (in_check_legal_bpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned, targets, in_check_valid, ind)) : (in_check_legal_wpawn_pushes(ret, kings_queen_scope, enemy_attacks, pinned, targets, in_check_valid, ind));
-	(sideMask) ? (in_check_legal_bpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, targets, ind)) : (in_check_legal_wpawn_captures(ret, kings_queen_scope, enemy_attacks, pinned, targets, ind));
+	(sideMask) ? (in_check_legal_bpawn_pushes(ret, enemy_attacks, pinned, targets, in_check_valid, ind)) : (in_check_legal_wpawn_pushes(ret, enemy_attacks, pinned, targets, in_check_valid, ind));
+	(sideMask) ? (in_check_legal_bpawn_captures(ret, enemy_attacks, pinned, targets, ind)) : (in_check_legal_wpawn_captures(ret, enemy_attacks, pinned, targets, ind));
 #if timingPosition
 	auto end = std::chrono::steady_clock::now();
 	pawnGeneration += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
 }
-inline void Position::in_check_legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind) {
+inline void Position::in_check_legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind) {
 	const U64 valid_targets = ~occupancies[both];
 	U64 promoters = bitboards[6] & (~pinned) & rank2;
 	U64 push_promotions = (promoters << 8) & in_check_valid & valid_targets;
@@ -941,7 +941,7 @@ inline void Position::in_check_legal_bpawn_pushes(std::array<unsigned int,128>& 
 		doublePushes = _blsr_u64(doublePushes);
 	}
 }
-inline void Position::in_check_legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind) {
+inline void Position::in_check_legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, const U64 targets, const U64 in_check_valid, int& ind) {
 	U64 valid_targets = ~occupancies[both];
 	U64 promoters = bitboards[0] & (~pinned) & rank7;
 	U64 push_promotions = (promoters >> 8) & in_check_valid & valid_targets;
@@ -980,7 +980,7 @@ inline void Position::in_check_legal_wpawn_pushes(std::array<unsigned int,128>& 
 		doublePushes = _blsr_u64(doublePushes);
 	}
 }
-inline void Position::in_check_legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, int& ind) {
+inline void Position::in_check_legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 enemy_attacks, const U64 pinned, const U64 targets, int& ind) {
 	U64 promoters = bitboards[6] & (~pinned) & rank2;
 	U64 captures = ((bitboards[6] & (~(pinned | promoters))) << 7) & notHFile & targets;
 
@@ -1046,7 +1046,7 @@ inline void Position::in_check_legal_bpawn_captures(std::array<unsigned int,128>
 		promotion_captures = promotion_captures & ones_decrement(promotion_captures);
 	}
 }
-inline void Position::in_check_legal_wpawn_captures(std::array<unsigned int, 128>& ret, const U64 kings_queen_scope, const U64 enemy_attacks, const U64 pinned, const U64 targets, int& ind) {
+inline void Position::in_check_legal_wpawn_captures(std::array<unsigned int, 128>& ret, const U64 enemy_attacks, const U64 pinned, const U64 targets, int& ind) {
 	U64 promoters = bitboards[0] & (~pinned) & rank7;
 	U64 captures = ((bitboards[0] & (~(pinned | promoters))) >> 7) & notAFile & targets;
 
@@ -1440,7 +1440,7 @@ inline U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>
 	const U64 rook_and_queen_mask = bitboards[R + offset] | bitboards[Q + offset];
 	type = B + piece_offset;
 	while (bishops_pot_pinned_by_bishops) {
-		const U64 isolated = bishops_pot_pinned_by_bishops & twos_complement(bishops_pot_pinned_by_bishops);
+		const U64 isolated = _blsi_u64(bishops_pot_pinned_by_bishops);
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_bishop_attacks(occupancies[both], kingpos);
@@ -1453,19 +1453,19 @@ inline U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>
 			ret[ind++]=move;
 		}
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
-		bishops_pot_pinned_by_bishops = bishops_pot_pinned_by_bishops & ones_decrement(bishops_pot_pinned_by_bishops);
+		bishops_pot_pinned_by_bishops = _blsr_u64(bishops_pot_pinned_by_bishops);
 	}
 	while (bishops_pot_pinned_by_rooks) {
-		const U64 isolated = bishops_pot_pinned_by_rooks & twos_complement(bishops_pot_pinned_by_rooks);
+		const U64 isolated = _blsi_u64(bishops_pot_pinned_by_rooks);
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancies
 		pinned_pieces |= ((bool)(get_rook_attacks(occupancies[both], kingpos) & rook_and_queen_mask)) * isolated;
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
-		bishops_pot_pinned_by_rooks = bishops_pot_pinned_by_rooks & ones_decrement(bishops_pot_pinned_by_rooks);
+		bishops_pot_pinned_by_rooks = _blsr_u64(bishops_pot_pinned_by_rooks);
 	}
 
 	type = Q + piece_offset;
 	while (queens_pot_pinned_by_bishops) {
-		const U64 isolated = queens_pot_pinned_by_bishops & twos_complement(queens_pot_pinned_by_bishops);
+		const U64 isolated = _blsi_u64(queens_pot_pinned_by_bishops);
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_bishop_attacks(occupancies[both], kingpos);
@@ -1478,10 +1478,10 @@ inline U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>
 			ret[ind++]=move;
 		}
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
-		queens_pot_pinned_by_bishops = queens_pot_pinned_by_bishops & ones_decrement(queens_pot_pinned_by_bishops);
+		queens_pot_pinned_by_bishops = _blsr_u64(queens_pot_pinned_by_bishops);
 	}
 	while (queens_pot_pinned_by_rooks) {
-		const U64 isolated = queens_pot_pinned_by_rooks & twos_complement(queens_pot_pinned_by_rooks);
+		const U64 isolated = _blsi_u64(queens_pot_pinned_by_rooks);
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_rook_attacks(occupancies[both], kingpos);
@@ -1494,11 +1494,11 @@ inline U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>
 			ret[ind++]=move;
 		}
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
-		queens_pot_pinned_by_rooks = queens_pot_pinned_by_rooks & ones_decrement(queens_pot_pinned_by_rooks);
+		queens_pot_pinned_by_rooks = _blsr_u64(queens_pot_pinned_by_rooks);
 	}
 	type = R + piece_offset;
 	while (rooks_pot_pinned_by_rooks) {
-		const U64 isolated = rooks_pot_pinned_by_rooks & twos_complement(rooks_pot_pinned_by_rooks);
+		const U64 isolated = _blsi_u64(rooks_pot_pinned_by_rooks);
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_rook_attacks(occupancies[both], kingpos);
@@ -1511,18 +1511,18 @@ inline U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>
 			ret[ind++]=move;
 		}
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
-		rooks_pot_pinned_by_rooks = rooks_pot_pinned_by_rooks & ones_decrement(rooks_pot_pinned_by_rooks);
+		rooks_pot_pinned_by_rooks = _blsr_u64(rooks_pot_pinned_by_rooks);
 	}
 	while (rooks_pot_pinned_by_bishops) {
-		const U64 isolated = rooks_pot_pinned_by_bishops & twos_complement(rooks_pot_pinned_by_bishops);
+		const U64 isolated = _blsi_u64(rooks_pot_pinned_by_bishops);
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancies
 		pinned_pieces |= ((bool)(get_bishop_attacks(occupancies[both], kingpos) & bishop_and_queen_mask)) * isolated;
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
-		rooks_pot_pinned_by_bishops = rooks_pot_pinned_by_bishops & ones_decrement(rooks_pot_pinned_by_bishops);
+		rooks_pot_pinned_by_bishops = _blsr_u64(rooks_pot_pinned_by_bishops);
 	}
 	type = P + piece_offset;
 	while (pawns_pot_pinned_by_bishops) {
-		const U64 isolated = pawns_pot_pinned_by_bishops & twos_complement(pawns_pot_pinned_by_bishops);
+		const U64 isolated = _blsi_u64(pawns_pot_pinned_by_bishops);
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_bishop_attacks(occupancies[both], kingpos);
 		const U64 pinner = pot_attacks & bishop_and_queen_mask;
@@ -1547,37 +1547,37 @@ inline U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>
 		}
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
 
-		pawns_pot_pinned_by_bishops = pawns_pot_pinned_by_bishops & ones_decrement(pawns_pot_pinned_by_bishops);
+		pawns_pot_pinned_by_bishops = _blsr_u64(pawns_pot_pinned_by_bishops);
 	}
 	while (pawns_pot_pinned_by_rooks) {
-		const U64 isolated = pawns_pot_pinned_by_rooks & twos_complement(pawns_pot_pinned_by_rooks);
+		const U64 isolated = _blsi_u64(pawns_pot_pinned_by_rooks);
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		U64 pot_attacks = get_rook_attacks(occupancies[both], kingpos);
 		const U64 pinner = pot_attacks & rook_and_queen_mask;
 		pinned_pieces |= ((bool)(pinner)) * isolated;
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
 
-		pawns_pot_pinned_by_rooks = pawns_pot_pinned_by_rooks & ones_decrement(pawns_pot_pinned_by_rooks);
+		pawns_pot_pinned_by_rooks = _blsr_u64(pawns_pot_pinned_by_rooks);
 	}
 
 
 	while (knights_pot_pinned_by_bishops) {
-		const U64 isolated = knights_pot_pinned_by_bishops & twos_complement(knights_pot_pinned_by_bishops);
+		const U64 isolated = _blsi_u64(knights_pot_pinned_by_bishops);
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancie
 		pinned_pieces |= ((bool)(get_bishop_attacks(occupancies[both], kingpos) & bishop_and_queen_mask)) * isolated;
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
 
-		knights_pot_pinned_by_bishops = knights_pot_pinned_by_bishops & ones_decrement(knights_pot_pinned_by_bishops);
+		knights_pot_pinned_by_bishops = _blsr_u64(knights_pot_pinned_by_bishops);
 	}
 	while (knights_pot_pinned_by_rooks) {
-		const U64 isolated = knights_pot_pinned_by_rooks & twos_complement(knights_pot_pinned_by_rooks);
+		const U64 isolated = _blsi_u64(knights_pot_pinned_by_rooks);
 
 		occupancies[both] &= ~isolated;//pop bit of piece from occupancies
 		pinned_pieces |= ((bool)(get_rook_attacks(occupancies[both], kingpos) & rook_and_queen_mask)) * isolated;
 		occupancies[both] |= isolated;//reset bit of piece from occupancies
 
-		knights_pot_pinned_by_rooks = knights_pot_pinned_by_rooks & ones_decrement(knights_pot_pinned_by_rooks);
+		knights_pot_pinned_by_rooks = _blsr_u64(knights_pot_pinned_by_rooks);
 	}
 	return pinned_pieces;
 }

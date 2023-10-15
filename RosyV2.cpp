@@ -188,7 +188,7 @@ void position_test() {
         std::cout << "Not all Tests passed" << std::endl;
     }
 }
-#define testingMoveGen false
+#define testingMoveGen true
 int main()
 {
     try {
