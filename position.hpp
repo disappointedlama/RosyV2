@@ -240,10 +240,22 @@ public:
 		hash_history.push_back(current_hash);
 		no_pawns_or_captures++;
 		ply++;
+		current_hash ^= keys[772];
+		const int old_enpassant_square = enpassant_history.back();
+		//undo en passant hash in case it was not a8 (none)
+		current_hash ^= ((old_enpassant_square != a8) && (old_enpassant_square != 64)) * keys[static_cast<std::array<size_t, 781Ui64>::size_type>(773) + old_enpassant_square % 8];
 		enpassant_square = a8;
 		sideMask = ~sideMask;
 		side = !side;
-		current_hash = get_hash();
+		//const U64 generatedHash = get_hash();
+		//if (current_hash != generatedHash) {
+		//	print();
+		//	std::cout << "updated hash: " << current_hash << "\ngenerated hash: " << generatedHash << std::endl;
+		//	for (int i = 0; i < 100; i++) {
+		//		std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
+		//	}
+		//	throw Position_Error("aaaaaaaaaaaa");
+		//}
 	}
 	inline void unmake_nullmove() {
 		no_pawns_or_captures = no_pawns_or_captures_history.back();
