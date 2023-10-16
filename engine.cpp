@@ -277,7 +277,9 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 #if timingEngine
 	auto start = std::chrono::steady_clock::now();
 #endif
+
 	const int number_of_moves = pos.get_legal_moves(moves[move_index]);
+
 #if timingEngine
 	auto end = std::chrono::steady_clock::now();
 	moveGenerationTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
@@ -295,7 +297,9 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 #if timingEngine
 		start = std::chrono::steady_clock::now();
 #endif
+
 		const short eval = pos.evaluate(is_draw, is_lost);
+
 #if timingEngine
 		end = std::chrono::steady_clock::now();
 		evaluationTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
@@ -322,7 +326,9 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 		quiescenceTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 		return eval;
 #else
+
 		return quiescence(moves, move_index+1,alpha, beta);
+
 #endif
 	}
 	const int phase = pos.get_phase();
@@ -426,7 +432,9 @@ short Engine::quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, i
 #if timingEngine
 	auto start = std::chrono::steady_clock::now();
 #endif
+
 	const int number_of_captures = pos.get_legal_captures(moves[move_index]);
+
 #if timingEngine
 	auto end = std::chrono::steady_clock::now();
 	captureGenerationTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
@@ -440,7 +448,9 @@ short Engine::quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, i
 #if timingEngine
 		start = std::chrono::steady_clock::now();
 #endif
+
 		const short eval = pos.evaluate(is_draw, false);
+
 #if timingEngine
 		end = std::chrono::steady_clock::now();
 		evaluationTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
@@ -451,7 +461,9 @@ short Engine::quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, i
 #if timingEngine
 		start = std::chrono::steady_clock::now();
 #endif
+
 		const int number_of_moves = pos.get_legal_moves(moves[move_index]);
+
 #if timingEngine
 		end = std::chrono::steady_clock::now();
 		moveGenerationQuiescenceTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
@@ -464,7 +476,9 @@ short Engine::quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, i
 #if timingEngine
 		start = std::chrono::steady_clock::now();
 #endif
+
 		const short eval = pos.evaluate(is_draw, is_lost);
+
 #if timingEngine
 		end = std::chrono::steady_clock::now();
 		evaluationTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
@@ -474,7 +488,9 @@ short Engine::quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, i
 #if timingEngine
 	start = std::chrono::steady_clock::now();
 #endif
+
 	short eval = pos.evaluate(false, false);
+
 #if timingEngine
 	end = std::chrono::steady_clock::now();
 	evaluationTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
