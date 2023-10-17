@@ -94,6 +94,8 @@ class Position {
 	inline int legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, int ind);
 	inline int legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, int ind);
 	inline int legal_wpawn_captures(std::array<unsigned int, 128>& ret, const U64 pinned, int ind);
+	inline int legal_b_enpassant(std::array<unsigned int, 128>& ret, int ind);
+	inline int legal_w_enpassant(std::array<unsigned int, 128>& ret, int ind);
 
 	inline int in_check_get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int ind);
 	inline int in_check_legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int ind);

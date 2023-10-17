@@ -436,7 +436,7 @@ int Position::legal_capture_gen(std::array<unsigned int,128>& ret, const U64 ene
 		unsigned long sq = 0UL;
 		_BitScanForward64(&sq, isolated);
 		U64 attacks = get_bishop_attacks(occupancies[both], sq) & enemy_pieces;
-		;
+		
 		while (attacks) {
 
 			const U64 isolated2 = _blsi_u64(attacks);
@@ -744,18 +744,7 @@ inline int Position::legal_bpawn_captures(std::array<unsigned int,128>& ret, con
 	U64 promoters = bitboards[6] & (~pinned) & rank2;
 	U64 captures = ((bitboards[6] & ~(pinned | promoters)) << 7) & notHFile & targets;
 
-	U64 enpassant = 0ULL;
-	set_bit(enpassant, enpassant_square);
-	const bool left_enpassant = (enpassant >> 7) & notAFile & bitboards[p];
-	const bool right_enpassant = (enpassant >> 9) & notHFile & bitboards[p];
-	if (left_enpassant) {
-		unsigned int move = encode_move(enpassant_square - 7, enpassant_square, p, P, no_piece, true, false, false, true);
-		try_out_move(ret, move, ind);
-	}
-	if (right_enpassant) {
-		unsigned int move = encode_move(enpassant_square - 9, enpassant_square, p, P, no_piece, true, false, false, true);
-		try_out_move(ret, move, ind);
-	}
+	ind = legal_b_enpassant(ret, ind);
 
 	while (captures) {
 		U64 isolated = _blsi_u64(captures);
@@ -816,23 +805,11 @@ inline int Position::legal_bpawn_captures(std::array<unsigned int,128>& ret, con
 	return ind;
 }
 inline int Position::legal_wpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, int ind) {
-	U64 promoters = bitboards[0] & (~pinned) & rank7;
 	const U64 targets = occupancies[black];
+	U64 promoters = bitboards[0] & (~pinned) & rank7;
 	U64 captures = ((bitboards[0] & ~(pinned | promoters)) >> 7) & notAFile & targets;
-
-
-	U64 enpassant = 0ULL;
-	enpassant = (enpassant_square != a8) * (1ULL << enpassant_square);
-	const bool left_enpassant = (enpassant << 7) & notHFile & bitboards[P];
-	const bool right_enpassant = (enpassant << 9) & notAFile & bitboards[P];
-	if (left_enpassant) {
-		unsigned int move = encode_move(enpassant_square + 7, enpassant_square, P, p, no_piece, true, false, false, true);
-		try_out_move(ret, move, ind);
-	}
-	if (right_enpassant) {
-		unsigned int move = encode_move(enpassant_square + 9, enpassant_square, P, p, no_piece, true, false, false, true);
-		try_out_move(ret, move, ind);
-	}
+	
+	ind = legal_w_enpassant(ret, ind);
 
 	while (captures) {
 		U64 isolated = _blsi_u64(captures);
@@ -888,6 +865,52 @@ inline int Position::legal_wpawn_captures(std::array<unsigned int,128>& ret, con
 		set_promotion_type(move, Q);
 		ret[ind++]=move;
 		promotion_captures = _blsr_u64(promotion_captures);
+	}
+	return ind;
+}
+inline int Position::legal_b_enpassant(std::array<unsigned int, 128>& ret, int ind) {
+	if (enpassant_square == a8) return ind;
+	U64 enpassant_bitboard = 1ULL << enpassant_square;
+	U64 pawn_to_be_captured = 1ULL << (enpassant_square - 8);
+	U64 enpassant_candidates = pawn_attacks[white][enpassant_square] & bitboards[p];
+	int kingpos = bitscan(bitboards[k]);
+	unsigned int move = 0;
+	const U64 rook_like = bitboards[R] | bitboards[Q];
+	const U64 bishop_like = bitboards[B] | bitboards[Q];
+	while (enpassant_candidates) {
+		U64 isolated = _blsi_u64(enpassant_candidates);
+		U64 occupanciesAfterMove = occupancies[both] ^ (isolated | pawn_to_be_captured | enpassant_bitboard);
+		U64 checking_rooks = get_rook_attacks(occupanciesAfterMove, kingpos) & rook_like;
+		U64 checking_bishops = get_bishop_attacks(occupanciesAfterMove, kingpos) & bishop_like;
+		bool in_check = checking_rooks | checking_bishops;
+		if (!in_check) {
+			move = encode_move(bitscan(isolated), enpassant_square, p, P, no_piece, true, false, false, true);
+			ret[ind++] = move;
+		}
+		enpassant_candidates = _blsr_u64(enpassant_candidates);
+	}
+	return ind;
+}
+inline int Position::legal_w_enpassant(std::array<unsigned int, 128>& ret, int ind) {
+	if (enpassant_square == a8) return ind;
+	U64 enpassant_bitboard = 1ULL << enpassant_square;
+	U64 pawn_to_be_captured = 1ULL << (enpassant_square + 8);
+	U64 enpassant_candidates = pawn_attacks[black][enpassant_square] & bitboards[P];
+	int kingpos = bitscan(bitboards[K]);
+	unsigned int move = 0;
+	const U64 rook_like = bitboards[r] | bitboards[q];
+	const U64 bishop_like = bitboards[b] | bitboards[q];
+	while (enpassant_candidates) {
+		U64 isolated = _blsi_u64(enpassant_candidates);
+		U64 occupanciesAfterMove = occupancies[both] ^ (isolated | pawn_to_be_captured | enpassant_bitboard);
+		U64 checking_rooks = get_rook_attacks(occupanciesAfterMove, kingpos) & rook_like;
+		U64 checking_bishops = get_bishop_attacks(occupanciesAfterMove, kingpos) & bishop_like;
+		bool in_check = checking_rooks | checking_bishops;
+		if (!in_check) {
+			move = encode_move(bitscan(isolated), enpassant_square, P, p, no_piece, true, false, false, true);
+			ret[ind++] = move;
+		}
+		enpassant_candidates = _blsr_u64(enpassant_candidates);
 	}
 	return ind;
 }
