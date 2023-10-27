@@ -207,7 +207,7 @@ public:
 	std::vector<short> no_pawns_or_captures_history;
 	std::vector<U64> hash_history;
 	std::unordered_map<U64, short> pawn_evaluation_map;
-	const static short infinity = 32767 - 1;//one less than max(short)
+	const static short infinity = 30000;
 	const static short no_piece = 15;
 	U64 current_hash;
 	static std::array<short, 16> wheights;

@@ -1627,27 +1627,23 @@ inline U64 Position::get_checking_rays(const int kingpos) {
 	return ret;
 }
 
-Position::Position() {
-	bitboards = std::array<U64, 12>{ { 71776119061217280ULL, 4755801206503243776ULL, 2594073385365405696ULL, 9295429630892703744ULL, 576460752303423488ULL, 1152921504606846976ULL, 65280ULL, 66ULL, 36ULL, 129ULL, 8ULL, 16ULL } };
-	occupancies = std::array<U64, 3>{ { 18446462598732840960ULL, 65535ULL, 18446462598732906495ULL} };
-	sideMask = falseMask;
-	side = false;
-	ply = 1;
-	enpassant_square = a8;
-	castling_rights = 15;
-	no_pawns_or_captures = 0;
+Position::Position() :
+	bitboards{ { 71776119061217280ULL, 4755801206503243776ULL, 2594073385365405696ULL, 9295429630892703744ULL, 576460752303423488ULL, 1152921504606846976ULL, 65280ULL, 66ULL, 36ULL, 129ULL, 8ULL, 16ULL } },
+	occupancies{ { 18446462598732840960ULL, 65535ULL, 18446462598732906495ULL} },
+	sideMask{ falseMask }, side{ false }, ply{ 1 }, enpassant_square{ a8 }, castling_rights{ 15 }, no_pawns_or_captures{0},
+	move_history{},
+	enpassant_history{},
+	castling_rights_history{},
+	no_pawns_or_captures_history{},
+	hash_history{},
+	square_board{}
+	{
 	current_hash = get_hash();
-	move_history = std::vector<unsigned int>{};
 	move_history.reserve(256);
-	enpassant_history = std::vector<short>{};
 	enpassant_history.reserve(256);
-	castling_rights_history = std::vector<short>{};
 	castling_rights_history.reserve(256);
-	no_pawns_or_captures_history = std::vector<short>{};
 	no_pawns_or_captures_history.reserve(256);
-	hash_history = std::vector<U64>{};
 	hash_history.reserve(256);
-	square_board = std::array<short, 64>{};
 	for (int i = 0; i < square_board.size(); i++) {
 		square_board[i] = no_piece;
 	}

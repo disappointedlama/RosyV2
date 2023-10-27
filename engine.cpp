@@ -16,28 +16,6 @@ const std::string stop_exception::what() throw(){
 	return "Stop exception thrown by " + source;
 }
 
-Engine::Engine() {
-	pos = Position{};
-	max_depth = 8;
-	run = false;
-	debug = false;
-	killer_table = KillerTable{};
-	hash_map = std::unordered_map<U64, TableEntry>{};
-	nodes = 0ULL;
-	use_opening_book = true;
-	log = Logger{ logging_path };
-}
-Engine::Engine(const bool t_debug) {
-	pos = Position{};
-	max_depth = 8;
-	run = false;
-	debug = t_debug;
-	killer_table = KillerTable{};
-	hash_map = std::unordered_map<U64, TableEntry>{};
-	nodes = 0ULL;
-	use_opening_book = true;
-	log = Logger{ logging_path };
-}
 int Engine::bestMove() {
 	if (use_opening_book) {
 		const int move = book.find_move(pos.current_hash);
@@ -60,47 +38,42 @@ int Engine::bestMove() {
 #if timingEngine
 	auto start = std::chrono::steady_clock::now();
 #endif
-	try {
-		for (current_desired_depth = 1; current_desired_depth < max_depth + 1; current_desired_depth++) {
+	for (current_desired_depth = 1; current_desired_depth < max_depth + 1; current_desired_depth++) {
+		nodes = 0;
+		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+		MoveWEval result = pv_root_call(moves, 0, current_desired_depth, alpha, beta);
+		const bool fell_outside_window = (result.eval <= alpha) || (result.eval >= beta);
+		if (fell_outside_window && run && !(result.eval==infinity+2 || result.eval==-infinity-2)) {
 			nodes = 0;
-			std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-			MoveWEval result = pv_root_call(moves,0, current_desired_depth, alpha, beta);
-			const bool fell_outside_window = (result.eval <= alpha) || (result.eval >= beta);
-			if (fell_outside_window && run) {
-				nodes = 0;
-				result = pv_root_call(moves,0, current_desired_depth, -infinity, infinity);
-			}
-			std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-			const U64 time = (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-			old_best = best;
-			best = result;
-			if (!run) {
-				if (best.move == 0) best = old_best;
+			result = pv_root_call(moves, 0, current_desired_depth, -infinity, infinity);
+		}
+		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+		const U64 time = (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+		old_best = best;
+		best = result;
+		if (!run) {
+			if (best.move == 0) best = old_best;
+			break;
+		}
+		print_info(current_desired_depth, result.eval, time);
+		if (check_time) {
+			const U64 total_time_searched = (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - search_start).count();
+			if (total_time_searched * 2 > time_for_next_move) {
 				break;
 			}
-			print_info(current_desired_depth, result.eval, time);
-			if (check_time) {
-				const U64 total_time_searched = (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - search_start).count();
-				if (total_time_searched * 2 > time_for_next_move) {
-					break;
-				}
-			}
-			alpha = result.eval - aspiration_window;
-			beta = result.eval + aspiration_window;
-			if (result.eval == infinity) {
-				printBestMove(best.move);
-				run = false;
-				return result.eval;
-			}
-			if (result.eval == -infinity) {
-				printBestMove(old_best.move);
-				run = false;
-				return old_best.move;
-			}
 		}
-	}
-	catch (Position_Error e) {
-		log.error(e.what());
+		alpha = result.eval - aspiration_window;
+		beta = result.eval + aspiration_window;
+		if (result.eval == infinity) {
+			printBestMove(best.move);
+			run = false;
+			return result.eval;
+		}
+		if (result.eval == -infinity) {
+			printBestMove(old_best.move);
+			run = false;
+			return old_best.move;
+		}
 	}
 #if timingEngine
 	auto end = std::chrono::steady_clock::now();
@@ -149,45 +122,40 @@ int Engine::evaluate() {
 	MoveWEval old_best = best;
 	short alpha = -infinity;
 	short beta = infinity;
-	try {
-		for (current_desired_depth = 1; current_desired_depth < max_depth + 1; current_desired_depth++) {
+	for (current_desired_depth = 1; current_desired_depth < max_depth + 1; current_desired_depth++) {
+		nodes = 0;
+		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+		MoveWEval result = pv_root_call(moves, 0, current_desired_depth, alpha, beta);
+		const bool fell_outside_window = (result.eval <= alpha) || (result.eval >= beta);
+		if (fell_outside_window && run && !(result.eval == infinity + 2 || result.eval == -infinity - 2)) {
 			nodes = 0;
-			std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-			MoveWEval result = pv_root_call(moves, 0, current_desired_depth, alpha, beta);
-			const bool fell_outside_window = (result.eval <= alpha) || (result.eval >= beta);
-			if (fell_outside_window && run) {
-				nodes = 0;
-				result = pv_root_call(moves, 0, current_desired_depth, -infinity, infinity);
-			}
-			std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-			const U64 time = (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-			old_best = best;
-			best = result;
-			if (!run) {
-				if (best.move == 0) best = old_best;
+			result = pv_root_call(moves, 0, current_desired_depth, -infinity, infinity);
+		}
+		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+		const U64 time = (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+		old_best = best;
+		best = result;
+		if (!run) {
+			if (best.move == 0) best = old_best;
+			break;
+		}
+		//print_info(current_desired_depth, result.eval, time);
+		if (check_time) {
+			const U64 total_time_searched = (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - search_start).count();
+			if (total_time_searched * 2 > time_for_next_move) {
 				break;
 			}
-			//print_info(current_desired_depth, result.eval, time);
-			if (check_time) {
-				const U64 total_time_searched = (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - search_start).count();
-				if (total_time_searched * 2 > time_for_next_move) {
-					break;
-				}
-			}
-			alpha = result.eval - aspiration_window;
-			beta = result.eval + aspiration_window;
-			if (result.eval == infinity) {
-				run = false;
-				return result.eval;
-			}
-			if (result.eval == -infinity) {
-				run = false;
-				return result.eval;
-			}
 		}
-	}
-	catch (Position_Error e) {
-		log.error(e.what());
+		alpha = result.eval - aspiration_window;
+		beta = result.eval + aspiration_window;
+		if (result.eval == infinity) {
+			run = false;
+			return result.eval;
+		}
+		if (result.eval == -infinity) {
+			run = false;
+			return result.eval;
+		}
 	}
 	reset_position();
 	bool found = false;
@@ -226,13 +194,10 @@ MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& mo
 			std::cout << "starting " << uci(moves[move_index][i]) << std::endl;
 		}
 		short value = 0;
-		try {
-			pos.make_move(moves[move_index][i]);
-			value = -pv_search(moves, move_index+1, depth - 1, -beta, -alpha,true);
-			pos.unmake_move();
-		}
-		catch (stop_exception e) {
-			if(debug) std::cout << "caught \"" << e.what() << "\"" << std::endl;
+		pos.make_move(moves[move_index][i]);
+		value = -pv_search(moves, move_index+1, depth - 1, -beta, -alpha,true);
+		pos.unmake_move();
+		if (value == infinity + 2 || value == infinity - 2) {
 			return MoveWEval{ current_best_move, current_best_eval };
 		}
 		//if(debug){
@@ -270,7 +235,7 @@ MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& mo
 }
 short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta, bool isPV) {
 	if (!run) {
-		throw stop_exception("pv search");
+		return infinity + 2;
 	}
 	nodes++;
 
@@ -425,7 +390,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 }
 short Engine::quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, short alpha, short beta) {
 	if (!run) {
-		throw stop_exception("pv search");
+		return infinity + 2;
 	}
 	nodes++;
 	const short alphaOrigin = alpha;

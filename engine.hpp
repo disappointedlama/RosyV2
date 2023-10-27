@@ -26,37 +26,25 @@ struct stop_exception : std::exception {
 struct MoveWEval {
 	unsigned int move;
 	int eval;
-	MoveWEval(const unsigned int t_move, const int t_eval) {
-		move = t_move;
-		eval = t_eval;
-	}
+	MoveWEval(const unsigned int t_move, const int t_eval) : move{ t_move }, eval{ t_eval } {}
 };
 struct TableEntry {
-	const static short EXACT = 0;
-	const static short UPPER = 1;
-	const static short LOWER = 2;
 	unsigned int move_and_flag;
 	unsigned int eval_and_depth;
 	//28 bits are used in the move int thus two bits can be used to encode the flag
 	//eval and depth can also be saved in a single int, with eval getting the first and depth getting the last 16 bits
-	TableEntry() {
-		move_and_flag = 0;
-		eval_and_depth = (int)(Position::infinity) << 16;
-	}
-	TableEntry(const unsigned int t_move, const short t_eval, const int t_flag, const short t_depth) {
-		move_and_flag = t_move | ((int)(t_flag) << 28);
-		eval_and_depth = ((int)t_eval) | ((int)t_depth << 16);
-	}
-	inline unsigned int get_move() {
+	TableEntry() : move_and_flag { 0 }, eval_and_depth{ (int)(Position::infinity) << 16 } {}
+	TableEntry(const unsigned int t_move, const short t_eval, const short t_flag, const short t_depth) : move_and_flag{ t_move | ((unsigned int)(t_flag) << 28) }, eval_and_depth{ ((unsigned int)t_eval) | ((unsigned int)t_depth << 16) } {}
+	inline unsigned int get_move() const {
 		return move_and_flag & 0xfffffff;
 	}
-	inline short get_flag() {
+	inline short get_flag() const {
 		return (move_and_flag & 0xf0000000) >> 28;
 	}
-	inline short get_depth() {
+	inline short get_depth() const {
 		return (eval_and_depth & 0xffff0000) >> 16;
 	}
-	inline short get_eval() {
+	inline short get_eval() const {
 		return eval_and_depth & 0xffff;
 	}
 };
@@ -187,8 +175,8 @@ class Engine {
 	void print_info(const short depth, const int eval, const U64 time);
 	void track_time(const U64 max_time);
 public:
-	Engine();
-	Engine(const bool t_debug);
+	Engine() :pos{}, max_depth{ 8 }, run{ false }, debug{ false }, killer_table{}, hash_map{}, nodes{ 0ULL }, use_opening_book{ true }, log{ logging_path } {};
+	Engine(const bool t_debug) :pos{}, max_depth{ 8 }, run{ false }, debug{ t_debug }, killer_table{}, hash_map{}, nodes{ 0ULL }, use_opening_book{ true }, log{ logging_path } {};
 	void perft();
 	void perft_traversal(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const int depth);
 	int bestMove();
