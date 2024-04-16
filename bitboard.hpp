@@ -7,11 +7,21 @@
 #define pop_bit(bitboard, square) ((bitboard) &= ~(1ULL << (square)))
 #define ones_decrement(bitboard) (bitboard - 1)
 #define twos_complement(bitboard) ((~bitboard) + 1)
-#define count_bits(bitboard) (std::_Popcount(bitboard))
+constexpr U64 k1 = 0x5555555555555555;
+constexpr U64 k2 = 0x3333333333333333;
+constexpr U64 k4 = 0x0f0f0f0f0f0f0f0f;
+constexpr U64 kf = 0x0101010101010101;
+constexpr int count_bits (U64 x) {
+    x =  x       - ((x >> 1)  & k1); /* put count of each 2 bits into those 2 bits */
+    x = (x & k2) + ((x >> 2)  & k2); /* put count of each 4 bits into those 4 bits */
+    x = (x       +  (x >> 4)) & k4 ; /* put count of each 8 bits into those 8 bits */
+    x = (x * kf) >> 56; /* returns 8 most significant bits of x + (x<<8) + (x<<16) + (x<<24) + ...  */
+    return (int) x;
+}
 #define bitscan(bitboard) (index64[((bitboard & twos_complement(bitboard)) * debruijn64) >> 58])
 constexpr U64 falseMask = 0ULL;
 constexpr U64 trueMask = ~falseMask;
-#define U32 unsigned __int32
+#define U32 uint32_t
 constexpr U32 falseMask32 = 0;
 constexpr U32 trueMask32 = ~0;
 constexpr U64 debruijn64 = 0x07EDD5E59A4E28C2;

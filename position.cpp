@@ -1,17 +1,4 @@
 #include "position.hpp"
-invalid_move_exception::invalid_move_exception(const Position t_pos, const unsigned int t_move) {
-	pos = t_pos;
-	move = t_move;
-	move_str = uci(t_move);
-}
-invalid_move_exception::invalid_move_exception(const Position t_pos, const std::string t_move) {
-	pos = t_pos;
-	move = -1;
-	move_str = t_move;
-}
-const std::string invalid_move_exception::what() throw() {
-	return std::format("Found invalid move {} in position {}", move_str, pos.fen());
-}
 inline bool Position::is_attacked_by_side(const int sq, const bool color) {
 	const int offset = 6 * color;
 	U64 attacks = get_rook_attacks(occupancies[both], sq) & (bitboards[R + offset] | bitboards[Q + offset]);
@@ -90,13 +77,10 @@ int Position::legal_move_generator(std::array<unsigned int,128>& ret, const int 
 	const U64 valid_targets = (~occupancies[both]) | enemy_pieces;
 	unsigned int move;
 	int type = N + (int)(6 & sideMask);
-	__m256i _pieces = _mm256_loadu_epi64((__m256i*) & bitboards[type]);
-	__m256i _not_pinned = _mm256_set1_epi64x(not_pinned);
-	_pieces = _mm256_and_si256(_pieces, _not_pinned);
-	U64 tempKnights = _mm256_extract_epi64(_pieces, 0);
-	U64 tempBishops = _mm256_extract_epi64(_pieces, 1);
-	U64 tempRooks = _mm256_extract_epi64(_pieces, 2);
-	U64 tempQueens = _mm256_extract_epi64(_pieces, 3);
+	U64 tempKnights = bitboards[type] & not_pinned;
+	U64 tempBishops = bitboards[type + 1] & not_pinned;
+	U64 tempRooks = bitboards[type + 2] & not_pinned;
+	U64 tempQueens = bitboards[type + 3] & not_pinned;
 	while (tempKnights) {
 		const U64 isolated = _blsi_u64(tempKnights);
 		unsigned long sq = 0UL;
@@ -248,13 +232,10 @@ int Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret, 
 	const U64 valid_pieces = (~pinned) * (not_double_check);
 	unsigned int move;
 	int type = N + (int)(6 & sideMask);
-	__m256i _pieces = _mm256_loadu_epi64((__m256i*) & bitboards[type]);
-	__m256i _valid_pieces = _mm256_set1_epi64x(valid_pieces);
-	_pieces = _mm256_and_si256(_pieces, _valid_pieces);
-	U64 tempKnights = _mm256_extract_epi64(_pieces, 0);
-	U64 tempBishops = _mm256_extract_epi64(_pieces, 1);
-	U64 tempRooks = _mm256_extract_epi64(_pieces, 2);
-	U64 tempQueens = _mm256_extract_epi64(_pieces, 3);
+	U64 tempKnights = bitboards[type] & valid_pieces;
+	U64 tempBishops = bitboards[type+1] & valid_pieces;
+	U64 tempRooks = bitboards[type+2] & valid_pieces;
+	U64 tempQueens = bitboards[type+3] & valid_pieces;
 
 	while (tempKnights) {
 		const U64 isolated = _blsi_u64(tempKnights);
@@ -1211,24 +1192,16 @@ inline U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& r
 	const U64 pot_pinned_by_rooks = enemy_attacks & rook_attacks;
 	int type = P + piece_offset;
 
-	__m256i _pieces = _mm256_loadu_epi64((__m256i*) &bitboards[type]);
-	__m256i _pot_pinned_by_pieces = _mm256_set1_epi64x(pot_pinned_by_bishops);
-	_pot_pinned_by_pieces = _mm256_and_si256(_pieces, _pot_pinned_by_pieces);
-
-	U64 pawns_pot_pinned_by_bishops = _mm256_extract_epi64(_pot_pinned_by_pieces, 0);
-	U64 knights_pot_pinned_by_bishops = _mm256_extract_epi64(_pot_pinned_by_pieces, 1);
-	U64 bishops_pot_pinned_by_bishops = _mm256_extract_epi64(_pot_pinned_by_pieces, 2);
-	U64 rooks_pot_pinned_by_bishops = _mm256_extract_epi64(_pot_pinned_by_pieces, 3);
+	U64 pawns_pot_pinned_by_bishops = bitboards[type] & pot_pinned_by_bishops;
+	U64 knights_pot_pinned_by_bishops = bitboards[type + 1] & pot_pinned_by_bishops;
+	U64 bishops_pot_pinned_by_bishops = bitboards[type + 2] & pot_pinned_by_bishops;
+	U64 rooks_pot_pinned_by_bishops = bitboards[type + 3] & pot_pinned_by_bishops;
 	U64 queens_pot_pinned_by_bishops = pot_pinned_by_bishops & bitboards[Q + piece_offset];
 
-	_pot_pinned_by_pieces = _mm256_set1_epi64x(pot_pinned_by_rooks);
-	_pot_pinned_by_pieces = _mm256_and_si256(_pieces, _pot_pinned_by_pieces);
-
-
-	U64 pawns_pot_pinned_by_rooks = _mm256_extract_epi64(_pot_pinned_by_pieces, 0);
-	U64 knights_pot_pinned_by_rooks = _mm256_extract_epi64(_pot_pinned_by_pieces, 1);
-	U64 bishops_pot_pinned_by_rooks = _mm256_extract_epi64(_pot_pinned_by_pieces, 2);
-	U64 rooks_pot_pinned_by_rooks = _mm256_extract_epi64(_pot_pinned_by_pieces, 3);
+	U64 pawns_pot_pinned_by_rooks = bitboards[type] & pot_pinned_by_rooks;
+	U64 knights_pot_pinned_by_rooks = bitboards[type + 1] & pot_pinned_by_rooks;
+	U64 bishops_pot_pinned_by_rooks = bitboards[type + 2] & pot_pinned_by_rooks;
+	U64 rooks_pot_pinned_by_rooks = bitboards[type + 3] & pot_pinned_by_rooks;
 	U64 queens_pot_pinned_by_rooks = pot_pinned_by_rooks & bitboards[Q + piece_offset];
 
 	U64 pinned_pieces = 0ULL;
@@ -1443,24 +1416,16 @@ inline U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>
 	const U64 pot_pinned_by_rooks = enemy_attacks & rook_attacks;
 	int type = P + piece_offset;
 
-	__m256i _pieces = _mm256_loadu_epi64((__m256i*) & bitboards[type]);
-	__m256i _pot_pinned_by_pieces = _mm256_set1_epi64x(pot_pinned_by_bishops);
-	_pot_pinned_by_pieces = _mm256_and_si256(_pieces, _pot_pinned_by_pieces);
-
-	U64 pawns_pot_pinned_by_bishops = _mm256_extract_epi64(_pot_pinned_by_pieces, 0);
-	U64 knights_pot_pinned_by_bishops = _mm256_extract_epi64(_pot_pinned_by_pieces, 1);
-	U64 bishops_pot_pinned_by_bishops = _mm256_extract_epi64(_pot_pinned_by_pieces, 2);
-	U64 rooks_pot_pinned_by_bishops = _mm256_extract_epi64(_pot_pinned_by_pieces, 3);
+	U64 pawns_pot_pinned_by_bishops = bitboards[type] & pot_pinned_by_bishops;
+	U64 knights_pot_pinned_by_bishops = bitboards[type + 1] & pot_pinned_by_bishops;
+	U64 bishops_pot_pinned_by_bishops = bitboards[type + 2] & pot_pinned_by_bishops;
+	U64 rooks_pot_pinned_by_bishops = bitboards[type + 3] & pot_pinned_by_bishops;
 	U64 queens_pot_pinned_by_bishops = pot_pinned_by_bishops & bitboards[Q + piece_offset];
 
-	_pot_pinned_by_pieces = _mm256_set1_epi64x(pot_pinned_by_rooks);
-	_pot_pinned_by_pieces = _mm256_and_si256(_pieces, _pot_pinned_by_pieces);
-
-
-	U64 pawns_pot_pinned_by_rooks = _mm256_extract_epi64(_pot_pinned_by_pieces, 0);
-	U64 knights_pot_pinned_by_rooks = _mm256_extract_epi64(_pot_pinned_by_pieces, 1);
-	U64 bishops_pot_pinned_by_rooks = _mm256_extract_epi64(_pot_pinned_by_pieces, 2);
-	U64 rooks_pot_pinned_by_rooks = _mm256_extract_epi64(_pot_pinned_by_pieces, 3);
+	U64 pawns_pot_pinned_by_rooks = bitboards[type] & pot_pinned_by_rooks;
+	U64 knights_pot_pinned_by_rooks = bitboards[type + 1] & pot_pinned_by_rooks;
+	U64 bishops_pot_pinned_by_rooks = bitboards[type + 2] & pot_pinned_by_rooks;
+	U64 rooks_pot_pinned_by_rooks = bitboards[type + 3] & pot_pinned_by_rooks;
 	U64 queens_pot_pinned_by_rooks = pot_pinned_by_rooks & bitboards[Q + piece_offset];
 
 	U64 pinned_pieces = 0ULL;
@@ -2039,7 +2004,7 @@ U64 Position::get_hash() const {
 
 	ret ^= sideMask & keys[772];
 	assert(773 + enpassant_square % 8<781);
-	ret ^= ((enpassant_square != a8) && (enpassant_square != 64)) * keys[static_cast<std::array<size_t, 781Ui64>::size_type>(773 + (enpassant_square % 8))];
+	ret ^= ((enpassant_square != a8) && (enpassant_square != 64)) * keys[static_cast<std::array<size_t, 781ULL>::size_type>(773 + (enpassant_square % 8))];
 	return ret % 4294967296;
 }
 inline void Position::update_hash(const unsigned int move) {
@@ -2083,7 +2048,7 @@ inline void Position::update_hash(const unsigned int move) {
 	//current_hash ^= ((bool)get_bit(different_rights, 3)) * keys[12 * 64 + 3];
 	//but the opening book was generated with the mistake, thus it is kept
 	const int old_enpassant_square = enpassant_history.back();
-	current_hash ^= ((old_enpassant_square != a8) && (old_enpassant_square != 64)) * keys[static_cast<std::array<size_t, 781Ui64>::size_type>(773) + old_enpassant_square % 8];
+	current_hash ^= ((old_enpassant_square != a8) && (old_enpassant_square != 64)) * keys[static_cast<std::array<size_t, 781ULL>::size_type>(773) + old_enpassant_square % 8];
 	//undo old enpassant key
 	current_hash ^= (is_double_push)*keys[773 + (from_square % 8)];
 
@@ -2257,7 +2222,7 @@ inline void Position::unmake_move() {
 	//	throw Position_Error{str};
 	//}
 }//position fen 8/2k4p/1b6/3P3p/p7/5K1P/P4P2/5q2 w - - 0 39
-std::array<short, 16> Position::wheights{
+std::array<double, 16> Position::wheights{
 	//146, 248, 749, 19, 1, 10, 29, 25, 3, 15// after first instant tuning 146,248,749,19,1,10,29,25,3,15
 	//37,70,440,5,0,10,20,25,3,15
 	//37,99,623,5,0,10,19,25,3,15
@@ -2267,15 +2232,15 @@ std::array<short, 16> Position::wheights{
 	//140, 245, 750, 16, 0, 10, 26, 25, 3, 15, 90, 361, 400, 588, 1194
 	//138, 243, 750, 14, 0, 10, 26, 25, 3, 15, 90, 364, 402, 592, 1206, 15
 	//128, 239, 750, 12, 0, 8, 26, 21, 3, 13, 81, 366, 417, 618, 1233, 15
-	136, 244, 750, 14, 0, 7, 30, 20, 3, 12, 83, 327, 381, 585, 1086, 15
+	//136, 244, 750, 14, 0, 7, 30, 20, 3, 12, 83, 327, 381, 585, 1086, 15
+	136, 244, 750, 14, 0, 7, 30, 20, 3, 12, 83, 327, 381, 500, 800, 15
 	//150,//trapped minor piece
 	//250,//trapped rook
 	//750,//trapped queen
 	//20, //bad bishop
 	//2,//knight mobility
 	//10,//doubed pawn
-	//30,//passed pawn
-	//25,//isolated pawn
+	//30,//passed pawn	//25,//isolated pawn
 	//3,//supported pawn
 	//15,//backwards pawn
 	//100,//base pawn

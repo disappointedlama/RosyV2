@@ -2,8 +2,7 @@
 #include "bitboard.hpp"
 #include "rookAttacks.hpp"
 #include "bishopAttacks.hpp"
-#include "immintrin.h"
-#include "intrin.h"
+#include <immintrin.h>
 #include <array>
 static constexpr U64 rank8 = (1ULL << 8) - 1ULL;
 static constexpr U64 rank7 = rank8 << 8;
