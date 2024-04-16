@@ -6,6 +6,7 @@
 #ADDED BY ME
 *.botlogs
 tune*
+.vscode
 
 # User-specific files
 *.rsuser

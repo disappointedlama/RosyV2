@@ -6,6 +6,7 @@
 #include "openingBook.hpp"
 #include "logging.hpp"
 #include <direct.h>
+#include<thread>
 constexpr short EXACT = 0;
 constexpr short UPPER = 1;
 constexpr short LOWER = 2;
