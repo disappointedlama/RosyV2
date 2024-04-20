@@ -5,6 +5,7 @@
 #include "immintrin.h"
 #include "intrin.h"
 #include <array>
+using std::array;
 static constexpr U64 rank8 = (1ULL << 8) - 1ULL;
 static constexpr U64 rank7 = rank8 << 8;
 static constexpr U64 rank6 = rank7 << 8;

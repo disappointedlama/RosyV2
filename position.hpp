@@ -2,6 +2,7 @@
 #include <vector>
 #include <chrono>
 #include <cassert>
+#include <algorithm>
 #include "immintrin.h"
 #include "intrin.h"
 #include <unordered_map>
@@ -275,7 +276,7 @@ public:
 	}
 	int get_legal_moves(array<unsigned int,128>& ret);
 	int get_legal_captures(array<unsigned int,128>& ret);
-	constexpr bool is_draw_by_repetition() {
+	inline bool is_draw_by_repetition() {
 		return (std::count(hash_history.begin(), hash_history.end(), current_hash)) >= 3;
 	}
 	constexpr bool is_draw_by_fifty_moves() {
