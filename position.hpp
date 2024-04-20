@@ -54,13 +54,13 @@ static constexpr int char_pieces(const char piece) {
 static constexpr U64 get_queen_attacks(U64 occ, const int sq) {
 	return get_bishop_attacks(occ, sq) | get_rook_attacks(occ, sq);
 };
-static const std::string start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+static const string start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 struct Position_Error : std::exception {
-	std::string msg;
-	Position_Error(std::string msg) {
+	string msg;
+	Position_Error(string msg) {
 		this->msg = msg;
 	}
-	const std::string what() throw() {
+	const string what() throw() {
 		return std::format("Position Error: {}", msg);
 	}
 
@@ -75,35 +75,35 @@ class Position {
 		return square_board[sq];
 	};
 
-	int legal_move_generator(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int ind);
-	int legal_in_check_move_generator(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int ind);
+	int legal_move_generator(array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int ind);
+	int legal_in_check_move_generator(array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int ind);
 
-	int legal_capture_gen(std::array<unsigned int,128>& ret, const U64 enemy_attacks, int ind);
-	int legal_in_check_capture_gen(std::array<unsigned int,128>& ret, const U64 enemy_attacks, int ind);
-	int in_check_get_pawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int ind);
-	int get_pawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, int ind);
+	int legal_capture_gen(array<unsigned int,128>& ret, const U64 enemy_attacks, int ind);
+	int legal_in_check_capture_gen(array<unsigned int,128>& ret, const U64 enemy_attacks, int ind);
+	int in_check_get_pawn_captures(array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int ind);
+	int get_pawn_captures(array<unsigned int,128>& ret, const U64 pinned, int ind);
 
 	inline U64 get_pinned_pieces(const int kingpos, const U64 enemy_attacks);
-	inline U64 get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks,int &ind);
-	inline U64 get_captures_for_pinned_pieces(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind);
+	inline U64 get_moves_for_pinned_pieces(array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks,int &ind);
+	inline U64 get_captures_for_pinned_pieces(array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind);
 	inline U64 get_checkers(const int kingpos);
 	inline U64 get_checking_rays(const int kingpos);
-	void try_out_move(std::array<unsigned int,128>& ret, unsigned int move, int& ind);
-	inline int get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 pinned, int ind);
-	inline int legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, int ind);
-	inline int legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, int ind);
-	inline int legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, int ind);
-	inline int legal_wpawn_captures(std::array<unsigned int, 128>& ret, const U64 pinned, int ind);
-	inline int legal_b_enpassant(std::array<unsigned int, 128>& ret, int ind);
-	inline int legal_w_enpassant(std::array<unsigned int, 128>& ret, int ind);
+	void try_out_move(array<unsigned int,128>& ret, unsigned int move, int& ind);
+	inline int get_legal_pawn_moves(array<unsigned int,128>& ret, const U64 pinned, int ind);
+	inline int legal_bpawn_pushes(array<unsigned int,128>& ret, const U64 pinned, int ind);
+	inline int legal_wpawn_pushes(array<unsigned int,128>& ret, const U64 pinned, int ind);
+	inline int legal_bpawn_captures(array<unsigned int,128>& ret, const U64 pinned, int ind);
+	inline int legal_wpawn_captures(array<unsigned int, 128>& ret, const U64 pinned, int ind);
+	inline int legal_b_enpassant(array<unsigned int, 128>& ret, int ind);
+	inline int legal_w_enpassant(array<unsigned int, 128>& ret, int ind);
 
-	inline int in_check_get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int ind);
-	inline int in_check_legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int ind);
-	inline int in_check_legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int ind);
-	inline int in_check_legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int ind);
-	inline int in_check_legal_wpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int ind);
+	inline int in_check_get_legal_pawn_moves(array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int ind);
+	inline int in_check_legal_bpawn_pushes(array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int ind);
+	inline int in_check_legal_wpawn_pushes(array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int ind);
+	inline int in_check_legal_bpawn_captures(array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int ind);
+	inline int in_check_legal_wpawn_captures(array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int ind);
 
-	inline int get_castles(std::array<unsigned int,128>& ptr, const U64 enemy_attacks, int ind);
+	inline int get_castles(array<unsigned int,128>& ptr, const U64 enemy_attacks, int ind);
 	inline short raw_material(const short phase) {
 		short ret = (((openingKingTableWhite[bitscan(bitboards[K])] - openingKingTableBlack[bitscan(bitboards[k])]) * (256 - phase)) + ((endgameKingTable[bitscan(bitboards[K])] - endgameKingTable[bitscan(bitboards[k])]) * phase)) / 256
 					+ (count_bits(bitboards[P]) - count_bits(bitboards[p])) * wheights[10]
@@ -184,9 +184,9 @@ class Position {
 		return ret;
 	}
 public:
-	std::array<U64, 12> bitboards; // P, N, B, R, Q, K, p, n, b, r, q, k
-	std::array<U64, 3> occupancies;
-	std::array<short, 64> square_board;
+	array<U64, 12> bitboards; // P, N, B, R, Q, K, p, n, b, r, q, k
+	array<U64, 3> occupancies;
+	array<short, 64> square_board;
 #if timingPosition
 	U64 totalTime;
 	U64 pawnGeneration;
@@ -201,27 +201,27 @@ public:
 	short enpassant_square;
 	short castling_rights;//wk,wq,bk,bq
 	short no_pawns_or_captures;
-	std::vector<unsigned int> move_history;
-	std::vector<short> enpassant_history;
-	std::vector<short> castling_rights_history;
-	std::vector<short> no_pawns_or_captures_history;
-	std::vector<U64> hash_history;
+	vector<unsigned int> move_history;
+	vector<short> enpassant_history;
+	vector<short> castling_rights_history;
+	vector<short> no_pawns_or_captures_history;
+	vector<U64> hash_history;
 	std::unordered_map<U64, short> pawn_evaluation_map;
 	const static short infinity = 30000;
 	const static short no_piece = 15;
 	U64 current_hash;
-	static std::array<short, 16> wheights;
+	static array<short, 16> wheights;
 	Position();
-	Position(const std::string& fen);
-	void parse_fen(std::string fen);
-	std::string fen() const;
+	Position(const string& fen);
+	void parse_fen(string fen);
+	string fen() const;
 	void print();
 	void print_square_board() const;
-	std::string to_string();
-	std::string square_board_to_string() const;
+	string to_string();
+	string square_board_to_string() const;
 	U64 get_hash() const;
 	inline bool valid_move(const unsigned int move) {
-		std::array<unsigned int, 128> legal_moves{};
+		array<unsigned int, 128> legal_moves{};
 		const int number_of_moves = get_legal_moves(legal_moves);
 		bool found = false;
 		for (int i = 0; i < number_of_moves; i++) {
@@ -245,16 +245,16 @@ public:
 		current_hash ^= keys[772];
 		const int old_enpassant_square = enpassant_history.back();
 		//undo en passant hash in case it was not a8 (none)
-		current_hash ^= ((old_enpassant_square != a8) && (old_enpassant_square != 64)) * keys[static_cast<std::array<size_t, 781Ui64>::size_type>(773) + old_enpassant_square % 8];
+		current_hash ^= ((old_enpassant_square != a8) && (old_enpassant_square != 64)) * keys[static_cast<array<size_t, 781Ui64>::size_type>(773) + old_enpassant_square % 8];
 		enpassant_square = a8;
 		sideMask = ~sideMask;
 		side = !side;
 		//const U64 generatedHash = get_hash();
 		//if (current_hash != generatedHash) {
 		//	print();
-		//	std::cout << "updated hash: " << current_hash << "\ngenerated hash: " << generatedHash << std::endl;
+		//	cout << "updated hash: " << current_hash << "\ngenerated hash: " << generatedHash << endl;
 		//	for (int i = 0; i < 100; i++) {
-		//		std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
+		//		cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << endl;
 		//	}
 		//	throw Position_Error("aaaaaaaaaaaa");
 		//}
@@ -273,8 +273,8 @@ public:
 		sideMask = ~sideMask;
 		side = !side;
 	}
-	int get_legal_moves(std::array<unsigned int,128>& ret);
-	int get_legal_captures(std::array<unsigned int,128>& ret);
+	int get_legal_moves(array<unsigned int,128>& ret);
+	int get_legal_captures(array<unsigned int,128>& ret);
 	constexpr bool is_draw_by_repetition() {
 		return (std::count(hash_history.begin(), hash_history.end(), current_hash)) >= 3;
 	}
@@ -741,14 +741,14 @@ public:
 				}
 			}
 			if (type != square_board[i]) {
-				std::cout << std::endl<< "mismatch at " << square_coordinates[i] << " : " << type << ", " << square_board[i] << std::endl;
+				cout << endl<< "mismatch at " << square_coordinates[i] << " : " << type << ", " << square_board[i] << endl;
 				return false;
 			}
 		}
 		return true;
 	}
-	inline std::string get_move_history() {
-		std::string ret = "";
+	inline string get_move_history() {
+		string ret = "";
 		for (int i = 0; i < move_history.size(); i++) {
 			ret += uci(move_history[i]) +" ";
 		}
@@ -757,9 +757,9 @@ public:
 };
 struct invalid_move_exception : std::exception {
 	unsigned int move;
-	std::string move_str;
+	string move_str;
 	Position pos;
 	invalid_move_exception(const Position t_pos, const unsigned int t_move);
-	invalid_move_exception(const Position t_pos, const std::string t_move);
-	const std::string what() throw();
+	invalid_move_exception(const Position t_pos, const string t_move);
+	const string what() throw();
 };

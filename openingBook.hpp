@@ -4,6 +4,7 @@
 #include <vector>
 #include <fstream>
 #include <random>
+using std::array,std::vector;
 
 struct move_weight_pair {
     int move = 0;
@@ -20,9 +21,9 @@ struct move_weight_pair {
 };
 struct book_entry {
     U64 key = 0ULL;
-    std::array<move_weight_pair, 5> entry{};
+    array<move_weight_pair, 5> entry{};
     constexpr book_entry() { }
-    constexpr book_entry(const U64 t_key, std::array<move_weight_pair, 5> t_entry) {
+    constexpr book_entry(const U64 t_key, array<move_weight_pair, 5> t_entry) {
         key = t_key;
         entry = t_entry;
     }
@@ -44,7 +45,7 @@ struct OpeningBook {
     OpeningBook() {
         size = 0;
     }
-    OpeningBook(std::string& file_path) {
+    OpeningBook(string& file_path) {
         load((char*)(file_path.c_str()));
     }
     OpeningBook(const char* file_path) {
@@ -66,7 +67,7 @@ struct OpeningBook {
         std::fstream file;
         file.open(file_path, std::ios::in);
         file >> size;
-        entries = std::vector<book_entry>(size);
+        entries = vector<book_entry>(size);
         for (int i = 0; i < size; i++) {
             book_entry e;
             file >> e;
@@ -75,11 +76,11 @@ struct OpeningBook {
         size = entries.size();
         file.close();
     }
-    void set_entries(std::vector<book_entry>& t_entries) {
+    void set_entries(vector<book_entry>& t_entries) {
         entries = t_entries;
         size = entries.size();
     }
-    std::vector<book_entry> get_entries() const {
+    vector<book_entry> get_entries() const {
         return entries;
     }
     constexpr size_t get_size() {
@@ -130,7 +131,7 @@ struct OpeningBook {
         return 0;
     }
 private:
-    std::vector<book_entry> entries{};
+    vector<book_entry> entries{};
     size_t size = 0;
     book_entry nullentry{};
 };

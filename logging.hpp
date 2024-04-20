@@ -1,17 +1,17 @@
 #pragma once
 #include <string>
 #include <fstream>
-
+using std::string;
 class Logger {
-	std::string file_path;
+	string file_path;
 public:
 	Logger() {
 		this->file_path = "LOGS.txt";
 	}
-	Logger(std::string file_path) {
+	Logger(string file_path) {
 		this->file_path = file_path;
 	}
-	void log (std::string message) {
+	void log (string message) {
 		if (message.at(message.size() - 1) == '\n') {
 			message = message.substr(0, message.size() - 1);
 		}
@@ -20,17 +20,17 @@ public:
 		file << message << "\n";
 		file.close();
 	}
-	void operator<< (std::string message) {
+	void operator<< (string message) {
 		if (message.at(message.size() - 1) == '\n') {
 			message = message.substr(0, message.size() - 1);
 		}
         std::fstream file;
         file.open(file_path, std::ios_base::app);
         file << message << "\n";
-		std::cout << message << std::endl;
+		cout << message << endl;
         file.close();
 	}
-	void info(std::string message) {
+	void info(string message) {
 		if (message.at(message.size() - 1) == '\n') {
 			message = message.substr(0, message.size() - 1);
 		}
@@ -38,15 +38,15 @@ public:
 		file.open(file_path, std::ios_base::app);
 		file << "INFO\n";
 		file << message << "\n";
-		std::cout << message << std::endl;
+		cout << message << endl;
 		file.close();
 	}
-	void error(std::string message) {
+	void error(string message) {
 		std::fstream file;
 		file.open(file_path, std::ios_base::app);
 		file << "ERROR\n";
 		file << message << "\n";
-		std::cout << message << std::endl;
+		cout << message << endl;
 		file.close();
 	}
 };

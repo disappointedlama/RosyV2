@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <string>
+using std::string;
 #define U64 unsigned long long
 #define get_bit(bitboard, square) ((bitboard) & (1ULL << (square)))
 #define set_bit(bitboard, square) ((bitboard) |= (1ULL << (square)))
@@ -27,7 +28,7 @@ constexpr int index64[64] = {
 };
 
 void print_bitboard(const U64 bitboard);
-const std::string square_coordinates[64] = {
+const string square_coordinates[64] = {
 "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
 "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7",
 "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",

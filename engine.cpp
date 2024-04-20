@@ -7,12 +7,12 @@ namespace std {
 		return current_working_dir;
 	}
 }
-OpeningBook book{ (std::getCurDir() + std::string("\\engines\\openingBook.txt")).c_str() };
+OpeningBook book{ (std::getCurDir() + string("\\engines\\openingBook.txt")).c_str() };
 
-stop_exception::stop_exception(std::string t_source) {
+stop_exception::stop_exception(string t_source) {
 	source = t_source;
 }
-const std::string stop_exception::what() throw(){
+const string stop_exception::what() throw(){
 	return "Stop exception thrown by " + source;
 }
 
@@ -20,7 +20,7 @@ int Engine::bestMove() {
 	if (use_opening_book) {
 		const int move = book.find_move(pos.current_hash);
 		if (move) {
-			std::cout << "bestmove " << uci(move) << std::endl;
+			cout << "bestmove " << uci(move) << endl;
 			run = false;
 			pos = Position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
 			return move;
@@ -29,7 +29,7 @@ int Engine::bestMove() {
 	std::chrono::steady_clock::time_point search_start = std::chrono::steady_clock::now();
 	killer_table.shift_by(2);
 	const int aspiration_window = 200;
-	std::array<std::array<unsigned int,128>,40> moves{};
+	array<array<unsigned int,128>,40> moves{};
 	const int number_of_legal_moves = pos.get_legal_moves(moves[0]);
 	MoveWEval best{ moves[0][0],0};
 	MoveWEval old_best = best;
@@ -78,15 +78,15 @@ int Engine::bestMove() {
 #if timingEngine
 	auto end = std::chrono::steady_clock::now();
 	totalEngineTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-	std::cout << "Time spend:\n";
-	std::cout << "pv search: " << (1 - (double)quiescenceTime / totalEngineTime) * 100.0 << "%\n";
-	std::cout<<"move generation : " << ((double)moveGenerationTime / totalEngineTime) * 100.0 << " % \n";
-	std::cout << "move ordering: " << ((double)moveOrderingTime / totalEngineTime) * 100.0 << "%\n";
-	std::cout << "quiescence: " << ((double)quiescenceTime / totalEngineTime) * 100.0 << "%\n";
-	std::cout << "move generation quiescence: " << ((double)moveGenerationQuiescenceTime / totalEngineTime) * 100.0 << "%\n";
-	std::cout << "capture generation : " << ((double)captureGenerationTime / totalEngineTime) * 100.0 << " % \n";
-	std::cout << "capture ordering: " << ((double)captureOrderingTime / totalEngineTime) * 100.0 << "%\n";
-	std::cout << "evaluation: " << ((double)evaluationTime / totalEngineTime) * 100.0 << "%\n";
+	cout << "Time spend:\n";
+	cout << "pv search: " << (1 - (double)quiescenceTime / totalEngineTime) * 100.0 << "%\n";
+	cout<<"move generation : " << ((double)moveGenerationTime / totalEngineTime) * 100.0 << " % \n";
+	cout << "move ordering: " << ((double)moveOrderingTime / totalEngineTime) * 100.0 << "%\n";
+	cout << "quiescence: " << ((double)quiescenceTime / totalEngineTime) * 100.0 << "%\n";
+	cout << "move generation quiescence: " << ((double)moveGenerationQuiescenceTime / totalEngineTime) * 100.0 << "%\n";
+	cout << "capture generation : " << ((double)captureGenerationTime / totalEngineTime) * 100.0 << " % \n";
+	cout << "capture ordering: " << ((double)captureOrderingTime / totalEngineTime) * 100.0 << "%\n";
+	cout << "evaluation: " << ((double)evaluationTime / totalEngineTime) * 100.0 << "%\n";
 	totalEngineTime = 0ULL;
 	moveGenerationTime = 0ULL;
 	captureGenerationTime = 0ULL;
@@ -116,7 +116,7 @@ int Engine::evaluate() {
 	std::chrono::steady_clock::time_point search_start = std::chrono::steady_clock::now();
 	killer_table.shift_by(2);
 	const int aspiration_window = 200;
-	std::array<std::array<unsigned int, 128>, 40> moves{};
+	array<array<unsigned int, 128>, 40> moves{};
 	const int number_of_legal_moves = pos.get_legal_moves(moves[0]);
 	MoveWEval best{ moves[0][0],0 };
 	MoveWEval old_best = best;
@@ -176,7 +176,7 @@ inline void Engine::printBestMove(int move) {
 	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	log<< "bestmove " + uci(move);
 }
-MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta) {
+MoveWEval Engine::pv_root_call(array<array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta) {
 	TableEntry entry = lookUp();
 #if timingEngine
 	auto start = std::chrono::steady_clock::now();
@@ -191,7 +191,7 @@ MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& mo
 	short current_best_eval = -infinity-1;
 	for (int i = 0; i < number_of_moves; i++) {
 		if (debug) {
-			std::cout << "starting " << uci(moves[move_index][i]) << std::endl;
+			cout << "starting " << uci(moves[move_index][i]) << endl;
 		}
 		short value = 0;
 		pos.make_move(moves[move_index][i]);
@@ -208,19 +208,19 @@ MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& mo
 		current_best_eval = (is_best_move)*value + (!is_best_move) * current_best_eval;
 		if (debug) {
 			if (is_best_move) {
-				std::cout << "Found new best move in: " << "\n";
+				cout << "Found new best move in: " << "\n";
 				print_move(moves[move_index][i]);
-				std::cout << " (" << value << ")" << std::endl;
+				cout << " (" << value << ")" << endl;
 			}
 			else {
-				std::cout << "finished " << uci(moves[move_index][i]) << std::endl;
+				cout << "finished " << uci(moves[move_index][i]) << endl;
 			}
 		}
 		if (value > alpha) {
 			alpha = value;
 			if (value >= infinity) {
 				if (debug) {
-					std::cout << "Finished depth " << depth << std::endl;
+					cout << "Finished depth " << depth << endl;
 				}
 				hash_map[pos.current_hash] = TableEntry{ current_best_move,current_best_eval,EXACT,depth };
 				return MoveWEval{current_best_move, current_best_eval};
@@ -228,12 +228,12 @@ MoveWEval Engine::pv_root_call(std::array<std::array<unsigned int, 128>, 40>& mo
 		}
 	}
 	if (debug) {
-		std::cout << "Finished depth " << depth << std::endl;
+		cout << "Finished depth " << depth << endl;
 	}
 	hash_map[pos.current_hash] = TableEntry{ current_best_move, current_best_eval, EXACT, depth };
 	return MoveWEval{ current_best_move, current_best_eval };
 }
-short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta, bool isPV) {
+short Engine::pv_search(array<array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta, bool isPV) {
 	if (!run) {
 		return infinity + 2;
 	}
@@ -311,7 +311,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 	order(moves[move_index], entry,number_of_moves);
 	unsigned int current_best_move = 0;
 	short current_best_eval = -infinity-1;
-	//std::string before_moves = pos.fen();
+	//string before_moves = pos.fen();
 	pos.make_move(moves[move_index][0]);
 	bool in_check_now = pos.currently_in_check();
 	short value = -pv_search(moves, move_index + 1, depth - 1, -beta, -alpha, true);
@@ -319,7 +319,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 	//if (pos.fen() != before_moves) {
 	//	pos.print();
 	//	pos.print_square_board();
-	//	std::cout << "Should have been: " << before_moves << std::endl;
+	//	cout << "Should have been: " << before_moves << endl;
 	//	print_move(pos.move_history.back());
 	//	throw stop_exception("pv");
 	//}
@@ -357,7 +357,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 		//if (pos.fen() != before_moves) {
 		//	pos.print();
 		//	pos.print_square_board();
-		//	std::cout << "Should have been: " << before_moves << std::endl;
+		//	cout << "Should have been: " << before_moves << endl;
 		//	print_move(pos.move_history.back());
 		//	throw stop_exception("pv");
 		//}
@@ -388,7 +388,7 @@ short Engine::pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, in
 	}
 	return alpha;
 }
-short Engine::quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, short alpha, short beta) {
+short Engine::quiescence(array<array<unsigned int, 128>, 40>& moves, int move_index, short alpha, short beta) {
 	if (!run) {
 		return infinity + 2;
 	}
@@ -471,7 +471,7 @@ short Engine::quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, i
 	}
 	quiescence_order(moves[move_index], number_of_captures);
 
-	//std::string before_moves = pos.fen();
+	//string before_moves = pos.fen();
 	unsigned int current_best_move = 0;
 	short current_best_eval = -infinity - 1;
 	for (int i = 0; i < number_of_captures; i++) {
@@ -484,7 +484,7 @@ short Engine::quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, i
 		//if (pos.fen() != before_moves) {
 		//	pos.print();
 		//	pos.print_square_board();
-		//	std::cout << "Should have been: " << before_moves << std::endl;
+		//	cout << "Should have been: " << before_moves << endl;
 		//	print_move(pos.move_history.back());
 		//	throw stop_exception("quiescence");
 		//}
@@ -517,32 +517,32 @@ void Engine::set_max_depth(const short depth) {
 void Engine::set_debug(const bool t_debug) {
 	debug = t_debug;
 }
-void Engine::parse_position(std::string fen) {
+void Engine::parse_position(string fen) {
 	if (debug) log << fen;
 	else log.log(fen);
-	std::string moves="";
-	std::string str = " moves ";
+	string moves="";
+	string str = " moves ";
 	auto substr_pos = fen.find(str);
-	if (substr_pos != std::string::npos) {
+	if (substr_pos != string::npos) {
 		moves = fen.substr(substr_pos + str.size(), fen.size());
 		fen = fen.substr(0, substr_pos);
 	}
 	str = "startpos";
 	substr_pos = fen.find(str);
-	if (substr_pos != std::string::npos) {
+	if (substr_pos != string::npos) {
 		fen = start_position;
 	}
 	str = "fen ";
 	substr_pos = fen.find(str);
-	if (substr_pos != std::string::npos) {
+	if (substr_pos != string::npos) {
 		fen = fen.substr(substr_pos + str.size(), fen.size());
 	}
 	pos = Position(fen);
 	try {
 		while (moves != "") {
-			std::array<unsigned,128> move_list{};
+			array<unsigned,128> move_list{};
 			pos.get_legal_moves(move_list);
-			std::string move_string = moves.substr(0, moves.find_first_of(' '));
+			string move_string = moves.substr(0, moves.find_first_of(' '));
 			if (move_string.size() > 4) {
 				const int last = move_string.size() - 1;
 				if ((move_string[last] != 'n') && (move_string[last] != 'b') && (move_string[last] != 'r') && (move_string[last] != 'q')) {
@@ -567,19 +567,19 @@ void Engine::parse_position(std::string fen) {
 		}
 	}
 	catch (invalid_move_exception e) {
-		std::cout << e.what() << std::endl;
+		cout << e.what() << endl;
 	}
 	if(debug) pos.print();
 }
 void Engine::reset_position() {
 	pos = Position{ start_position };
 }
-void Engine::parse_go(std::string str){
+void Engine::parse_go(string str){
 	if(debug) log << str;
 	check_time = false;
-	std::string command = "depth ";
+	string command = "depth ";
 	auto substr_pos = str.find(command);
-	if (substr_pos != std::string::npos) {
+	if (substr_pos != string::npos) {
 		str = str.substr(substr_pos + command.size(), str.size());
 		max_depth = stoi(str);
 		bestMove();
@@ -587,7 +587,7 @@ void Engine::parse_go(std::string str){
 	}
 	command = "infinite";
 	substr_pos = str.find(command);
-	if (substr_pos != std::string::npos) {
+	if (substr_pos != string::npos) {
 		str = str.substr(substr_pos + command.size(), str.size());
 		max_depth = infinity;
 		bestMove();
@@ -595,7 +595,7 @@ void Engine::parse_go(std::string str){
 	}
 	command = "movetime ";
 	substr_pos = str.find(command);
-	if (substr_pos != std::string::npos) {
+	if (substr_pos != string::npos) {
 		str = str.substr(substr_pos + command.size(), str.size());
 		std::thread time_tracker = std::thread(&Engine::track_time, this, stoull(str)*1000000ULL);
 		max_depth = infinity;
@@ -610,9 +610,9 @@ void Engine::parse_go(std::string str){
 	}
 	command = "wtime ";
 	substr_pos = str.find(command);
-	if (substr_pos != std::string::npos) {
+	if (substr_pos != string::npos) {
 		str = str.substr(substr_pos + command.size(), str.size());
-		std::string time_str = str.substr(0, str.find(" "));
+		string time_str = str.substr(0, str.find(" "));
 		const int wtime = stoi(time_str);
 		command = "btime ";
 		substr_pos = str.find(command);
@@ -639,7 +639,7 @@ void Engine::parse_go(std::string str){
 		if (time_for_next_move < 0) {
 			time_for_next_move = 100;
 		}
-		std::cout << "Thinking time: " << time_for_next_move << std::endl;
+		cout << "Thinking time: " << time_for_next_move << endl;
 		time_for_next_move *= 1000000ULL;
 		std::thread time_tracker = std::thread(&Engine::track_time, this, time_for_next_move);
 		max_depth = 100;
@@ -654,7 +654,7 @@ void Engine::parse_go(std::string str){
 	}
 	command = "perft ";
 	substr_pos = str.find(command);
-	if (substr_pos != std::string::npos) {
+	if (substr_pos != string::npos) {
 		str = str.substr(substr_pos + command.size(), str.size());
 		max_depth = stoi(str);
 		perft();
@@ -663,26 +663,26 @@ void Engine::parse_go(std::string str){
 }
 void Engine::perft() {
 	pos.print();
-	std::array<std::array<unsigned int, 128>, 40> moves{};
+	array<array<unsigned int, 128>, 40> moves{};
 	const int number_of_moves = pos.get_legal_moves(moves[0]);
-	std::vector<unsigned long long> nodeList{};
-	std::cout << "Nodes from different branches:\n";
+	vector<unsigned long long> nodeList{};
+	cout << "Nodes from different branches:\n";
 	U64 total_nodes = 0ULL;
 	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 	for (int i = 0; i < number_of_moves; i++) {
 		pos.make_move(moves[0][i]);
 		perft_traversal(moves, 1, max_depth - 1);
 		pos.unmake_move();
-		std::cout << "\t" << uci(moves[0][i]) << ": " << nodes << " Nodes\n";
+		cout << "\t" << uci(moves[0][i]) << ": " << nodes << " Nodes\n";
 		total_nodes += nodes;
 		nodes = 0ULL;
 	}
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 	U64 totalTime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-	std::cout << "Total Nodes: " << total_nodes << "\n";
-	std::cout << "Time: " << totalTime/1000000000.0 << "s (" << 1000.0 * total_nodes / totalTime << " MHz)\n";
+	cout << "Total Nodes: " << total_nodes << "\n";
+	cout << "Time: " << totalTime/1000000000.0 << "s (" << 1000.0 * total_nodes / totalTime << " MHz)\n";
 }
-void Engine::perft_traversal(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const int depth) {
+void Engine::perft_traversal(array<array<unsigned int, 128>, 40>& moves, int move_index, const int depth) {
 	if (depth == 0) {
 		nodes++;
 		return;
@@ -709,7 +709,7 @@ void Engine::print_info(const short depth, const int eval, const U64 time) {
 		pos.unmake_move();
 	}
 	stream<<"\n";
-	std::string str = std::move(stream).str();
+	string str = std::move(stream).str();
 	log << str;
 }
 void Engine::track_time(const U64 max_time) {
@@ -719,7 +719,7 @@ void Engine::track_time(const U64 max_time) {
 		end = std::chrono::steady_clock::now();
 		if ((U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() >= max_time) {
 			run = false;
-			if(debug)std::cout << "stopping execution" << std::endl;
+			if(debug)cout << "stopping execution" << endl;
 		}
 	}
 }
@@ -729,7 +729,7 @@ void Engine::uci_loop(){
 	fflush(stdout);
 	char input[2000];
 
-	std::vector<std::thread> workers{};
+	vector<std::thread> workers{};
 	while (true) {
 		memset(input, 0, sizeof(input));
 		fflush(stdout);
@@ -750,7 +750,7 @@ void Engine::uci_loop(){
 			continue;
 		}
 		if (strncmp(input, "isready", 7) == 0) {
-			std::cout << "readyok\n";
+			cout << "readyok\n";
 		}
 		else if (strncmp(input, "position", 8) == 0) {
 			parse_position(input);
@@ -758,8 +758,8 @@ void Engine::uci_loop(){
 		else if (strncmp(input, "ucinewgame", 10) == 0) {
 			parse_position("position startpos");
 			hash_map = std::unordered_map<U64, TableEntry>{};
-			history = std::array<std::array<U64, 64>, 12>{};
-			if(debug) std::cout << "Done with cleanup\n";
+			history = array<array<U64, 64>, 12>{};
+			if(debug) cout << "Done with cleanup\n";
 		}
 		else if (strncmp(input, "go", 2) == 0) {
 			if (!run) {
@@ -811,9 +811,9 @@ void Engine::uci_loop(){
 			}
 		}
 		else if (strncmp(input, "uci", 3) == 0) {
-			std::cout << "id name Rosy author disappointed_lama\n";
-			std::cout << "option name Move Overhead type spin default 100 min 0 max 20000\noption name Threads type spin default 2 min 2 max 2\noption name Hash type spin default 512 min 256" << std::endl;
-			std::cout << "uciok\n";
+			cout << "id name Rosy author disappointed_lama\n";
+			cout << "option name Move Overhead type spin default 100 min 0 max 20000\noption name Threads type spin default 2 min 2 max 2\noption name Hash type spin default 512 min 256" << endl;
+			cout << "uciok\n";
 		}
 		else if (strncmp(input, "debug", 5) == 0) {
 			if (strncmp(input + 6, "true", 4) == 0) {
@@ -822,7 +822,7 @@ void Engine::uci_loop(){
 			else if (strncmp(input +6 , "false", 5) == 0) {
 				debug = false;
 			}
-			std::cout << "Debug is set to " << ((debug) ? ("true") : ("false")) << std::endl;
+			cout << "Debug is set to " << ((debug) ? ("true") : ("false")) << endl;
 		}
 		/*
 		else if (strncmp(input, "ponderhit", 9) == 0) {
@@ -843,7 +843,7 @@ void Engine::uci_loop(){
 		*/
 	}
 	/*
-	std::vector<std::thread> workers{};
+	vector<std::thread> workers{};
 	std::thread parse_runner{};
 	run = false;
 	char* command = nullptr;
@@ -862,12 +862,12 @@ void Engine::uci_loop(){
 			continue;
 		}
 		if (strncmp(input, "isready", 7) == 0) {
-			std::cout << "readyok\n";
+			cout << "readyok\n";
 		}
 		else if (strncmp(input, "position", 8) == 0) {
 			run = true;
-			std::cout << "Launching thread" << std::endl;
-			parse_runner = std::thread(&Engine::parse_position, this, std::string{ input });
+			cout << "Launching thread" << endl;
+			parse_runner = std::thread(&Engine::parse_position, this, string{ input });
 		}
 		else if (strncmp(input, "ucinewgame", 10) == 0) {
 			reset_position();
@@ -875,7 +875,7 @@ void Engine::uci_loop(){
 		else if (strncmp(input, "go", 2) == 0) {
 			if (!run) {
 				run = true;
-				parse_runner = std::thread(&Engine::parse_go, this, std::string{ input });
+				parse_runner = std::thread(&Engine::parse_go, this, string{ input });
 			}
 
 			using namespace std::literals::chrono_literals;
@@ -897,9 +897,9 @@ void Engine::uci_loop(){
 			reset_position();
 		}
 		else if (strncmp(input, "uci", 3) == 0) {
-			std::cout << "id name Rosy author disappointed_lama\n";
-			std::cout << "option name Move Overhead type spin default 100 min 0 max 20000\noption name Threads type spin default 2 min 2 max 2\noption name Hash type spin default 512 min 256" << std::endl;
-			std::cout << "uciok\n";
+			cout << "id name Rosy author disappointed_lama\n";
+			cout << "option name Move Overhead type spin default 100 min 0 max 20000\noption name Threads type spin default 2 min 2 max 2\noption name Hash type spin default 512 min 256" << endl;
+			cout << "uciok\n";
 		}
 	*/
 }

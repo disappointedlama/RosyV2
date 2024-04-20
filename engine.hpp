@@ -19,9 +19,9 @@ namespace std {
 	string getCurDir();
 }
 struct stop_exception : std::exception {
-	std::string source;
-	stop_exception(std::string t_source);
-	const std::string what() throw();
+	string source;
+	stop_exception(string t_source);
+	const string what() throw();
 };
 struct MoveWEval {
 	unsigned int move;
@@ -72,7 +72,7 @@ struct KillerTable {
 	}
 };
 
-static std::array<std::array<U64, 64>, 12> history = std::array<std::array<U64, 64>, 12>{};
+static array<array<U64, 64>, 12> history = array<array<U64, 64>, 12>{};
 class Engine {
 #if timingEngine
 	U64 totalEngineTime = 0ULL;
@@ -84,7 +84,7 @@ class Engine {
 	U64 moveGenerationQuiescenceTime = 0ULL;
 	U64 evaluationTime = 0ULL;
 #endif
-	std::string logging_path = "RosyV2.botlogs";
+	string logging_path = "RosyV2.botlogs";
 	Position pos;
 	int current_desired_depth;
 	int max_depth;
@@ -99,10 +99,10 @@ class Engine {
 	bool check_time;
 	bool use_opening_book;
 	Logger log;
-	MoveWEval pv_root_call(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta);
-	short pv_search(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta, bool isPV);
-	short quiescence(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, short alpha, short beta);
-	inline void order(std::array<unsigned int,128>& moves, TableEntry& entry, int number_of_moves) {
+	MoveWEval pv_root_call(array<array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta);
+	short pv_search(array<array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta, bool isPV);
+	short quiescence(array<array<unsigned int, 128>, 40>& moves, int move_index, short alpha, short beta);
+	inline void order(array<unsigned int,128>& moves, TableEntry& entry, int number_of_moves) {
 #if timingEngine
 		auto start = std::chrono::steady_clock::now();
 #endif
@@ -110,7 +110,7 @@ class Engine {
 		if (((bool)(entry.get_move())) && (std::find(moves.begin(), moves.end(), entry.get_move()) != moves.end())&&entry.get_move()!=0) {
 			hash_move = entry.get_move();
 		}
-		std::sort(moves.begin(), (std::array<unsigned int, 128>::iterator)(moves.begin() + number_of_moves), [&](const int& lhs, const int& rhs)
+		std::sort(moves.begin(), (array<unsigned int, 128>::iterator)(moves.begin() + number_of_moves), [&](const int& lhs, const int& rhs)
 			{
 				if (lhs == hash_move) { return true; }
 				else if (rhs == hash_move) { return false; }
@@ -155,11 +155,11 @@ class Engine {
 		moveOrderingTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
 	}
-	inline void quiescence_order(std::array<unsigned int, 128>& moves, int number_of_moves) {
+	inline void quiescence_order(array<unsigned int, 128>& moves, int number_of_moves) {
 #if timingEngine
 		auto start = std::chrono::steady_clock::now();
 #endif
-		std::sort(moves.begin(), (std::array<unsigned int,128>::iterator)(moves.begin()+number_of_moves), [&](const int& lhs, const int& rhs)
+		std::sort(moves.begin(), (array<unsigned int,128>::iterator)(moves.begin()+number_of_moves), [&](const int& lhs, const int& rhs)
 			{
 				return pos.seeByMove(lhs)>pos.seeByMove(rhs);
 			});
@@ -175,14 +175,14 @@ public:
 	Engine() :pos{}, max_depth{ 8 }, run{ false }, debug{ false }, killer_table{}, hash_map{}, nodes{ 0ULL }, use_opening_book{ true }, log{ logging_path }, time_for_next_move{ 0 } {};
 	Engine(const bool t_debug) :pos{}, max_depth{ 8 }, run{ false }, debug{ t_debug }, killer_table{}, hash_map{}, nodes{ 0ULL }, use_opening_book{ true }, log{ logging_path }, time_for_next_move{ 0 } {};
 	void perft();
-	void perft_traversal(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const int depth);
+	void perft_traversal(array<array<unsigned int, 128>, 40>& moves, int move_index, const int depth);
 	int bestMove();
 	int evaluate();
 	inline void printBestMove(int move);
 	void set_debug(const bool t_debug);
 	void set_max_depth(const short depth);
-	void parse_position(std::string fen);
-	void parse_go(std::string str);
+	void parse_position(string fen);
+	void parse_go(string str);
 	void reset_position();
 	void uci_loop();
 };

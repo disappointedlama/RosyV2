@@ -4,12 +4,12 @@ invalid_move_exception::invalid_move_exception(const Position t_pos, const unsig
 	move = t_move;
 	move_str = uci(t_move);
 }
-invalid_move_exception::invalid_move_exception(const Position t_pos, const std::string t_move) {
+invalid_move_exception::invalid_move_exception(const Position t_pos, const string t_move) {
 	pos = t_pos;
 	move = -1;
 	move_str = t_move;
 }
-const std::string invalid_move_exception::what() throw() {
+const string invalid_move_exception::what() throw() {
 	return std::format("Found invalid move {} in position {}", move_str, pos.fen());
 }
 inline bool Position::is_attacked_by_side(const int sq, const bool color) {
@@ -54,14 +54,14 @@ inline U64 Position::get_attacks_by(const U64 color) {
 inline int Position::get_piece_type_on(const int sq)const {
 	return square_board[sq];
 }
-void Position::try_out_move(std::array<unsigned int,128>& ret, unsigned int move, int& ind) {
+void Position::try_out_move(array<unsigned int,128>& ret, unsigned int move, int& ind) {
 	make_move(move);
 	if (!is_attacked_by_side(bitscan(bitboards[11 - (int)(sideMask & 6)]), sideMask)) ret[ind++] = move;
 	//append move if the king is not attacked after playing the move
 	unmake_move();
 }
 
-int Position::get_legal_moves(std::array<unsigned int,128>& ret) {
+int Position::get_legal_moves(array<unsigned int,128>& ret) {
 #if timingPosition
 	auto start = std::chrono::steady_clock::now();
 #endif
@@ -75,7 +75,7 @@ int Position::get_legal_moves(std::array<unsigned int,128>& ret) {
 #endif
 	return ind;
 }
-int Position::legal_move_generator(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int ind) {
+int Position::legal_move_generator(array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int ind) {
 	ind = get_castles(ret, enemy_attacks, ind);
 #if timingPosition
 	auto start = std::chrono::steady_clock::now();
@@ -232,7 +232,7 @@ int Position::legal_move_generator(std::array<unsigned int,128>& ret, const int 
 	}
 	return get_legal_pawn_moves(ret, pinned, ind);
 }
-int Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret, const int kingpos, const U64 enemy_attacks, int ind){
+int Position::legal_in_check_move_generator(array<unsigned int, 128>& ret, const int kingpos, const U64 enemy_attacks, int ind){
 #if timingPosition
 	auto start = std::chrono::steady_clock::now();
 #endif
@@ -394,14 +394,14 @@ int Position::legal_in_check_move_generator(std::array<unsigned int, 128>& ret, 
 	return in_check_get_legal_pawn_moves(ret, pinned, (not_double_check)*checkers, (not_double_check)*valid_targets, ind);
 }
 
-int Position::get_legal_captures(std::array<unsigned int,128>& ret) {
+int Position::get_legal_captures(array<unsigned int,128>& ret) {
 	const int kingpos = bitscan(bitboards[K + (int)(sideMask & 6)]);
 	const bool in_check = is_attacked_by_side(kingpos, ~sideMask);
 	const U64 enemy_attacks = get_attacks_by(~sideMask);
 	int ind = (in_check) ? (legal_in_check_capture_gen(ret, enemy_attacks, 0)) : (legal_capture_gen(ret, enemy_attacks, 0));
 	return ind;
 }
-int Position::legal_capture_gen(std::array<unsigned int,128>& ret, const U64 enemy_attacks, int ind) {
+int Position::legal_capture_gen(array<unsigned int,128>& ret, const U64 enemy_attacks, int ind) {
 	const int kingpos = bitscan(bitboards[K + (int)(sideMask & 6)]);
 	const U64 pinned = get_captures_for_pinned_pieces(ret, kingpos, enemy_attacks, ind);
 	const U64 enemy_pieces = occupancies[(!side)];
@@ -510,7 +510,7 @@ int Position::legal_capture_gen(std::array<unsigned int,128>& ret, const U64 ene
 	}
 	return get_pawn_captures(ret, pinned, ind);
 }
-int Position::legal_in_check_capture_gen(std::array<unsigned int, 128>& ret, const U64 enemy_attacks, int ind) {
+int Position::legal_in_check_capture_gen(array<unsigned int, 128>& ret, const U64 enemy_attacks, int ind) {
 	const int kingpos = bitscan(bitboards[K + (int)(sideMask & 6)]);
 	const U64 pinned = get_pinned_pieces(kingpos, enemy_attacks);
 	const U64 checkers = get_checkers(kingpos);
@@ -631,14 +631,14 @@ int Position::legal_in_check_capture_gen(std::array<unsigned int, 128>& ret, con
 	return in_check_get_pawn_captures(ret, pinned, (not_double_check)*checkers, ind);
 }
 
-int Position::get_pawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, int ind) {
+int Position::get_pawn_captures(array<unsigned int,128>& ret, const U64 pinned, int ind) {
 	return (sideMask) ? (legal_bpawn_captures(ret, pinned, ind)) : (legal_wpawn_captures(ret, pinned, ind));
 }
-int Position::in_check_get_pawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int ind) {
+int Position::in_check_get_pawn_captures(array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int ind) {
 	return (sideMask) ? (in_check_legal_bpawn_captures(ret, pinned, targets, ind)) : (in_check_legal_wpawn_captures(ret, pinned, targets, ind));
 }
 
-inline int Position::get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 pinned, int ind) {
+inline int Position::get_legal_pawn_moves(array<unsigned int,128>& ret, const U64 pinned, int ind) {
 #if timingPosition
 	auto start = std::chrono::steady_clock::now();
 #endif
@@ -650,7 +650,7 @@ inline int Position::get_legal_pawn_moves(std::array<unsigned int,128>& ret, con
 #endif
 	return ind;
 }
-inline int Position::legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, int ind) {
+inline int Position::legal_bpawn_pushes(array<unsigned int,128>& ret, const U64 pinned, int ind) {
 	U64 valid_targets = ~occupancies[both];
 	U64 promoters = bitboards[6] & (~pinned) & rank2;
 	U64 push_promotions = (promoters << 8) & valid_targets;
@@ -693,7 +693,7 @@ inline int Position::legal_bpawn_pushes(std::array<unsigned int,128>& ret, const
 	}
 	return ind;
 }
-inline int Position::legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, int ind) {
+inline int Position::legal_wpawn_pushes(array<unsigned int,128>& ret, const U64 pinned, int ind) {
 	U64 valid_targets = ~occupancies[both];
 	U64 promoters = bitboards[0] & (~pinned) & rank7;
 	U64 push_promotions = (promoters >> 8) & valid_targets;
@@ -739,7 +739,7 @@ inline int Position::legal_wpawn_pushes(std::array<unsigned int,128>& ret, const
 	}
 	return ind;
 }
-inline int Position::legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, int ind) {
+inline int Position::legal_bpawn_captures(array<unsigned int,128>& ret, const U64 pinned, int ind) {
 	const U64 targets = occupancies[white];
 	U64 promoters = bitboards[6] & (~pinned) & rank2;
 	U64 captures = ((bitboards[6] & ~(pinned | promoters)) << 7) & notHFile & targets;
@@ -804,7 +804,7 @@ inline int Position::legal_bpawn_captures(std::array<unsigned int,128>& ret, con
 	}
 	return ind;
 }
-inline int Position::legal_wpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, int ind) {
+inline int Position::legal_wpawn_captures(array<unsigned int,128>& ret, const U64 pinned, int ind) {
 	const U64 targets = occupancies[black];
 	U64 promoters = bitboards[0] & (~pinned) & rank7;
 	U64 captures = ((bitboards[0] & ~(pinned | promoters)) >> 7) & notAFile & targets;
@@ -868,7 +868,7 @@ inline int Position::legal_wpawn_captures(std::array<unsigned int,128>& ret, con
 	}
 	return ind;
 }
-inline int Position::legal_b_enpassant(std::array<unsigned int, 128>& ret, int ind) {
+inline int Position::legal_b_enpassant(array<unsigned int, 128>& ret, int ind) {
 	if (enpassant_square == a8) return ind;
 	U64 enpassant_bitboard = 1ULL << enpassant_square;
 	U64 pawn_to_be_captured = 1ULL << (enpassant_square - 8);
@@ -891,7 +891,7 @@ inline int Position::legal_b_enpassant(std::array<unsigned int, 128>& ret, int i
 	}
 	return ind;
 }
-inline int Position::legal_w_enpassant(std::array<unsigned int, 128>& ret, int ind) {
+inline int Position::legal_w_enpassant(array<unsigned int, 128>& ret, int ind) {
 	if (enpassant_square == a8) return ind;
 	U64 enpassant_bitboard = 1ULL << enpassant_square;
 	U64 pawn_to_be_captured = 1ULL << (enpassant_square + 8);
@@ -915,7 +915,7 @@ inline int Position::legal_w_enpassant(std::array<unsigned int, 128>& ret, int i
 	return ind;
 }
 
-inline int Position::in_check_get_legal_pawn_moves(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int ind) {
+inline int Position::in_check_get_legal_pawn_moves(array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int ind) {
 #if timingPosition
 	auto start = std::chrono::steady_clock::now();
 #endif
@@ -927,7 +927,7 @@ inline int Position::in_check_get_legal_pawn_moves(std::array<unsigned int,128>&
 #endif
 	return ind;
 }
-inline int Position::in_check_legal_bpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int ind) {
+inline int Position::in_check_legal_bpawn_pushes(array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int ind) {
 	const U64 valid_targets = ~occupancies[both];
 	U64 promoters = bitboards[6] & (~pinned) & rank2;
 	U64 push_promotions = (promoters << 8) & in_check_valid & valid_targets;
@@ -967,7 +967,7 @@ inline int Position::in_check_legal_bpawn_pushes(std::array<unsigned int,128>& r
 	}
 	return ind;
 }
-inline int Position::in_check_legal_wpawn_pushes(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int ind) {
+inline int Position::in_check_legal_wpawn_pushes(array<unsigned int,128>& ret, const U64 pinned, const U64 targets, const U64 in_check_valid, int ind) {
 	U64 valid_targets = ~occupancies[both];
 	U64 promoters = bitboards[0] & (~pinned) & rank7;
 	U64 push_promotions = (promoters >> 8) & in_check_valid & valid_targets;
@@ -1007,7 +1007,7 @@ inline int Position::in_check_legal_wpawn_pushes(std::array<unsigned int,128>& r
 	}
 	return ind;
 }
-inline int Position::in_check_legal_bpawn_captures(std::array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int ind) {
+inline int Position::in_check_legal_bpawn_captures(array<unsigned int,128>& ret, const U64 pinned, const U64 targets, int ind) {
 	U64 promoters = bitboards[6] & (~pinned) & rank2;
 	U64 captures = ((bitboards[6] & (~(pinned | promoters))) << 7) & notHFile & targets;
 
@@ -1074,7 +1074,7 @@ inline int Position::in_check_legal_bpawn_captures(std::array<unsigned int,128>&
 	}
 	return ind;
 }
-inline int Position::in_check_legal_wpawn_captures(std::array<unsigned int, 128>& ret, const U64 pinned, const U64 targets, int ind) {
+inline int Position::in_check_legal_wpawn_captures(array<unsigned int, 128>& ret, const U64 pinned, const U64 targets, int ind) {
 	U64 promoters = bitboards[0] & (~pinned) & rank7;
 	U64 captures = ((bitboards[0] & (~(pinned | promoters))) >> 7) & notAFile & targets;
 
@@ -1140,7 +1140,7 @@ inline int Position::in_check_legal_wpawn_captures(std::array<unsigned int, 128>
 	return ind;
 }
 
-inline int Position::get_castles(std::array<unsigned int,128>& ptr, const U64 enemy_attacks, int ind) {
+inline int Position::get_castles(array<unsigned int,128>& ptr, const U64 enemy_attacks, int ind) {
 	const U64 empty = ~(occupancies[both]);
 	const U64 notAttacked = ~enemy_attacks;
 
@@ -1203,7 +1203,7 @@ inline U64 Position::get_pinned_pieces(const int kingpos, const U64 enemy_attack
 	}
 	return pinned_pieces;
 }
-inline U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind) {
+inline U64 Position::get_moves_for_pinned_pieces(array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind) {
 	const int piece_offset = 6 & sideMask;
 	const U64 bishop_attacks = get_bishop_attacks(occupancies[both], kingpos);
 	const U64 rook_attacks = get_rook_attacks(occupancies[both], kingpos);
@@ -1435,7 +1435,7 @@ inline U64 Position::get_moves_for_pinned_pieces(std::array<unsigned int,128>& r
 	}
 	return pinned_pieces;
 }
-inline U64 Position::get_captures_for_pinned_pieces(std::array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind) {
+inline U64 Position::get_captures_for_pinned_pieces(array<unsigned int,128>& ret, const int kingpos, const U64 enemy_attacks, int& ind) {
 	const int piece_offset = 6 & sideMask;
 	const U64 bishop_attacks = get_bishop_attacks(occupancies[both], kingpos);
 	const U64 rook_attacks = get_rook_attacks(occupancies[both], kingpos);
@@ -1656,16 +1656,16 @@ Position::Position() :
 	moveUnmaking = 0ULL;
 #endif
 }
-Position::Position(const std::string& fen) {
+Position::Position(const string& fen) {
 	parse_fen(fen);
 }
-void Position::parse_fen(std::string fen) {
+void Position::parse_fen(string fen) {
 	unsigned int i, j;
 	int sq;
 	char letter;
 	int aRank, aFile;
-	std::vector<std::string> strList;
-	const std::string delimiter = " ";
+	vector<string> strList;
+	const string delimiter = " ";
 	strList.push_back(fen.substr(0, fen.find(delimiter)));
 	fen = fen.substr(fen.find(delimiter));
 	fen = fen.substr(1);
@@ -1673,7 +1673,7 @@ void Position::parse_fen(std::string fen) {
 	for (int i = 0; i < 12; i++) {
 		bitboards[i] = 0ULL;
 	}
-	square_board = std::array<short, 64>{};
+	square_board = array<short, 64>{};
 	for (int i = 0; i < square_board.size(); i++) {
 		square_board[i] = no_piece;
 	}
@@ -1728,16 +1728,16 @@ void Position::parse_fen(std::string fen) {
 	fen = fen.substr(fen.find(delimiter));
 	fen = fen.substr(1);
 
-	if (strList[2].find('K') != std::string::npos) {
+	if (strList[2].find('K') != string::npos) {
 		castling_rights |= wk;
 	}
-	if (strList[2].find('Q') != std::string::npos) {
+	if (strList[2].find('Q') != string::npos) {
 		castling_rights |= wq;
 	}
-	if (strList[2].find('k') != std::string::npos) {
+	if (strList[2].find('k') != string::npos) {
 		castling_rights |= bk;
 	}
-	if (strList[2].find('q') != std::string::npos) {
+	if (strList[2].find('q') != string::npos) {
 		castling_rights |= bq;
 	}
 
@@ -1791,8 +1791,8 @@ void Position::parse_fen(std::string fen) {
 	hash_history.push_back(current_hash);
 }
 
-std::string Position::fen() const{
-	std::string ret = "";
+string Position::fen() const{
+	string ret = "";
 	const int arr[8] = { 7,6,5,4,3,2,1,0 };
 	for (int i = 0; i < 8; i++) {
 		int empty_spaces = 0;
@@ -1896,8 +1896,8 @@ void Position::print() {
 	printf("    halfmoves since last pawn move or capture: %d\n", no_pawns_or_captures);
 	printf("    current halfclock turn: %d\n", ply);
 	printf("    current game turn: %d\n", (int)ply / 2 + (sideMask == falseMask));
-	std::cout << "    current hash: " << current_hash << "\n";
-	std::cout << "    fen: " << fen() << "\n";
+	cout << "    current hash: " << current_hash << "\n";
+	cout << "    fen: " << fen() << "\n";
 }
 void Position::print_square_board() const {
 	printf("\n");
@@ -1928,9 +1928,9 @@ void Position::print_square_board() const {
 	printf("    halfmoves since last pawn move or capture: %d\n", no_pawns_or_captures);
 	printf("    current halfclock turn: %d\n", ply);
 	printf("    current game turn: %d\n", (int)ply / 2 + (sideMask == falseMask));
-	std::cout << "    current hash: " << current_hash << "\n";
+	cout << "    current hash: " << current_hash << "\n";
 }
-std::string Position::to_string() {
+string Position::to_string() {
 	std::stringstream stream = std::stringstream{};
 	for (int rank = 0; rank < 8; rank++) {
 		for (int file = 0; file < 8; file++) {
@@ -1958,7 +1958,7 @@ std::string Position::to_string() {
 	stream<<"\n    a b c d e f g h \n\n";
 	stream<<"    To move: "<< ((sideMask) ? "black" : "white") <<"\n";
 	stream<<"    enpassant square: "<< ((enpassant_square != a8) ? square_coordinates[enpassant_square].c_str() : "none") <<"\n";
-	std::string castling_rights_str = "";
+	string castling_rights_str = "";
 	castling_rights_str += (get_bit(castling_rights, 0)) ? "K" : "-";
 	castling_rights_str += (get_bit(castling_rights, 1)) ? "Q" : "-";
 	castling_rights_str += (get_bit(castling_rights, 2)) ? "k" : "-";
@@ -1970,10 +1970,10 @@ std::string Position::to_string() {
 	stream << "    current game turn: " << ((int)ply / 2 + (sideMask == falseMask)) << "\n";
 	stream << "    current hash: " << current_hash << "\n";
 	stream << "    fen: " << fen() << "\n";
-	std::string ret = std::move(stream).str();
+	string ret = std::move(stream).str();
 	return ret;
 }
-std::string Position::square_board_to_string() const {
+string Position::square_board_to_string() const {
 	std::stringstream stream = std::stringstream{};
 	for (int rank = 0; rank < 8; rank++) {
 		for (int file = 0; file < 8; file++) {
@@ -2001,7 +2001,7 @@ std::string Position::square_board_to_string() const {
 	stream << "\n    a b c d e f g h \n\n";
 	stream << "    To move: " << ((sideMask) ? "black" : "white") << "\n";
 	stream << "    enpassant square: " << ((enpassant_square != a8) ? square_coordinates[enpassant_square].c_str() : "none") << "\n";
-	std::string castling_rights_str = "";
+	string castling_rights_str = "";
 	castling_rights_str += (get_bit(castling_rights, 0)) ? "K" : "-";
 	castling_rights_str += (get_bit(castling_rights, 1)) ? "Q" : "-";
 	castling_rights_str += (get_bit(castling_rights, 2)) ? "k" : "-";
@@ -2012,7 +2012,7 @@ std::string Position::square_board_to_string() const {
 	stream << "    current halfclock turn: " << ply << "\n";
 	stream << "    current game turn: " << ((int)ply / 2 + (sideMask == falseMask)) << "\n";
 	stream << "    current hash: " << current_hash << "\n";
-	std::string ret = std::move(stream).str();
+	string ret = std::move(stream).str();
 	return ret;
 }
 U64 Position::get_hash() const {
@@ -2039,7 +2039,7 @@ U64 Position::get_hash() const {
 
 	ret ^= sideMask & keys[772];
 	assert(773 + enpassant_square % 8<781);
-	ret ^= ((enpassant_square != a8) && (enpassant_square != 64)) * keys[static_cast<std::array<size_t, 781Ui64>::size_type>(773 + (enpassant_square % 8))];
+	ret ^= ((enpassant_square != a8) && (enpassant_square != 64)) * keys[static_cast<array<size_t, 781Ui64>::size_type>(773 + (enpassant_square % 8))];
 	return ret % 4294967296;
 }
 inline void Position::update_hash(const unsigned int move) {
@@ -2083,7 +2083,7 @@ inline void Position::update_hash(const unsigned int move) {
 	//current_hash ^= ((bool)get_bit(different_rights, 3)) * keys[12 * 64 + 3];
 	//but the opening book was generated with the mistake, thus it is kept
 	const int old_enpassant_square = enpassant_history.back();
-	current_hash ^= ((old_enpassant_square != a8) && (old_enpassant_square != 64)) * keys[static_cast<std::array<size_t, 781Ui64>::size_type>(773) + old_enpassant_square % 8];
+	current_hash ^= ((old_enpassant_square != a8) && (old_enpassant_square != 64)) * keys[static_cast<array<size_t, 781Ui64>::size_type>(773) + old_enpassant_square % 8];
 	//undo old enpassant key
 	current_hash ^= (is_double_push)*keys[773 + (from_square % 8)];
 
@@ -2179,10 +2179,10 @@ inline void Position::make_move(const unsigned int move) {
 	moveMaking += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
 	//if (!boardsMatch()) {
-	//	std::string str = "\n" + to_string();
+	//	string str = "\n" + to_string();
 	//	str += "| last move: \n" + move_to_string(move);
 	//	str += square_board_to_string();
-	//	std::cout << get_move_history()<<std::endl;
+	//	cout << get_move_history()<<endl;
 	//	throw Position_Error{str};
 	//}
 }
@@ -2250,14 +2250,14 @@ inline void Position::unmake_move() {
 	moveUnmaking += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
 	//if (!boardsMatch()) {
-	//	std::string str = "\n" + to_string();
+	//	string str = "\n" + to_string();
 	//	str += "| last move: \n" + move_to_string(move);
 	//	str += square_board_to_string();
-	//	std::cout << get_move_history() << std::endl;
+	//	cout << get_move_history() << endl;
 	//	throw Position_Error{str};
 	//}
 }//position fen 8/2k4p/1b6/3P3p/p7/5K1P/P4P2/5q2 w - - 0 39
-std::array<short, 16> Position::wheights{
+array<short, 16> Position::wheights{
 	//146, 248, 749, 19, 1, 10, 29, 25, 3, 15// after first instant tuning 146,248,749,19,1,10,29,25,3,15
 	//37,70,440,5,0,10,20,25,3,15
 	//37,99,623,5,0,10,19,25,3,15

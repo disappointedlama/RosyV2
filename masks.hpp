@@ -55,7 +55,7 @@ static constexpr U64 passed_pawn_masks[2][64] = {
 	0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL}
 };
 static constexpr U64 neighbour_pawn_masks[8] = { 565157600297472ULL,1412894000743680ULL,2825788001487360ULL,5651576002974720ULL,11303152005949440ULL,22606304011898880ULL,45212608023797760ULL,18085043209519104ULL };
-static constexpr std::array<U64, 64> init_doubled_pawn_masks(std::array<U64, 64> ret) {
+static constexpr array<U64, 64> init_doubled_pawn_masks(array<U64, 64> ret) {
 	for (int i = 8; i < 56; i++) {
 		U64 isolated = 1ULL << i;
 		U64 span = isolated << 8;
@@ -68,8 +68,8 @@ static constexpr std::array<U64, 64> init_doubled_pawn_masks(std::array<U64, 64>
 	}
 	return ret;
 }
-static constexpr std::array<U64, 64> doubled_pawn_masks = init_doubled_pawn_masks(std::array<U64, 64>{});
-static constexpr std::array<U64, 64> init_doubled_pawn_reset_masks(std::array<U64, 64> ret) {
+static constexpr array<U64, 64> doubled_pawn_masks = init_doubled_pawn_masks(array<U64, 64>{});
+static constexpr array<U64, 64> init_doubled_pawn_reset_masks(array<U64, 64> ret) {
 	for (int i = 8; i < 56; i++) {
 		U64 isolated = 1ULL << i;
 		U64 span = isolated;
@@ -83,8 +83,8 @@ static constexpr std::array<U64, 64> init_doubled_pawn_reset_masks(std::array<U6
 	}
 	return ret;
 }
-static constexpr std::array<U64, 64> doubled_pawn_reset_masks = init_doubled_pawn_reset_masks(std::array<U64, 64>{});
-static constexpr std::array<std::array<U64, 64>, 2> init_front_pawn_attack_spans(std::array<std::array<U64, 64>, 2> ret) {
+static constexpr array<U64, 64> doubled_pawn_reset_masks = init_doubled_pawn_reset_masks(array<U64, 64>{});
+static constexpr array<array<U64, 64>, 2> init_front_pawn_attack_spans(array<array<U64, 64>, 2> ret) {
 	for (int i = 8; i < 64; i++) {
 		U64 isolated = 1ULL << i;
 		U64 span = ((isolated << 7) & notHFile) | ((isolated << 9) & notAFile);
@@ -107,8 +107,8 @@ static constexpr std::array<std::array<U64, 64>, 2> init_front_pawn_attack_spans
 	}
 	return ret;
 }
-static constexpr std::array<std::array<U64, 64>, 2> front_pawn_attack_spans = init_front_pawn_attack_spans(std::array<std::array<U64, 64>, 2>{});
-static constexpr std::array<std::array<U64, 64>, 64> init_checkingRays(std::array<std::array<U64, 64>, 64>ret) {
+static constexpr array<array<U64, 64>, 2> front_pawn_attack_spans = init_front_pawn_attack_spans(array<array<U64, 64>, 2>{});
+static constexpr array<array<U64, 64>, 64> init_checkingRays(array<array<U64, 64>, 64>ret) {
 	for (int i = 0; i < 64; i++) {
 		for (int j = 0; j < 64; j++) {
 			ret[i][j] = 0ULL;
@@ -136,8 +136,8 @@ static constexpr std::array<std::array<U64, 64>, 64> init_checkingRays(std::arra
 	}
 	return ret;
 }
-static const std::array<std::array<U64, 64>, 64> checkingRays = init_checkingRays(std::array<std::array<U64, 64>, 64>{});
-static constexpr std::array<std::array<U64, 64>, 64> init_connectionRays(std::array<std::array<U64, 64>, 64>ret) {
+static const array<array<U64, 64>, 64> checkingRays = init_checkingRays(array<array<U64, 64>, 64>{});
+static constexpr array<array<U64, 64>, 64> init_connectionRays(array<array<U64, 64>, 64>ret) {
 	for (int i = 0; i < 64; i++) {
 		for (int j = 0; j < 64; j++) {
 			ret[i][j] = 0;
@@ -166,4 +166,4 @@ static constexpr std::array<std::array<U64, 64>, 64> init_connectionRays(std::ar
 	}
 	return ret;
 }
-static const std::array<std::array<U64, 64>, 64> connectionRays = init_connectionRays(std::array<std::array<U64, 64>, 64>{});
+static const array<array<U64, 64>, 64> connectionRays = init_connectionRays(array<array<U64, 64>, 64>{});

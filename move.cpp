@@ -1,8 +1,8 @@
 #include "move.hpp"
-std::string uci(const int move) {
+string uci(const int move) {
 	const int from_square = get_from_square(move);
 	const int to_square = get_to_square(move);
-	std::string ret = square_coordinates[from_square] + square_coordinates[to_square];
+	string ret = square_coordinates[from_square] + square_coordinates[to_square];
 	const int promoted_type = get_promotion_type(move);
 	if ((promoted_type != 15)) {
 		ret += ascii_promotion_symbols[promoted_type];
@@ -21,7 +21,7 @@ void print_move(int move) {
 	const bool is_enpassant = get_enpassant_flag(move);
 	const bool is_castle = get_castling_flag(move);
 	char ascii_pieces[] = "PNBRQKpnbrqk";
-	std::cout << "\nUci: " << uci(move) << "\n";
+	cout << "\nUci: " << uci(move) << "\n";
 	printf("Piece type: %c\n", ascii_pieces[piece_type]);
 	printf("Captured type: %c\n", (capture) ? ascii_pieces[captured_type] : '0');
 	printf("Promotion: %c\n", (promoted_type != 15) ? ascii_pieces[promoted_type] : '0');
@@ -31,7 +31,7 @@ void print_move(int move) {
 
 
 }
-std::string move_to_string(int move) {
+string move_to_string(int move) {
 	const int piece_type = get_piece_type(move);
 	const int from_square = get_from_square(move);
 	const int to_square = get_to_square(move);
@@ -53,13 +53,13 @@ std::string move_to_string(int move) {
 	stream<<"Is double push: "<< double_pawn_push << "\n";
 	stream<<"Is castle: "<< is_castle << "\n";
 	stream<<"Is enpassant: "<< is_enpassant<<"\n";
-	std::string ret = std::move(stream).str();
+	string ret = std::move(stream).str();
 	return ret;
 }
 void print_move_bits(int move) {
-	std::cout << "\n";
+	cout << "\n";
 	for (int i = 0; i < 28; i++) {
-		std::cout << (bool)(get_bit(move, i));
+		cout << (bool)(get_bit(move, i));
 	}
-	std::cout << "\n";
+	cout << "\n";
 }
