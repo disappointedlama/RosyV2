@@ -6,7 +6,9 @@
 #ADDED BY ME
 a.out
 *.botlogs
-tune*
+tuneData/*.txt
+tune*.txt
+tune*.pgn
 .vscode
 
 # User-specific files

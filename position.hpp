@@ -332,7 +332,7 @@ public:
 		phase = (phase * 256 + (TotalPhase / 2)) / TotalPhase;
 		return phase;
 	}
-	short evaluate(const bool is_draw, const bool is_lost) {
+	double evaluate(const bool is_draw, const bool is_lost) {
 		if (is_draw) {
 			return 0;
 		}
@@ -343,7 +343,7 @@ public:
 		const int sign = 1 - 2 * (side);
 		return sign * (raw_material(phase) + pawn_eval() + king_shield(phase) + outposts() + king_attack_zones() + knight_mobility() + bad_bishop() + trapped());
 	};
-	short outposts() {
+	double outposts() {
 		short outposts = 0;
 		U64 whiteAttacks = ((bitboards[P] >> 7) & notAFile) | ((bitboards[P] >> 9) & notHFile);
 		U64 tempKnights = bitboards[N] & whiteAttacks & (rank5 | rank6 | rank7 | rank8 | centralSquares);
@@ -380,18 +380,18 @@ public:
 		}
 		return ret;
 	}
-	short pawn_eval() {
+	double pawn_eval() {
 		const U64 pawn_hash = get_pawn_hash();
 		auto yield = pawn_evaluation_map.find(pawn_hash);
 		if (yield != pawn_evaluation_map.end()) {
 			return yield->second;
 		}
-		const short eval = doubledPawns() + pawn_structure();
+		const double eval = doubledPawns() + pawn_structure();
 		pawn_evaluation_map[pawn_hash]=eval;
 		return eval;
 	}
-	short doubledPawns() {
-		short ret = 0;
+	double doubledPawns() {
+		double ret = 0;
 		U64 whitePawns = bitboards[P];
 		while (whitePawns) {
 			const U64 isolated = _blsi_u64(whitePawns);
@@ -408,7 +408,7 @@ public:
 		}
 		return wheights[5] * ret;
 	}
-	short pawn_structure() {
+	double pawn_structure() {
 		U64 whiteStops = bitboards[P] >> 8;
 		U64 blackStops = bitboards[p] << 8;
 		U64	blackAttacks = ((bitboards[p] << 7) & notHFile) | ((bitboards[p] << 9) & notAFile);
@@ -448,10 +448,10 @@ public:
 		}
 		return wheights[6] * passed + wheights[7] * isolatedPawns + wheights[8] * supported + wheights[9] * backwards;
 	}
-	short knight_mobility() {
+	double knight_mobility() {
 		U64	blackPawnAttacks = ((bitboards[p] << 7) & notHFile) | ((bitboards[p] << 9) & notAFile);
 		U64 whitePawnAttacks = ((bitboards[P] >> 7) & notAFile) | ((bitboards[P] >> 9) & notHFile);
-		short ret=0;
+		double ret=0;
 		U64 whiteKnights = bitboards[N];
 		while (whiteKnights) {
 			U64 isolated = _blsi_u64(whiteKnights);
@@ -466,8 +466,8 @@ public:
 		}
 		return wheights[4] * ret;
 	}
-	short rook_on_semi_open_file() {
-		short ret = 0;
+	double rook_on_semi_open_file() {
+		double ret = 0;
 		U64 whiteRooks = bitboards[R];
 		while (whiteRooks) {
 			const U64 isolated = _blsi_u64(whiteRooks);
@@ -484,8 +484,8 @@ public:
 		}
 		return ret;
 	}
-	short bad_bishop() {
-		short ret = 0;
+	double bad_bishop() {
+		double ret = 0;
 		U64 whiteBishops = bitboards[B];
 		while (whiteBishops) {
 			U64 isolated = _blsi_u64(whiteBishops);
@@ -500,7 +500,7 @@ public:
 		}
 		return wheights[3] * ret;
 	}
-	short trapped() {
+	double trapped() {
 		short minor = 0;
 		const U64 black_attacks = get_attacks_by(trueMask);
 		const U64 white_attacks = get_attacks_by(falseMask);
@@ -566,7 +566,7 @@ public:
 		}
 		return wheights[0] * minor + wheights[1]  * rooks + wheights[2] * queens;
 	}
-	short king_attack_zones() {
+	double king_attack_zones() {
 		U64 black_king_zone = blackKingZones[bitscan(bitboards[k])];
 
 		short attackersOnWhite = 0;
@@ -646,8 +646,8 @@ public:
 
 		return ret - SafetyTable[table_index] * (attackersOnBlack>2);
 	}
-	short king_shield(const short phase) {
-		short ret = 0;
+	double king_shield(const short phase) {
+		double ret = 0;
 		const U64 bPawns = bitboards[p];
 		const U64 bKing = bitboards[k];
 		if (bKing & bKingposABCPawnShield) {

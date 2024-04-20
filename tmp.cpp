@@ -1,5 +1,3 @@
-#include"position.cpp"
-#include"position.hpp"
 #include"tuneData.hpp"
 #include"move.cpp"
 #include <cmath>
@@ -197,7 +195,7 @@ void position_test() {
 size_t getTotalTunePositionCount(){
     size_t ret{0};
     std::ifstream file{};
-    file.open("./tuneData2.txt");
+    file.open("./tuneData/out.txt");
     if (file.is_open()) {
         std::string fen = "";
         int goal = 0;
@@ -217,13 +215,16 @@ void tune() {
     double total_relative_err = 100000000000;
     int iterations = 0;
     const double h{0.01};
-    while (previous_relative_err > total_relative_err || iterations==0) {
+    const double learning_rate{0.1};
+    std::array<double,16> best{};
+    double best_relative_err{previous_relative_err};
+    while (previous_relative_err > total_relative_err || iterations<20) {
         std::cout << "Iteration: " << ++iterations << std::endl;
         U64 count = 0;
         previous_relative_err = total_relative_err;
         total_relative_err = 0;
         std::ifstream file{};
-        file.open("./tuneData2.txt");
+        file.open("./tuneData/out.txt");
         if (file.is_open()) {
             std::string fen = "";
             int goal = 0;
@@ -234,6 +235,7 @@ void tune() {
                     std::cout << "count: " << count << " ("<<100*(double)count/total_positions<< "%)\n";
                     std::cout << "average relative error so far: " << (std::sqrt(total_relative_err/ count)) << std::endl;
                 }
+                //std::cout<<fen<<"\n";
                 std::string trueFen = "";
                 for (int i = 0; i < fen.length(); ++i) {
                     if (fen[i] != '?') {
@@ -245,18 +247,20 @@ void tune() {
                 }
                 fen = trueFen;
                 pos = Position{ fen };
-                const int current = pos.evaluate(false,false);
+                const int sign{1-2*(pos.side==black)};
+                const int current = sign*pos.evaluate(false,false);
                 const int diff = goal - current;
                 const double abs_diff = std::max(diff,-diff);
-                double relative_error = (current) / (double)(goal);
-                relative_error = std::max(relative_error, -relative_error);
+                double relative_error = std::abs((goal - current));
                 total_relative_err+=relative_error*relative_error;
                 //std::cout << relative_error << std::endl;
+                //std::cout<<"goal: "<<goal<<" eval: "<<current<<std::endl;
                 for (int i = 0; i < pos.wheights.size(); ++i) {
                     if(i==4) continue;
                     pos.wheights[i]+=h;
-                    int after_change = pos.evaluate(false,false);
-                    double factor{(after_change-current)/h * (1-2*(abs_diff<std::max(goal-after_change,after_change-goal)))};
+                    int after_change = sign*pos.evaluate(false,false);
+                    const double rel_err_after_change{std::abs((goal - after_change))};
+                    double factor{(rel_err_after_change-relative_error)/h};
                     pos.wheights[i]-=h;
                     gradient[i]-=factor;
                 }
@@ -269,6 +273,10 @@ void tune() {
             file.close();
         }
         total_relative_err=std::sqrt(total_relative_err);
+        if(total_relative_err<best_relative_err){
+            best_relative_err=total_relative_err;
+            best=pos.wheights;
+        }
         for(int i=0;i<gradient.size();++i){
             gradient[i]=(!(gradient[i]<0 && pos.wheights[i]==0)) * gradient[i];
         }
@@ -280,7 +288,7 @@ void tune() {
         std::cout<<"ABSOLUTE VALUE OF GRADIENT "<<abs<<"\n";
         std::cout<<"Normalized gradient\n";
         for (int i = 0; i < gradient.size(); i++) {
-            gradient[i]/=count;
+            gradient[i]*=learning_rate/std::sqrt(count);
             if(i) std::cout<<",";
             std::cout<<gradient[i];
         }
@@ -295,9 +303,134 @@ void tune() {
         }
         std::cout << std::endl;
     }
+    std::cout<<"best wheights: \n";
+    for(int i=0;i<best.size();++i){
+        if(i) std::cout<<",";
+        std::cout<<best[i];
+    }
+    std::cout<<std::endl;
 }
 int main(){
-    generateTuneData();
-    //tune();
+    //generateTuneData();
+    tune();
     return 0;
 }
+/*
+void tune() {
+    size_t total_positions{getTotalTunePositionCount()};
+    std::cout<<"TOTAL POSITIONS: "<<total_positions<<std::endl;
+    std::array<double,16> gradient{};
+    Position pos;
+    double previous_relative_err = 100000000000;
+    double total_relative_err = 100000000000;
+    int iterations = 0;
+    const double h{0.01};
+    const double learning_rate{0.5};
+    std::array<double,16> best{};
+    double best_relative_err{previous_relative_err};
+    const size_t batches{10};
+    size_t batch{0};
+    size_t batch_size{total_positions/batches};
+    while (previous_relative_err > total_relative_err || iterations<10) {
+        if(batch==batches){
+            std::cout << "Iteration: " << ++iterations << std::endl;
+            batch=0;
+            continue;
+        }
+        U64 count = 0;
+        previous_relative_err = total_relative_err;
+        total_relative_err = 0;
+        std::ifstream file{};
+        file.open("./tuneData/out.txt");
+        if (file.is_open()) {
+            std::string fen = "";
+            int goal = 0;
+            size_t position_number{0};
+            std::cout<<"starting batch "<<batch<<std::endl;
+            while (file >> fen >> goal) {
+                ++position_number;
+                if(position_number<batch*batch_size) continue;
+                if(position_number>=(batch+1)*batch_size) break;
+                if (goal == 0) continue;
+                ++count;
+                if (count % 100000 == 0 && count) {
+                    std::cout << "count: " << count << " ("<<100*(double)count/batch_size<< "%)\n";
+                    std::cout << "average relative error so far: " << (std::sqrt(total_relative_err/ count)) << std::endl;
+                }
+                //std::cout<<fen<<"\n";
+                std::string trueFen = "";
+                for (int i = 0; i < fen.length(); ++i) {
+                    if (fen[i] != '?') {
+                        trueFen += fen[i];
+                    }
+                    else {
+                        trueFen += ' ';
+                    }
+                }
+                fen = trueFen;
+                pos = Position{ fen };
+                const int sign{1-2*(pos.side==black)};
+                const int current = sign*pos.evaluate(false,false);
+                const int diff = goal - current;
+                const double abs_diff = std::max(diff,-diff);
+                double relative_error = (current) / (double)(goal);
+                relative_error = std::max(relative_error, -relative_error);
+                total_relative_err+=relative_error*relative_error;
+                //std::cout << relative_error << std::endl;
+                //std::cout<<"goal: "<<goal<<" eval: "<<current<<std::endl;
+                for (int i = 0; i < pos.wheights.size(); ++i) {
+                    if(i==4) continue;
+                    pos.wheights[i]+=h;
+                    int after_change = sign*pos.evaluate(false,false);
+                    double factor{(after_change-current)/h * (1-2*(abs_diff<std::max(goal-after_change,after_change-goal)))};
+                    pos.wheights[i]-=h;
+                    gradient[i]+=factor;
+                }
+                //for (int i = 0; i < pos.wheights.size(); i++) {
+                //	std::cout << gradient[i] << ",";
+                //}
+                //std::cout << std::endl;
+                //if (count == 10000) break;
+            }
+            file.close();
+        }
+        total_relative_err=std::sqrt(total_relative_err);
+        if(total_relative_err<best_relative_err){
+            best_relative_err=total_relative_err;
+            best=pos.wheights;
+        }
+        for(int i=0;i<gradient.size();++i){
+            gradient[i]=(!(gradient[i]<0 && pos.wheights[i]==0)) * gradient[i];
+        }
+        double abs{0};
+        for (int i = 0; i < gradient.size(); ++i) {
+            abs+=gradient[i]*gradient[i];
+        }
+        abs=std::sqrt(abs);
+        std::cout<<"ABSOLUTE VALUE OF GRADIENT "<<abs<<"\n";
+        std::cout<<"Normalized gradient\n";
+        for (int i = 0; i < gradient.size(); i++) {
+            gradient[i]*=learning_rate/abs;
+            if(i) std::cout<<",";
+            std::cout<<gradient[i];
+        }
+        std::cout<<std::endl;
+        std::cout << total_relative_err << std::endl;
+        std::cout << "average relative error: " << (total_relative_err / std::sqrt(count)) << std::endl;
+        for (int i = 0; i < pos.wheights.size(); i++) {
+            pos.wheights[i] += gradient[i];
+            pos.wheights[i] = std::max(0.0,pos.wheights[i]);
+            std::cout << pos.wheights[i] << ",";
+            gradient[i] = 0;
+        }
+        std::cout << std::endl;
+        batch++;
+    }
+    std::cout<<"best wheights: \n";
+    for(int i=0;i<best.size();++i){
+        if(i) std::cout<<",";
+        std::cout<<best[i];
+    }
+    std::cout<<std::endl;
+}
+*/
