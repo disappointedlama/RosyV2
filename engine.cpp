@@ -761,12 +761,6 @@ void Engine::uci_loop(){
 			history = std::array<std::array<U64, 64>, 12>{};
 			if(debug) std::cout << "Done with cleanup\n";
 		}
-#if tune
-		else if (strncmp(input, "tune", 4) == 0) {
-			tune();
-			break;
-		}
-#endif
 		else if (strncmp(input, "go", 2) == 0) {
 			if (!run) {
 				run = true;
