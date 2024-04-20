@@ -176,8 +176,8 @@ class Engine {
 	void print_info(const short depth, const int eval, const U64 time);
 	void track_time(const U64 max_time);
 public:
-	Engine() :pos{}, max_depth{ 8 }, run{ false }, debug{ false }, killer_table{}, hash_map{}, nodes{ 0ULL }, use_opening_book{ true }, log{ logging_path } {};
-	Engine(const bool t_debug) :pos{}, max_depth{ 8 }, run{ false }, debug{ t_debug }, killer_table{}, hash_map{}, nodes{ 0ULL }, use_opening_book{ true }, log{ logging_path } {};
+	Engine() :pos{}, max_depth{ 8 }, run{ false }, debug{ false }, killer_table{}, hash_map{}, nodes{ 0ULL }, use_opening_book{ true }, log{ logging_path }, time_for_next_move{ 0 } {};
+	Engine(const bool t_debug) :pos{}, max_depth{ 8 }, run{ false }, debug{ t_debug }, killer_table{}, hash_map{}, nodes{ 0ULL }, use_opening_book{ true }, log{ logging_path }, time_for_next_move{ 0 } {};
 	void perft();
 	void perft_traversal(std::array<std::array<unsigned int, 128>, 40>& moves, int move_index, const int depth);
 	int bestMove();
