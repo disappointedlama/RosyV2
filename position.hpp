@@ -244,9 +244,13 @@ public:
 		no_pawns_or_captures++;
 		ply++;
 		current_hash ^= keys[772];
-		const int old_enpassant_square = enpassant_history.back();
+		const size_t old_enpassant_square = enpassant_history.back();
 		//undo en passant hash in case it was not a8 (none)
-		current_hash ^= ((old_enpassant_square != a8) && (old_enpassant_square != 64)) * keys[static_cast<array<size_t, 781Ui64>::size_type>(773) + old_enpassant_square % 8];
+		assert((773ULL + (old_enpassant_square % 8)) < 781ULL);
+		assert(old_enpassant_square >= 0);
+		assert(old_enpassant_square != 64);
+		__assume(((773ULL + (old_enpassant_square % 8)) < 781ULL) && (old_enpassant_square >= 0));
+		current_hash ^= (old_enpassant_square != a8)* keys[773ULL + (old_enpassant_square % 8)];
 		enpassant_square = a8;
 		sideMask = ~sideMask;
 		side = !side;

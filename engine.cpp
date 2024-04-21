@@ -544,7 +544,7 @@ void Engine::parse_position(string fen) {
 			pos.get_legal_moves(move_list);
 			string move_string = moves.substr(0, moves.find_first_of(' '));
 			if (move_string.size() > 4) {
-				const int last = move_string.size() - 1;
+				const size_t last = move_string.size() - 1;
 				if ((move_string[last] != 'n') && (move_string[last] != 'b') && (move_string[last] != 'r') && (move_string[last] != 'q')) {
 					move_string = move_string.substr(0, last);
 				}

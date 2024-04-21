@@ -2026,10 +2026,11 @@ U64 Position::get_hash() const {
 		}
 	}
 
-	ret ^= (get_bit(castling_rights, 0)) * keys[12 * 64];
-	ret ^= (get_bit(castling_rights, 1)) * keys[12 * 64 + 1];
-	ret ^= (get_bit(castling_rights, 2)) * keys[12 * 64 + 2];
-	ret ^= (get_bit(castling_rights, 3)) * keys[12 * 64 + 3];
+	const size_t castle_rights_offset{ 12 * 64 };
+	ret ^= (get_bit(castling_rights, 0)) * keys[castle_rights_offset];
+	ret ^= (get_bit(castling_rights, 1)) * keys[castle_rights_offset + 1];
+	ret ^= (get_bit(castling_rights, 2)) * keys[castle_rights_offset + 2];
+	ret ^= (get_bit(castling_rights, 3)) * keys[castle_rights_offset + 3];
 	//should be:
 	//current_hash ^= ((bool)get_bit(different_rights, 0)) * keys[12 * 64];
 	//current_hash ^= ((bool)get_bit(different_rights, 1)) * keys[12 * 64 + 1];
@@ -2038,9 +2039,12 @@ U64 Position::get_hash() const {
 	//but the opening book was generated with the mistake, thus it is kept
 
 	ret ^= sideMask & keys[772];
-	assert(773 + enpassant_square % 8<781);
-	ret ^= ((enpassant_square != a8) && (enpassant_square != 64)) * keys[static_cast<array<size_t, 781Ui64>::size_type>(773 + (enpassant_square % 8))];
-	return ret % 4294967296;
+	assert(773ULL + ((size_t)enpassant_square) % 8 < 781ULL);
+	assert(enpassant_square >= 0);
+	assert(enpassant_square != 64);
+	__assume((773ULL + ((size_t)enpassant_square % 8) < 781ULL) && (enpassant_square >= 0));
+	ret ^= (enpassant_square != a8) * keys[773ULL + ((size_t)enpassant_square % 8)];
+	return ret % 4294967296ULL;
 }
 inline void Position::update_hash(const unsigned int move) {
 	const bool capture = get_capture_flag(move);
@@ -2072,24 +2076,29 @@ inline void Position::update_hash(const unsigned int move) {
 		current_hash ^= keys[rookOffset + rookTarget];
 	}
 	const int different_rights = castling_rights ^ castling_rights_history.back();
-	current_hash ^= (get_bit(different_rights, 0)) * keys[12 * 64];
-	current_hash ^= (get_bit(different_rights, 1)) * keys[12 * 64 + 1];
-	current_hash ^= (get_bit(different_rights, 2)) * keys[12 * 64 + 2];
-	current_hash ^= (get_bit(different_rights, 3)) * keys[12 * 64 + 3];
+	const size_t castle_rights_offset{ 12 * 64 };
+	current_hash ^= (get_bit(different_rights, 0)) * keys[castle_rights_offset];
+	current_hash ^= (get_bit(different_rights, 1)) * keys[castle_rights_offset + 1];
+	current_hash ^= (get_bit(different_rights, 2)) * keys[castle_rights_offset + 2];
+	current_hash ^= (get_bit(different_rights, 3)) * keys[castle_rights_offset + 3];
 	//should be:
 	//current_hash ^= ((bool)get_bit(different_rights, 0)) * keys[12 * 64];
 	//current_hash ^= ((bool)get_bit(different_rights, 1)) * keys[12 * 64 + 1];
 	//current_hash ^= ((bool)get_bit(different_rights, 2)) * keys[12 * 64 + 2];
 	//current_hash ^= ((bool)get_bit(different_rights, 3)) * keys[12 * 64 + 3];
 	//but the opening book was generated with the mistake, thus it is kept
-	const int old_enpassant_square = enpassant_history.back();
-	current_hash ^= ((old_enpassant_square != a8) && (old_enpassant_square != 64)) * keys[static_cast<array<size_t, 781Ui64>::size_type>(773) + old_enpassant_square % 8];
+	const size_t old_enpassant_square = enpassant_history.back();
+	assert((773ULL + (old_enpassant_square % 8)) < 781ULL);
+	assert(old_enpassant_square >= 0);
+	assert(old_enpassant_square != 64);
+	__assume(((773ULL + (old_enpassant_square % 8)) < 781ULL) && (old_enpassant_square >= 0));
+	current_hash ^= (old_enpassant_square != a8) * keys[773ULL + (old_enpassant_square % 8)];
 	//undo old enpassant key
 	current_hash ^= (is_double_push)*keys[773 + (from_square % 8)];
 
 	current_hash ^= keys[772];
 	
-	current_hash = current_hash % 4294967296;
+	current_hash = current_hash % 4294967296ULL;
 }
 inline void Position::make_move(const unsigned int move) {
 #if timingPosition
@@ -2119,7 +2128,7 @@ inline void Position::make_move(const unsigned int move) {
 	no_pawns_or_captures = (!(is_white_pawn || is_black_pawn || capture)) * (no_pawns_or_captures + 1);
 	//branchlessly increment the counter if move was not a pawn move^or a capture
 
-	enpassant_square = (double_pawn_push) * (to_square + 8 - (16 & sideMask));
+	enpassant_square = (short)((double_pawn_push) * (to_square + 8 - (16 & sideMask)));
 	//branchlessly set enpassant square
 
 	const int offset = 6 & sideMask;
@@ -2155,6 +2164,7 @@ inline void Position::make_move(const unsigned int move) {
 		const U32 is_kingside = (to_square > from_square) * trueMask32;
 		const int rook_source = (int)((h1 & is_kingside) | (a1 & ~is_kingside)) - square_offset;
 		const int rook_target = from_square + (to_square == g1 - square_offset) - (to_square == c1 - square_offset);
+		__assume(piece_type == K || piece_type == k);
 		bitboards[piece_type-2] ^= (1ULL << rook_source) | (1ULL << rook_target);
 		const int bit_offset = 2 * (side);
 		castling_rights &= ~(3ULL << bit_offset);

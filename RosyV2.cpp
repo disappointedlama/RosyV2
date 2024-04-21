@@ -195,10 +195,9 @@ int main()
 #if testingMoveGen
     //test();
     position_test();
-#else
+#endif
         Engine rosy{false};
         rosy.uci_loop();
-#endif
     }
     catch(Position_Error e) {
         cout << e.what() << endl;
