@@ -108,7 +108,7 @@ int Position::legal_move_generator(array<unsigned int,128>& ret, const int kingp
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
 			//move |= (int)_bittest64(&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces, to), false, false, false);
 			ret[ind++] = move;
 
 			attacks = pop_ls1b(attacks);
@@ -138,7 +138,7 @@ int Position::legal_move_generator(array<unsigned int,128>& ret, const int kingp
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
 			//move |= (int)_bittest64(&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 			ret[ind++] = move;
 
 			attacks = pop_ls1b(attacks);
@@ -165,7 +165,7 @@ int Position::legal_move_generator(array<unsigned int,128>& ret, const int kingp
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
 			//move |= (int)_bittest64(&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 			ret[ind++] = move;
 
 			attacks = pop_ls1b(attacks);
@@ -192,7 +192,7 @@ int Position::legal_move_generator(array<unsigned int,128>& ret, const int kingp
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
 			//move |= (int)_bittest64(&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 			ret[ind++] = move;
 
 			attacks = pop_ls1b(attacks);
@@ -219,7 +219,7 @@ int Position::legal_move_generator(array<unsigned int,128>& ret, const int kingp
 		//move |= type << 12;
 		//move |= get_piece_type_on(to) << 16;
 		//move |= (int)_bittest64(&enemy_pieces, to) << 24;
-		move = encode_move(kingpos, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
+		move = encode_move(kingpos, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 		ret[ind++] = move;
 
 		attacks = pop_ls1b(attacks);
@@ -264,7 +264,7 @@ int Position::legal_in_check_move_generator(array<unsigned int, 128>& ret, const
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
 			//move |= (int)_bittest64(&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 			ret[ind++]=move;
 
 			attacks = pop_ls1b(attacks);
@@ -294,7 +294,7 @@ int Position::legal_in_check_move_generator(array<unsigned int, 128>& ret, const
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
 			//move |= (int)_bittest64(&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 			ret[ind++]=move;
 
 			attacks = pop_ls1b(attacks);
@@ -321,7 +321,7 @@ int Position::legal_in_check_move_generator(array<unsigned int, 128>& ret, const
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
 			//move |= (int)_bittest64(&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 			ret[ind++]=move;
 
 			attacks = pop_ls1b(attacks);
@@ -348,7 +348,7 @@ int Position::legal_in_check_move_generator(array<unsigned int, 128>& ret, const
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
 			//move |= (int)_bittest64(&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 			ret[ind++]=move;
 
 			attacks = pop_ls1b(attacks);
@@ -377,7 +377,7 @@ int Position::legal_in_check_move_generator(array<unsigned int, 128>& ret, const
 		//move |= type << 12;
 		//move |= get_piece_type_on(to) << 16;
 		//move |= (int)_bittest64(&enemy_pieces, to) << 24;
-		move = encode_move(kingpos, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
+		move = encode_move(kingpos, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
 		ret[ind++]=move;
 
 		attacks = pop_ls1b(attacks);

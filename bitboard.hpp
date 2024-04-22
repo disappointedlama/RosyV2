@@ -14,7 +14,7 @@ using std::string;
 #include "intrin.h"
 #define get_ls1b(bitboard) (_blsi_u64(bitboard))
 #define pop_ls1b(bitboard) (_blsr_u64(bitboard))
-#define count_bits(bitboard) (std::Popcount(bitboard))
+#define count_bits(bitboard) (std::_Popcount(bitboard))
 #else
 #define get_ls1b(bitboard) ((U64)bitboard & -(U64)bitboard)
 #define pop_ls1b(bitboard) ((U64)bitboard & ones_decrement((U64)bitboard))
@@ -49,7 +49,7 @@ constexpr int count_bits (U64 x) {
         return Mask?1:0;
     }
     
-   inline unsigned char _bittest64(unsigned long long const *a, std::int64_t b)
+   inline unsigned char _bittest64(long long const *a, std::int64_t b)
    {
       auto const bits{ reinterpret_cast<unsigned char const*>(a) };
       auto const value{ bits[b >> 3] };
