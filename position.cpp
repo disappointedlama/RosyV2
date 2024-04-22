@@ -10,7 +10,7 @@ invalid_move_exception::invalid_move_exception(const Position t_pos, const strin
 	move_str = t_move;
 }
 const string invalid_move_exception::what() throw() {
-	return std::format("Found invalid move {} in position {}", move_str, pos.fen());
+	return "Found invalid move " + move_str + " in position " + pos.fen();
 }
 inline bool Position::is_attacked_by_side(const int sq, const bool color) {
 	const int offset = 6 * color;

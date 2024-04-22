@@ -62,7 +62,7 @@ struct Position_Error : std::exception {
 		this->msg = msg;
 	}
 	const string what() throw() {
-		return std::format("Position Error: {}", msg);
+		return "Position Error: " + msg;
 	}
 
 };
