@@ -5,6 +5,7 @@
 
 #ADDED BY ME
 CMake*
+!CMakeLists.txt
 cmake_build/
 cmake_build/*/
 !*/.gitkeep
