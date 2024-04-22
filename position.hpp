@@ -4,7 +4,6 @@
 #include <cassert>
 #include <algorithm>
 #include "immintrin.h"
-#include "intrin.h"
 #include <unordered_map>
 
 #include "hashKeys.hpp"
@@ -52,7 +51,7 @@ static constexpr int char_pieces(const char piece) {
 	default:return -1;
 	}
 };
-static constexpr U64 get_queen_attacks(U64 occ, const int sq) {
+static inline U64 get_queen_attacks(U64 occ, const int sq) {
 	return get_bishop_attacks(occ, sq) | get_rook_attacks(occ, sq);
 };
 static const string start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -116,71 +115,71 @@ class Position {
 		short pawnOpening = 0;
 		short pawnEndgame = 0;
 		while (whitePawns) {
-			const U64 isolated = _blsi_u64(whitePawns);
+			const U64 isolated = get_ls1b(whitePawns);
 			const int ind = bitscan(isolated);
 			pawnOpening += openingPawnTableWhite[ind];
 			pawnEndgame += endgamePawnTableWhite[ind];
-			whitePawns = _blsr_u64(whitePawns);
+			whitePawns = pop_ls1b(whitePawns);
 		}
 		U64 blackPawns = bitboards[p];
 		while (blackPawns) {
-			const U64 isolated = _blsi_u64(blackPawns);
+			const U64 isolated = get_ls1b(blackPawns);
 			const int ind = bitscan(isolated);
 			pawnOpening -= openingPawnTableBlack[ind];
 			pawnEndgame -= endgamePawnTableBlack[ind];
-			blackPawns = _blsr_u64(blackPawns);
+			blackPawns = pop_ls1b(blackPawns);
 		}
 		ret += (pawnOpening * (256 - phase) + pawnEndgame * phase) / 256;
 		U64 whiteKnights = bitboards[N];
 		while (whiteKnights) {
-			const U64 isolated = _blsi_u64(whiteKnights);
+			const U64 isolated = get_ls1b(whiteKnights);
 			ret += openingKnightsTable[bitscan(isolated)];
-			whiteKnights = _blsr_u64(whiteKnights);
+			whiteKnights = pop_ls1b(whiteKnights);
 		}
 		U64 blackKnights = bitboards[n];
 		while (blackKnights) {
-			const U64 isolated = _blsi_u64(blackKnights);
+			const U64 isolated = get_ls1b(blackKnights);
 			ret -= openingKnightsTable[bitscan(isolated)];
-			blackKnights = _blsr_u64(blackKnights);
+			blackKnights = pop_ls1b(blackKnights);
 		}
 
 		U64 whiteBishops = bitboards[B];
 		while (whiteBishops) {
-			const U64 isolated = _blsi_u64(whiteBishops);
+			const U64 isolated = get_ls1b(whiteBishops);
 			ret += openingBishopTableWhite[bitscan(isolated)];
-			whiteBishops = _blsr_u64(whiteBishops);
+			whiteBishops = pop_ls1b(whiteBishops);
 		}
 		U64 blackBishops = bitboards[b];
 		while (blackBishops) {
-			const U64 isolated = _blsi_u64(blackBishops);
+			const U64 isolated = get_ls1b(blackBishops);
 			ret -= openingBishopTableBlack[bitscan(isolated)];
-			blackBishops = _blsr_u64(blackBishops);
+			blackBishops = pop_ls1b(blackBishops);
 		}
 
 		U64 whiteRooks = bitboards[R];
 		while (whiteRooks) {
-			const U64 isolated = _blsi_u64(whiteRooks);
+			const U64 isolated = get_ls1b(whiteRooks);
 			ret += openingRookTableWhite[bitscan(isolated)];
-			whiteRooks = _blsr_u64(whiteRooks);
+			whiteRooks = pop_ls1b(whiteRooks);
 		}
 		U64 blackRooks = bitboards[r];
 		while (blackRooks) {
-			const U64 isolated = _blsi_u64(blackRooks);
+			const U64 isolated = get_ls1b(blackRooks);
 			ret -= openingQueenTableBlack[bitscan(isolated)];
-			blackRooks = _blsr_u64(blackRooks);
+			blackRooks = pop_ls1b(blackRooks);
 		}
 
 		U64 whiteQueens = bitboards[Q];
 		while (whiteQueens) {
-			const U64 isolated = _blsi_u64(whiteQueens);
+			const U64 isolated = get_ls1b(whiteQueens);
 			ret += openingQueenTableWhite[bitscan(isolated)];
-			whiteQueens = _blsr_u64(whiteQueens);
+			whiteQueens = pop_ls1b(whiteQueens);
 		}
 		U64 blackQueens = bitboards[q];
 		while (blackQueens) {
-			const U64 isolated = _blsi_u64(blackQueens);
+			const U64 isolated = get_ls1b(blackQueens);
 			ret -= openingQueenTableBlack[bitscan(isolated)];
-			blackQueens = _blsr_u64(blackQueens);
+			blackQueens = pop_ls1b(blackQueens);
 		}
 		return ret;
 	}
@@ -249,7 +248,7 @@ public:
 		assert((773ULL + (old_enpassant_square % 8)) < 781ULL);
 		assert(old_enpassant_square >= 0);
 		assert(old_enpassant_square != 64);
-		__assume(((773ULL + (old_enpassant_square % 8)) < 781ULL) && (old_enpassant_square >= 0));
+		[[assume(((773ULL + (old_enpassant_square % 8)) < 781ULL) && (old_enpassant_square >= 0))]];
 		current_hash ^= (old_enpassant_square != a8)* keys[773ULL + (old_enpassant_square % 8)];
 		enpassant_square = a8;
 		sideMask = ~sideMask;
@@ -324,18 +323,18 @@ public:
 		U64 whiteAttacks = ((bitboards[P] >> 7) & notAFile) | ((bitboards[P] >> 9) & notHFile);
 		U64 tempKnights = bitboards[N] & whiteAttacks & (rank5 | rank6 | rank7 | rank8 | centralSquares);
 		while (tempKnights) {
-			U64 isolated = _blsi_u64(tempKnights);
+			U64 isolated = get_ls1b(tempKnights);
 			U64 attackSpans = front_pawn_attack_spans[white][bitscan(isolated)];
 			outposts += (!((bool)(attackSpans & bitboards[p])));
-			tempKnights = _blsr_u64(tempKnights);
+			tempKnights = pop_ls1b(tempKnights);
 		}
 		U64	blackAttacks = ((bitboards[p] << 7) & notHFile) | ((bitboards[p] << 9) & notAFile);
 		tempKnights = bitboards[n] & blackAttacks & (rank1 | rank2 | rank3 | rank4 | centralSquares);
 		while (tempKnights) {
-			U64 isolated = _blsi_u64(tempKnights);
+			U64 isolated = get_ls1b(tempKnights);
 			U64 attackSpans = front_pawn_attack_spans[black][bitscan(isolated)];
 			outposts -= (!((bool)(attackSpans & bitboards[P])));
-			tempKnights = _blsr_u64(tempKnights);
+			tempKnights = pop_ls1b(tempKnights);
 		}
 		return outposts * wheights[15];
 	};
@@ -344,15 +343,15 @@ public:
 
 		U64 board = bitboards[P];
 		while (board) {
-			U64 isolated = _blsi_u64(board);
+			U64 isolated = get_ls1b(board);
 			ret ^= keys[bitscan(isolated) + P * 64];
-			board = _blsr_u64(board);
+			board = pop_ls1b(board);
 		}
 		board = bitboards[p];
 		while (board) {
-			U64 isolated = _blsi_u64(board);
+			U64 isolated = get_ls1b(board);
 			ret ^= keys[bitscan(isolated) + p * 64];
-			board = _blsr_u64(board);
+			board = pop_ls1b(board);
 		}
 		return ret;
 	}
@@ -370,14 +369,14 @@ public:
 		short ret = 0;
 		U64 whitePawns = bitboards[P];
 		while (whitePawns) {
-			const U64 isolated = _blsi_u64(whitePawns);
+			const U64 isolated = get_ls1b(whitePawns);
 			const int sq = bitscan(isolated);
 			ret -= count_bits(whitePawns & doubled_pawn_masks[sq]);
 			whitePawns = whitePawns & (~doubled_pawn_reset_masks[sq]);
 		}
 		U64 blackPawns = bitboards[p];
 		while (blackPawns) {
-			const U64 isolated = _blsi_u64(blackPawns);
+			const U64 isolated = get_ls1b(blackPawns);
 			const int sq = bitscan(isolated);
 			ret += count_bits(blackPawns & doubled_pawn_masks[sq]);
 			blackPawns = blackPawns & (~doubled_pawn_reset_masks[sq]);
@@ -408,19 +407,19 @@ public:
 		short supported = 0;
 		U64 tempPawns = bitboards[P];
 		while (tempPawns) {
-			U64 isolated = _blsi_u64(tempPawns);
+			U64 isolated = get_ls1b(tempPawns);
 			passed += (!((bool)(passed_pawn_masks[white][bitscan(isolated)] & bitboards[p])));//passed pawns
 			isolatedPawns -= ((neighbour_pawn_masks[bitscan(isolated) % 8] & bitboards[P]) == 0);//isolated pawns
 			supported += count_bits(pawn_attacks[black][bitscan(isolated)] & bitboards[P]);//check if pawn is supported by pears
-			tempPawns = _blsr_u64(tempPawns);
+			tempPawns = pop_ls1b(tempPawns);
 		}
 		tempPawns = bitboards[p];
 		while (tempPawns) {
-			U64 isolated = _blsi_u64(tempPawns);
+			U64 isolated = get_ls1b(tempPawns);
 			passed -= (!((bool)(passed_pawn_masks[black][bitscan(isolated)] & bitboards[P])));//passed pawns
 			isolatedPawns += ((neighbour_pawn_masks[bitscan(isolated) % 8] & bitboards[p]) == 0);//isolated pawns
 			supported -= count_bits(pawn_attacks[white][bitscan(isolated)] & bitboards[p]);//check if pawn is supported by pears
-			tempPawns = _blsr_u64(tempPawns);
+			tempPawns = pop_ls1b(tempPawns);
 		}
 		return wheights[6] * passed + wheights[7] * isolatedPawns + wheights[8] * supported + wheights[9] * backwards;
 	}
@@ -430,15 +429,15 @@ public:
 		short ret=0;
 		U64 whiteKnights = bitboards[N];
 		while (whiteKnights) {
-			U64 isolated = _blsi_u64(whiteKnights);
+			U64 isolated = get_ls1b(whiteKnights);
 			ret -= count_bits(knight_attacks[bitscan(isolated)] & blackPawnAttacks);
-			whiteKnights = _blsr_u64(whiteKnights);
+			whiteKnights = pop_ls1b(whiteKnights);
 		}
 		U64 blackKnights = bitboards[n];
 		while (blackKnights) {
-			U64 isolated = _blsi_u64(blackKnights);
+			U64 isolated = get_ls1b(blackKnights);
 			ret = count_bits(knight_attacks[bitscan(isolated)] & whitePawnAttacks);
-			blackKnights = _blsr_u64(blackKnights);
+			blackKnights = pop_ls1b(blackKnights);
 		}
 		return wheights[4] * ret;
 	}
@@ -446,14 +445,14 @@ public:
 		short ret = 0;
 		U64 whiteRooks = bitboards[R];
 		while (whiteRooks) {
-			const U64 isolated = _blsi_u64(whiteRooks);
+			const U64 isolated = get_ls1b(whiteRooks);
 			U64 file = files[bitscan(isolated) % 8];
 			ret += (bool)(file & bitboards[P]) * rooks_semi_open[count_bits(file & bitboards[R])];
 			whiteRooks &= ~file;
 		}
 		U64 blackRooks = bitboards[r];
 		while (blackRooks) {
-			const U64 isolated = _blsi_u64(blackRooks);
+			const U64 isolated = get_ls1b(blackRooks);
 			U64 file = files[bitscan(isolated) % 8];
 			ret -= (bool)(file & bitboards[p]) * rooks_semi_open[count_bits(file & bitboards[r])];
 			blackRooks &= ~file;
@@ -464,15 +463,15 @@ public:
 		short ret = 0;
 		U64 whiteBishops = bitboards[B];
 		while (whiteBishops) {
-			U64 isolated = _blsi_u64(whiteBishops);
+			U64 isolated = get_ls1b(whiteBishops);
 			ret -= count_bits(pawn_attacks[white][bitscan(isolated)] & bitboards[P]);
-			whiteBishops = _blsr_u64(whiteBishops);
+			whiteBishops = pop_ls1b(whiteBishops);
 		}
 		U64 blackBishops = bitboards[b];
 		while (blackBishops) {
-			U64 isolated = _blsi_u64(blackBishops);
+			U64 isolated = get_ls1b(blackBishops);
 			ret += count_bits(pawn_attacks[black][bitscan(isolated)] & bitboards[p]);
-			blackBishops = _blsr_u64(blackBishops);
+			blackBishops = pop_ls1b(blackBishops);
 		}
 		return wheights[3] * ret;
 	}
@@ -482,63 +481,63 @@ public:
 		const U64 white_attacks = get_attacks_by(falseMask);
 		U64 whiteKnights = bitboards[N];
 		while (whiteKnights) {
-			U64 isolated = _blsi_u64(whiteKnights);
+			U64 isolated = get_ls1b(whiteKnights);
 			U64 squares = (knight_attacks[bitscan(isolated)] & ~occupancies[white]) | isolated;
 			minor -= (squares & black_attacks) == squares;
-			whiteKnights = _blsr_u64(whiteKnights);
+			whiteKnights = pop_ls1b(whiteKnights);
 		}
 		U64 blackKnights = bitboards[n];
 		while (blackKnights) {
-			U64 isolated = _blsi_u64(blackKnights);
+			U64 isolated = get_ls1b(blackKnights);
 			U64 squares = (knight_attacks[bitscan(isolated)] & ~occupancies[black]) | isolated;
 			minor += (squares & white_attacks) == squares;
-			blackKnights = _blsr_u64(blackKnights);
+			blackKnights = pop_ls1b(blackKnights);
 		}
 		U64 whiteBishops = bitboards[B];
 		while (whiteBishops) {
-			U64 isolated = _blsi_u64(whiteBishops);
+			U64 isolated = get_ls1b(whiteBishops);
 			U64 squares = (get_bishop_attacks(occupancies[both], bitscan(isolated)) & ~occupancies[white]) | isolated;
 			minor -= (squares & black_attacks) == squares;
-			whiteBishops = _blsr_u64(whiteBishops);
+			whiteBishops = pop_ls1b(whiteBishops);
 		}
 		U64 blackBishops = bitboards[b];
 		while (blackBishops) {
-			U64 isolated = _blsi_u64(blackBishops);
+			U64 isolated = get_ls1b(blackBishops);
 			U64 squares = (get_bishop_attacks(occupancies[both], bitscan(isolated)) & ~occupancies[black]) | isolated;
 			minor += (squares & white_attacks) == squares;
-			blackBishops = _blsr_u64(blackBishops);
+			blackBishops = pop_ls1b(blackBishops);
 		}
 		short rooks = 0;
 		U64 whiteRooks = bitboards[R];
 		while (whiteRooks) {
-			U64 isolated = _blsi_u64(whiteRooks);
+			U64 isolated = get_ls1b(whiteRooks);
 			U64 squares = (get_rook_attacks(occupancies[both], bitscan(isolated)) & ~occupancies[white]) | isolated;
 			rooks -= (squares & black_attacks) == squares;
-			whiteRooks = _blsr_u64(whiteRooks);
+			whiteRooks = pop_ls1b(whiteRooks);
 		}
 		U64 blackRooks = bitboards[r];
 		while (blackRooks) {
-			U64 isolated = _blsi_u64(blackRooks);
+			U64 isolated = get_ls1b(blackRooks);
 			U64 squares = (get_rook_attacks(occupancies[both], bitscan(isolated)) & ~occupancies[black]) | isolated;
 			rooks += (squares & white_attacks) == squares;
-			blackRooks = _blsr_u64(blackRooks);
+			blackRooks = pop_ls1b(blackRooks);
 		}
 		short queens = 0;
 		U64 whiteQueens = bitboards[Q];
 		while (whiteQueens) {
-			U64 isolated = _blsi_u64(whiteQueens);
+			U64 isolated = get_ls1b(whiteQueens);
 			int sq = bitscan(isolated);
 			U64 squares = ((get_rook_attacks(occupancies[both], sq) | get_bishop_attacks(occupancies[both], sq)) & ~occupancies[white]) | isolated;
 			queens -= (squares & black_attacks) == squares;
-			whiteQueens = _blsr_u64(whiteQueens);
+			whiteQueens = pop_ls1b(whiteQueens);
 		}
 		U64 blackQueens = bitboards[q];
 		while (blackQueens) {
-			U64 isolated = _blsi_u64(blackQueens);
+			U64 isolated = get_ls1b(blackQueens);
 			int sq = bitscan(isolated);
 			U64 squares = ((get_rook_attacks(occupancies[both], sq) | get_bishop_attacks(occupancies[both],sq)) & ~occupancies[black]) | isolated;
 			queens += (squares & white_attacks) == squares;
-			blackQueens = _blsr_u64(blackQueens);
+			blackQueens = pop_ls1b(blackQueens);
 		}
 		return wheights[0] * minor + wheights[1]  * rooks + wheights[2] * queens;
 	}
@@ -549,36 +548,36 @@ public:
 		int table_index = 0;
 		U64 tempKnights = bitboards[N];
 		while (tempKnights) {
-			U64 isolated = _blsi_u64(tempKnights);
+			U64 isolated = get_ls1b(tempKnights);
 			int attacks = count_bits(knight_attacks[bitscan(isolated)] & black_king_zone);
 			table_index += 2 * attacks;
 			attackersOnWhite += (attacks != 0);
-			tempKnights = _blsr_u64(tempKnights);
+			tempKnights = pop_ls1b(tempKnights);
 		}
 		U64 tempBishops = bitboards[B];
 		while (tempBishops) {
-			U64 isolated = _blsi_u64(tempBishops);
+			U64 isolated = get_ls1b(tempBishops);
 			int attacks = count_bits(get_bishop_attacks(occupancies[both], bitscan(isolated)) & black_king_zone);
 			table_index += 2 * attacks;
 			attackersOnWhite += (attacks != 0);
-			tempBishops = _blsr_u64(tempBishops);
+			tempBishops = pop_ls1b(tempBishops);
 		}
 		U64 tempRooks = bitboards[R];
 		while (tempRooks) {
-			U64 isolated = _blsi_u64(tempRooks);
+			U64 isolated = get_ls1b(tempRooks);
 			int attacks = count_bits(get_bishop_attacks(occupancies[both], bitscan(isolated)) & black_king_zone);
 			table_index += 3 * attacks;
 			attackersOnWhite += (attacks != 0);
-			tempRooks = _blsr_u64(tempRooks);
+			tempRooks = pop_ls1b(tempRooks);
 		}
 		U64 tempQueens = bitboards[Q];
 		while (tempQueens) {
-			U64 isolated = _blsi_u64(tempQueens);
+			U64 isolated = get_ls1b(tempQueens);
 			const int ind = bitscan(isolated);
 			int attacks = count_bits((get_bishop_attacks(occupancies[both], ind) | get_rook_attacks(occupancies[both], ind)) & black_king_zone);
 			table_index += 5 * attacks;
 			attackersOnWhite += (attacks != 0);
-			tempQueens = _blsr_u64(tempQueens);
+			tempQueens = pop_ls1b(tempQueens);
 		}
 
 		int ret = SafetyTable[table_index] * (attackersOnWhite>2);
@@ -588,36 +587,36 @@ public:
 		table_index = 0;
 		tempKnights = bitboards[n];
 		while (tempKnights) {
-			U64 isolated = _blsi_u64(tempKnights);
+			U64 isolated = get_ls1b(tempKnights);
 			int attacks = count_bits(knight_attacks[bitscan(isolated)] & white_king_zone);
 			table_index += 2 * attacks;
 			attackersOnBlack += (attacks != 0);
-			tempKnights = _blsr_u64(tempKnights);
+			tempKnights = pop_ls1b(tempKnights);
 		}
 		tempBishops = bitboards[b];
 		while (tempBishops) {
-			U64 isolated = _blsi_u64(tempBishops);
+			U64 isolated = get_ls1b(tempBishops);
 			int attacks = count_bits(get_bishop_attacks(occupancies[both], bitscan(isolated)) & white_king_zone);
 			table_index += 2 * attacks;
 			attackersOnBlack += (attacks != 0);
-			tempBishops = _blsr_u64(tempBishops);
+			tempBishops = pop_ls1b(tempBishops);
 		}
 		tempRooks = bitboards[r];
 		while (tempRooks) {
-			U64 isolated = _blsi_u64(tempRooks);
+			U64 isolated = get_ls1b(tempRooks);
 			int attacks = count_bits(get_rook_attacks(occupancies[both], bitscan(isolated)) & white_king_zone);
 			table_index += 3 * attacks;
 			attackersOnBlack += (attacks != 0);
-			tempRooks = _blsr_u64(tempRooks);
+			tempRooks = pop_ls1b(tempRooks);
 		}
 		tempQueens = bitboards[q];
 		while (tempQueens) {
-			U64 isolated = _blsi_u64(tempQueens);
+			U64 isolated = get_ls1b(tempQueens);
 			const int ind = bitscan(isolated);
 			int attacks = count_bits((get_bishop_attacks(occupancies[both], ind) | get_rook_attacks(occupancies[both], ind)) & white_king_zone);
 			table_index += 5 * attacks;
 			attackersOnBlack += (attacks != 0);
-			tempQueens = _blsr_u64(tempQueens);
+			tempQueens = pop_ls1b(tempQueens);
 		}
 
 		return ret - SafetyTable[table_index] * (attackersOnBlack>2);

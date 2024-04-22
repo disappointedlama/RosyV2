@@ -4,6 +4,8 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 #ADDED BY ME
+cmake_build/
+!*/.gitkeep
 *.botlogs
 tune*
 .vscode

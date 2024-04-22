@@ -11,6 +11,13 @@ using std::string;
 #define twos_complement(bitboard) ((~bitboard) + 1)
 #define count_bits(bitboard) (std::popcount(bitboard))
 #define bitscan(bitboard) (index64[((bitboard & twos_complement(bitboard)) * debruijn64) >> 58])
+#if defined(_WIN64)
+#define get_ls1b(bitboard) (_blsi_u64(bitboard))
+#define pop_ls1b(bitboard) (_blsr_u64(bitboard))
+#else
+#define get_ls1b(bitboard) (twos_complement(bitboard))
+#define pop_ls1b(bitboard) (bitboard & ones_decrement(bitboard))
+#endif
 constexpr U64 falseMask = 0ULL;
 constexpr U64 trueMask = ~falseMask;
 #define U32 uint32_t

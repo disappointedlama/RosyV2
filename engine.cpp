@@ -323,10 +323,10 @@ short Engine::pv_search(array<array<unsigned int, 128>, 40>& moves, int move_ind
 			const bool not_capture = !get_capture_flag(moves[move_index][0]);
 			if (not_capture) {
 				killer_table.push_move(moves[move_index][0], pos.get_ply());
-				__assume(get_piece_type(moves[move_index][0]) > -1);
-				__assume(get_piece_type(moves[move_index][0]) < 12);
-				__assume(get_to_square(moves[move_index][0]) > -1);
-				__assume(get_to_square(moves[move_index][0]) < 64);
+				[[assume(get_piece_type(moves[move_index][0]) > -1)]];
+				[[assume(get_piece_type(moves[move_index][0]) < 12)]];
+				[[assume(get_to_square(moves[move_index][0]) > -1)]];
+				[[assume(get_to_square(moves[move_index][0]) < 64)]];
 				history[get_piece_type(moves[move_index][0])][get_to_square(moves[move_index][0])] += 1ULL << depth;
 			}
 			if (depth >= entry.get_depth()) {
@@ -361,10 +361,10 @@ short Engine::pv_search(array<array<unsigned int, 128>, 40>& moves, int move_ind
 				const bool not_capture = !get_capture_flag(moves[move_index][i]);
 				if (not_capture) {
 					killer_table.push_move(moves[move_index][i], pos.get_ply());
-					__assume(get_piece_type(moves[move_index][i]) > -1);
-					__assume(get_piece_type(moves[move_index][i]) < 12);
-					__assume(get_to_square(moves[move_index][i]) > -1);
-					__assume(get_to_square(moves[move_index][i]) < 64);
+					[[assume(get_piece_type(moves[move_index][i]) > -1)]];
+					[[assume(get_piece_type(moves[move_index][i]) < 12)]];
+					[[assume(get_to_square(moves[move_index][i]) > -1)]];
+					[[assume(get_to_square(moves[move_index][i]) < 64)]];
 					history[get_piece_type(moves[move_index][i])][get_to_square(moves[move_index][i])] += 1ULL << depth;
 				}
 				if (depth >= entry.get_depth()) {

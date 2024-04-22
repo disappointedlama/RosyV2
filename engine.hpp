@@ -1,6 +1,6 @@
 #pragma once
 #include <unordered_map>
-
+#include <cstring>
 #include "position.hpp"
 #include "openingBook.hpp"
 #include "logging.hpp"
@@ -142,10 +142,10 @@ class Engine {
 					return pos.seeByMove(lhs) > 0;
 				}
 				if (rhs_is_capture) return false;
-				__assume(get_to_square(lhs) < 64);
-				__assume(get_to_square(rhs) < 64);
-				__assume(get_to_square(lhs) > -1);
-				__assume(get_to_square(rhs) > -1);
+				[[assume(get_to_square(lhs) < 64)]];
+				[[assume(get_to_square(rhs) < 64)]];
+				[[assume(get_to_square(lhs) > -1)]];
+				[[assume(get_to_square(rhs) > -1)]];
 				return (history[(size_t)(lhs_piece)][(size_t)(get_to_square(lhs))] > history[(size_t)(rhs_piece)][(size_t)(get_to_square(rhs))]);
 			});
 #if timingEngine
