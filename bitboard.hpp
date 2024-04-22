@@ -12,7 +12,7 @@ using std::string;
 #define bitscan(bitboard) (index64[((bitboard & twos_complement(bitboard)) * debruijn64) >> 58])
 constexpr U64 falseMask = 0ULL;
 constexpr U64 trueMask = ~falseMask;
-#define U32 unsigned __int32
+#define U32 uint32_t
 constexpr U32 falseMask32 = 0;
 constexpr U32 trueMask32 = ~0;
 constexpr U64 debruijn64 = 0x07EDD5E59A4E28C2;

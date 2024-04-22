@@ -1,13 +1,5 @@
 #include "engine.hpp"
-namespace std {
-	string getCurDir() {
-		char buff[512];
-		_getcwd(buff, 512);
-		string current_working_dir(buff);
-		return current_working_dir;
-	}
-}
-OpeningBook book{ (std::getCurDir() + string("\\engines\\openingBook.txt")).c_str() };
+OpeningBook book{ "./engines/openingBook.txt" };
 
 stop_exception::stop_exception(string t_source) {
 	source = t_source;
