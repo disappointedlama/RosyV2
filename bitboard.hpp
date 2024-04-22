@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <string>
+#include <bit>
 using std::string;
 #define U64 unsigned long long
 #define get_bit(bitboard, square) ((bitboard) & (1ULL << (square)))
@@ -8,7 +9,7 @@ using std::string;
 #define pop_bit(bitboard, square) ((bitboard) &= ~(1ULL << (square)))
 #define ones_decrement(bitboard) (bitboard - 1)
 #define twos_complement(bitboard) ((~bitboard) + 1)
-#define count_bits(bitboard) (std::_Popcount(bitboard))
+#define count_bits(bitboard) (std::popcount(bitboard))
 #define bitscan(bitboard) (index64[((bitboard & twos_complement(bitboard)) * debruijn64) >> 58])
 constexpr U64 falseMask = 0ULL;
 constexpr U64 trueMask = ~falseMask;
