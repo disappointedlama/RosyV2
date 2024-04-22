@@ -69,7 +69,9 @@ struct Position_Error : std::exception {
 class Position {
 	inline bool is_attacked_by_side(const int sq, const bool color);
 	inline U64 get_attacks_by(const U64 color);
-	inline int get_piece_type_on(const int sq) const;
+	inline int get_piece_type_on(const int sq)const {
+		return square_board[sq];
+	}
 	inline int get_piece_type_or_enpassant_on(const int sq) {
 		if (sq == enpassant_square && sq != a8) return ~sideMask & p;
 		return square_board[sq];

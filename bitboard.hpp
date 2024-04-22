@@ -7,17 +7,59 @@ using std::string;
 #define get_bit(bitboard, square) ((bitboard) & (1ULL << (square)))
 #define set_bit(bitboard, square) ((bitboard) |= (1ULL << (square)))
 #define pop_bit(bitboard, square) ((bitboard) &= ~(1ULL << (square)))
-#define ones_decrement(bitboard) (bitboard - 1)
-#define twos_complement(bitboard) ((~bitboard) + 1)
-#define count_bits(bitboard) (std::popcount(bitboard))
-#define bitscan(bitboard) (index64[((bitboard & twos_complement(bitboard)) * debruijn64) >> 58])
+#define ones_decrement(bitboard) ((U64)bitboard - 1)
+#define twos_complement(bitboard) ((~(U64)bitboard) + 1)
+#define bitscan(bitboard) (index64[(((U64)bitboard & twos_complement((U64)bitboard)) * debruijn64) >> 58])
 #if defined(_WIN64)
+#include "intrin.h"
 #define get_ls1b(bitboard) (_blsi_u64(bitboard))
 #define pop_ls1b(bitboard) (_blsr_u64(bitboard))
+#define count_bits(bitboard) (std::Popcount(bitboard))
 #else
-#define get_ls1b(bitboard) (twos_complement(bitboard))
-#define pop_ls1b(bitboard) (bitboard & ones_decrement(bitboard))
+#define get_ls1b(bitboard) ((U64)bitboard & -(U64)bitboard)
+#define pop_ls1b(bitboard) ((U64)bitboard & ones_decrement((U64)bitboard))
+
+/*
+https://www.chessprogramming.org/Population_Count#The_PopCount_routine
+*/
+constexpr U64 k1 = 0x5555555555555555ULL;
+constexpr U64 k2 = 0x3333333333333333ULL;
+constexpr U64 k4 = 0x0f0f0f0f0f0f0f0fULL;
+constexpr U64 kf = 0x0101010101010101ULL;
+constexpr int count_bits (U64 x) {
+    x =  x       - ((x >> 1)  & k1);
+    x = (x & k2) + ((x >> 2)  & k2);
+    x = (x       +  (x >> 4)) & k4 ;
+    x = (x * kf) >> 56;
+    return (int) x;
+}
+
 #endif
+#if defined(__GNUC__) && defined(__LP64__)
+    static inline unsigned char _BitScanForward64(unsigned long* Index, const U64 Mask)
+    {
+        U64 Ret;
+        __asm__
+        (
+            "bsfq %[Mask], %[Ret]"
+            :[Ret] "=r" (Ret)
+            :[Mask] "mr" (Mask)
+        );
+        *Index = (unsigned long)Ret;
+        return Mask?1:0;
+    }
+    
+   inline unsigned char _bittest64(unsigned long long const *a, std::int64_t b)
+   {
+      auto const bits{ reinterpret_cast<unsigned char const*>(a) };
+      auto const value{ bits[b >> 3] };
+      auto const mask{ (unsigned char)(1 << (b & 7)) };
+      return (value & mask) != 0;
+   }
+    #define USING_INTRINSICS
+#endif
+
+
 constexpr U64 falseMask = 0ULL;
 constexpr U64 trueMask = ~falseMask;
 #define U32 uint32_t

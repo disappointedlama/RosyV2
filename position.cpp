@@ -51,9 +51,6 @@ inline U64 Position::get_attacks_by(const U64 color) {
 
 	return attacks;
 }
-inline int Position::get_piece_type_on(const int sq)const {
-	return square_board[sq];
-}
 void Position::try_out_move(array<unsigned int,128>& ret, unsigned int move, int& ind) {
 	make_move(move);
 	if (!is_attacked_by_side(bitscan(bitboards[11 - (int)(sideMask & 6)]), sideMask)) ret[ind++] = move;
@@ -90,13 +87,10 @@ int Position::legal_move_generator(array<unsigned int,128>& ret, const int kingp
 	const U64 valid_targets = (~occupancies[both]) | enemy_pieces;
 	unsigned int move;
 	int type = N + (int)(6 & sideMask);
-	__m256i _pieces = _mm256_loadu_epi64((__m256i*) & bitboards[type]);
-	__m256i _not_pinned = _mm256_set1_epi64x(not_pinned);
-	_pieces = _mm256_and_si256(_pieces, _not_pinned);
-	U64 tempKnights = _mm256_extract_epi64(_pieces, 0);
-	U64 tempBishops = _mm256_extract_epi64(_pieces, 1);
-	U64 tempRooks = _mm256_extract_epi64(_pieces, 2);
-	U64 tempQueens = _mm256_extract_epi64(_pieces, 3);
+	U64 tempKnights = bitboards[type] & not_pinned;
+	U64 tempBishops = bitboards[type + 1] & not_pinned;
+	U64 tempRooks = bitboards[type + 2] & not_pinned;
+	U64 tempQueens = bitboards[type + 3] & not_pinned;
 	while (tempKnights) {
 		const U64 isolated = get_ls1b(tempKnights);
 		unsigned long sq = 0UL;
@@ -113,8 +107,8 @@ int Position::legal_move_generator(array<unsigned int,128>& ret, const int kingp
 			//move |= to << 6;
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
-			//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+			//move |= (int)_bittest64(&enemy_pieces, to) << 24;
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
 			ret[ind++] = move;
 
 			attacks = pop_ls1b(attacks);
@@ -143,8 +137,8 @@ int Position::legal_move_generator(array<unsigned int,128>& ret, const int kingp
 			//move |= to << 6;
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
-			//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+			//move |= (int)_bittest64(&enemy_pieces, to) << 24;
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
 			ret[ind++] = move;
 
 			attacks = pop_ls1b(attacks);
@@ -170,8 +164,8 @@ int Position::legal_move_generator(array<unsigned int,128>& ret, const int kingp
 			//move |= to << 6;
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
-			//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+			//move |= (int)_bittest64(&enemy_pieces, to) << 24;
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
 			ret[ind++] = move;
 
 			attacks = pop_ls1b(attacks);
@@ -197,8 +191,8 @@ int Position::legal_move_generator(array<unsigned int,128>& ret, const int kingp
 			//move |= to << 6;
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
-			//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+			//move |= (int)_bittest64(&enemy_pieces, to) << 24;
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
 			ret[ind++] = move;
 
 			attacks = pop_ls1b(attacks);
@@ -224,8 +218,8 @@ int Position::legal_move_generator(array<unsigned int,128>& ret, const int kingp
 		//move |= to << 6;
 		//move |= type << 12;
 		//move |= get_piece_type_on(to) << 16;
-		//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-		move = encode_move(kingpos, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+		//move |= (int)_bittest64(&enemy_pieces, to) << 24;
+		move = encode_move(kingpos, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
 		ret[ind++] = move;
 
 		attacks = pop_ls1b(attacks);
@@ -248,13 +242,10 @@ int Position::legal_in_check_move_generator(array<unsigned int, 128>& ret, const
 	const U64 valid_pieces = (~pinned) * (not_double_check);
 	unsigned int move;
 	int type = N + (int)(6 & sideMask);
-	__m256i _pieces = _mm256_loadu_epi64((__m256i*) & bitboards[type]);
-	__m256i _valid_pieces = _mm256_set1_epi64x(valid_pieces);
-	_pieces = _mm256_and_si256(_pieces, _valid_pieces);
-	U64 tempKnights = _mm256_extract_epi64(_pieces, 0);
-	U64 tempBishops = _mm256_extract_epi64(_pieces, 1);
-	U64 tempRooks = _mm256_extract_epi64(_pieces, 2);
-	U64 tempQueens = _mm256_extract_epi64(_pieces, 3);
+	U64 tempKnights = bitboards[type] & valid_pieces;
+	U64 tempBishops = bitboards[type+1] & valid_pieces;
+	U64 tempRooks = bitboards[type+2] & valid_pieces;
+	U64 tempQueens = bitboards[type+3] & valid_pieces;
 
 	while (tempKnights) {
 		const U64 isolated = get_ls1b(tempKnights);
@@ -272,8 +263,8 @@ int Position::legal_in_check_move_generator(array<unsigned int, 128>& ret, const
 			//move |= to << 6;
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
-			//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+			//move |= (int)_bittest64(&enemy_pieces, to) << 24;
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
 			ret[ind++]=move;
 
 			attacks = pop_ls1b(attacks);
@@ -302,8 +293,8 @@ int Position::legal_in_check_move_generator(array<unsigned int, 128>& ret, const
 			//move |= to << 6;
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
-			//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+			//move |= (int)_bittest64(&enemy_pieces, to) << 24;
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
 			ret[ind++]=move;
 
 			attacks = pop_ls1b(attacks);
@@ -329,8 +320,8 @@ int Position::legal_in_check_move_generator(array<unsigned int, 128>& ret, const
 			//move |= to << 6;
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
-			//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+			//move |= (int)_bittest64(&enemy_pieces, to) << 24;
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
 			ret[ind++]=move;
 
 			attacks = pop_ls1b(attacks);
@@ -356,8 +347,8 @@ int Position::legal_in_check_move_generator(array<unsigned int, 128>& ret, const
 			//move |= to << 6;
 			//move |= type << 12;
 			//move |= get_piece_type_on(to) << 16;
-			//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+			//move |= (int)_bittest64(&enemy_pieces, to) << 24;
+			move = encode_move(sq, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
 			ret[ind++]=move;
 
 			attacks = pop_ls1b(attacks);
@@ -385,8 +376,8 @@ int Position::legal_in_check_move_generator(array<unsigned int, 128>& ret, const
 		//move |= to << 6;
 		//move |= type << 12;
 		//move |= get_piece_type_on(to) << 16;
-		//move |= (int)_bittest64((long long*)&enemy_pieces, to) << 24;
-		move = encode_move(kingpos, to, type, get_piece_type_on(to), no_piece, (int)_bittest64((long long*)&enemy_pieces,to), false, false, false);
+		//move |= (int)_bittest64(&enemy_pieces, to) << 24;
+		move = encode_move(kingpos, to, type, get_piece_type_on(to), no_piece, (int)_bittest64(&enemy_pieces,to), false, false, false);
 		ret[ind++]=move;
 
 		attacks = pop_ls1b(attacks);
@@ -1211,24 +1202,16 @@ inline U64 Position::get_moves_for_pinned_pieces(array<unsigned int,128>& ret, c
 	const U64 pot_pinned_by_rooks = enemy_attacks & rook_attacks;
 	int type = P + piece_offset;
 
-	__m256i _pieces = _mm256_loadu_epi64((__m256i*) &bitboards[type]);
-	__m256i _pot_pinned_by_pieces = _mm256_set1_epi64x(pot_pinned_by_bishops);
-	_pot_pinned_by_pieces = _mm256_and_si256(_pieces, _pot_pinned_by_pieces);
-
-	U64 pawns_pot_pinned_by_bishops = _mm256_extract_epi64(_pot_pinned_by_pieces, 0);
-	U64 knights_pot_pinned_by_bishops = _mm256_extract_epi64(_pot_pinned_by_pieces, 1);
-	U64 bishops_pot_pinned_by_bishops = _mm256_extract_epi64(_pot_pinned_by_pieces, 2);
-	U64 rooks_pot_pinned_by_bishops = _mm256_extract_epi64(_pot_pinned_by_pieces, 3);
+	U64 pawns_pot_pinned_by_bishops = bitboards[type] & pot_pinned_by_bishops;
+	U64 knights_pot_pinned_by_bishops = bitboards[type + 1] & pot_pinned_by_bishops;
+	U64 bishops_pot_pinned_by_bishops = bitboards[type + 2] & pot_pinned_by_bishops;
+	U64 rooks_pot_pinned_by_bishops = bitboards[type + 3] & pot_pinned_by_bishops;
 	U64 queens_pot_pinned_by_bishops = pot_pinned_by_bishops & bitboards[Q + piece_offset];
 
-	_pot_pinned_by_pieces = _mm256_set1_epi64x(pot_pinned_by_rooks);
-	_pot_pinned_by_pieces = _mm256_and_si256(_pieces, _pot_pinned_by_pieces);
-
-
-	U64 pawns_pot_pinned_by_rooks = _mm256_extract_epi64(_pot_pinned_by_pieces, 0);
-	U64 knights_pot_pinned_by_rooks = _mm256_extract_epi64(_pot_pinned_by_pieces, 1);
-	U64 bishops_pot_pinned_by_rooks = _mm256_extract_epi64(_pot_pinned_by_pieces, 2);
-	U64 rooks_pot_pinned_by_rooks = _mm256_extract_epi64(_pot_pinned_by_pieces, 3);
+	U64 pawns_pot_pinned_by_rooks = bitboards[type] & pot_pinned_by_rooks;
+	U64 knights_pot_pinned_by_rooks = bitboards[type + 1] & pot_pinned_by_rooks;
+	U64 bishops_pot_pinned_by_rooks = bitboards[type + 2] & pot_pinned_by_rooks;
+	U64 rooks_pot_pinned_by_rooks = bitboards[type + 3] & pot_pinned_by_rooks;
 	U64 queens_pot_pinned_by_rooks = pot_pinned_by_rooks & bitboards[Q + piece_offset];
 
 	U64 pinned_pieces = 0ULL;
@@ -1443,24 +1426,16 @@ inline U64 Position::get_captures_for_pinned_pieces(array<unsigned int,128>& ret
 	const U64 pot_pinned_by_rooks = enemy_attacks & rook_attacks;
 	int type = P + piece_offset;
 
-	__m256i _pieces = _mm256_loadu_epi64((__m256i*) & bitboards[type]);
-	__m256i _pot_pinned_by_pieces = _mm256_set1_epi64x(pot_pinned_by_bishops);
-	_pot_pinned_by_pieces = _mm256_and_si256(_pieces, _pot_pinned_by_pieces);
-
-	U64 pawns_pot_pinned_by_bishops = _mm256_extract_epi64(_pot_pinned_by_pieces, 0);
-	U64 knights_pot_pinned_by_bishops = _mm256_extract_epi64(_pot_pinned_by_pieces, 1);
-	U64 bishops_pot_pinned_by_bishops = _mm256_extract_epi64(_pot_pinned_by_pieces, 2);
-	U64 rooks_pot_pinned_by_bishops = _mm256_extract_epi64(_pot_pinned_by_pieces, 3);
+	U64 pawns_pot_pinned_by_bishops = bitboards[type] & pot_pinned_by_bishops;
+	U64 knights_pot_pinned_by_bishops = bitboards[type + 1] & pot_pinned_by_bishops;
+	U64 bishops_pot_pinned_by_bishops = bitboards[type + 2] & pot_pinned_by_bishops;
+	U64 rooks_pot_pinned_by_bishops = bitboards[type + 3] & pot_pinned_by_bishops;
 	U64 queens_pot_pinned_by_bishops = pot_pinned_by_bishops & bitboards[Q + piece_offset];
 
-	_pot_pinned_by_pieces = _mm256_set1_epi64x(pot_pinned_by_rooks);
-	_pot_pinned_by_pieces = _mm256_and_si256(_pieces, _pot_pinned_by_pieces);
-
-
-	U64 pawns_pot_pinned_by_rooks = _mm256_extract_epi64(_pot_pinned_by_pieces, 0);
-	U64 knights_pot_pinned_by_rooks = _mm256_extract_epi64(_pot_pinned_by_pieces, 1);
-	U64 bishops_pot_pinned_by_rooks = _mm256_extract_epi64(_pot_pinned_by_pieces, 2);
-	U64 rooks_pot_pinned_by_rooks = _mm256_extract_epi64(_pot_pinned_by_pieces, 3);
+	U64 pawns_pot_pinned_by_rooks = bitboards[type] & pot_pinned_by_rooks;
+	U64 knights_pot_pinned_by_rooks = bitboards[type + 1] & pot_pinned_by_rooks;
+	U64 bishops_pot_pinned_by_rooks = bitboards[type + 2] & pot_pinned_by_rooks;
+	U64 rooks_pot_pinned_by_rooks = bitboards[type + 3] & pot_pinned_by_rooks;
 	U64 queens_pot_pinned_by_rooks = pot_pinned_by_rooks & bitboards[Q + piece_offset];
 
 	U64 pinned_pieces = 0ULL;

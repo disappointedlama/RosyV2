@@ -657,17 +657,16 @@ void Engine::perft() {
 	pos.print();
 	array<array<unsigned int, 128>, 40> moves{};
 	const int number_of_moves = pos.get_legal_moves(moves[0]);
-	vector<unsigned long long> nodeList{};
 	cout << "Nodes from different branches:\n";
 	U64 total_nodes = 0ULL;
 	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-	for (int i = 0; i < number_of_moves; i++) {
+	for (int i = 0; i < number_of_moves; ++i) {
+		nodes = 0ULL;
 		pos.make_move(moves[0][i]);
 		perft_traversal(moves, 1, max_depth - 1);
 		pos.unmake_move();
 		cout << "\t" << uci(moves[0][i]) << ": " << nodes << " Nodes\n";
 		total_nodes += nodes;
-		nodes = 0ULL;
 	}
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 	U64 totalTime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
@@ -676,11 +675,11 @@ void Engine::perft() {
 }
 void Engine::perft_traversal(array<array<unsigned int, 128>, 40>& moves, int move_index, const int depth) {
 	if (depth == 0) {
-		nodes++;
+		++nodes;
 		return;
 	}
 	const int number_of_moves = pos.get_legal_moves(moves[move_index]);
-	for (int i = 0; i < number_of_moves; i++) {
+	for (int i = 0; i < number_of_moves; ++i) {
 		pos.make_move(moves[move_index][i]);
 		perft_traversal(moves, move_index + 1, depth - 1);
 		pos.unmake_move();
