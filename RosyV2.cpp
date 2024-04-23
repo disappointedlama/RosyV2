@@ -1,4 +1,5 @@
 #include "RosyV2.hpp"
+#include "betterMagics.hpp"
 U64 lookedAt = 0ULL;
 U64 mates = 0ULL;
 U64 captures = 0ULL;
@@ -188,7 +189,7 @@ void position_test() {
         cout << "Not all Tests passed" << endl;
     }
 }
-#define testingMoveGen false
+#define testingMoveGen true
 int main()
 {
     //generateMagicsBishops();

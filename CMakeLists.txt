@@ -3,9 +3,7 @@ cmake_minimum_required(VERSION 3.16.0 FATAL_ERROR)
 set(CMAKE_SYSTEM_VERSION 10.0 CACHE STRING "" FORCE)
 
 project(RosyV2 CXX)
-
 set(CMAKE_CXX_STANDARD 23)
-
 ################################################################################
 # Set target arch type if empty. Visual studio solution generator provides it.
 ################################################################################
@@ -36,8 +34,6 @@ if(MSVC)
     set(CMAKE_CXX_FLAGS "")
     set(CMAKE_CXX_FLAGS_DEBUG "")
     set(CMAKE_CXX_FLAGS_RELEASE "")
-else()
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -mavx2")
 endif()
 
 ################################################################################
@@ -57,8 +53,6 @@ if(MSVC)
     set(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS}")
     set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS}")
     set(CMAKE_STATIC_LINKER_FLAGS_RELEASE "${CMAKE_STATIC_LINKER_FLAGS}")
-else()
-    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS} -flto=auto")
 endif()
 
 ################################################################################
@@ -121,6 +115,7 @@ set(PROJECT_NAME RosyV2)
 # Source groups
 ################################################################################
 set(Headerdateien
+    "betterMagics.hpp"
     "bishopAttacks.hpp"
     "bitboard.hpp"
     "engine.hpp"
@@ -218,7 +213,8 @@ if(MSVC)
                 /GT;
                 /Oy;
                 /Gy;
-                /Ot
+                /Ot;
+                
             >
             /permissive-;
             /Oi;
