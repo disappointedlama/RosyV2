@@ -80,5 +80,8 @@
     <ClInclude Include="logging.hpp">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="betterMagics.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

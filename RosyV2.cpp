@@ -191,6 +191,8 @@ void position_test() {
 #define testingMoveGen false
 int main()
 {
+    //generateMagicsBishops();
+    //generateMagicsRooks();
     try {
 #if testingMoveGen
     //test();

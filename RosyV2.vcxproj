@@ -127,6 +127,7 @@
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <EnableParallelCodeGeneration>false</EnableParallelCodeGeneration>
+      <OpenMPSupport>false</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -145,6 +146,7 @@
     <ClCompile Include="RosyV2.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="betterMagics.hpp" />
     <ClInclude Include="bishopAttacks.hpp" />
     <ClInclude Include="bitboard.hpp" />
     <ClInclude Include="engine.hpp" />
