@@ -68,7 +68,7 @@ static constexpr array<U64, 64> init_doubled_pawn_masks(array<U64, 64> ret) {
 	}
 	return ret;
 }
-static constexpr array<U64, 64> doubled_pawn_masks = init_doubled_pawn_masks(array<U64, 64>{});
+static constexpr array<U64, 64> doubled_pawn_masks{ init_doubled_pawn_masks(array<U64, 64>{}) };
 static constexpr array<U64, 64> init_doubled_pawn_reset_masks(array<U64, 64> ret) {
 	for (int i = 8; i < 56; i++) {
 		U64 isolated = 1ULL << i;
@@ -83,7 +83,7 @@ static constexpr array<U64, 64> init_doubled_pawn_reset_masks(array<U64, 64> ret
 	}
 	return ret;
 }
-static constexpr array<U64, 64> doubled_pawn_reset_masks = init_doubled_pawn_reset_masks(array<U64, 64>{});
+static constexpr array<U64, 64> doubled_pawn_reset_masks{ init_doubled_pawn_reset_masks(array<U64, 64>{}) };
 static constexpr array<array<U64, 64>, 2> init_front_pawn_attack_spans(array<array<U64, 64>, 2> ret) {
 	for (int i = 8; i < 64; i++) {
 		U64 isolated = 1ULL << i;
@@ -107,8 +107,10 @@ static constexpr array<array<U64, 64>, 2> init_front_pawn_attack_spans(array<arr
 	}
 	return ret;
 }
-static constexpr array<array<U64, 64>, 2> front_pawn_attack_spans = init_front_pawn_attack_spans(array<array<U64, 64>, 2>{});
-static constexpr array<array<U64, 64>, 64> init_checkingRays(array<array<U64, 64>, 64>ret) {
+static constexpr array<array<U64, 64>, 2> front_pawn_attack_spans{ init_front_pawn_attack_spans(array<array<U64, 64>, 2>{}) };
+static constexpr array<array<U64, 64>, 64> checkingRays{ []()consteval {
+
+	array<array<U64, 64>, 64>ret{};
 	for (int i = 0; i < 64; i++) {
 		for (int j = 0; j < 64; j++) {
 			ret[i][j] = 0ULL;
@@ -117,27 +119,27 @@ static constexpr array<array<U64, 64>, 64> init_checkingRays(array<array<U64, 64
 	for (int i = 0; i < 64; i++) {
 		U64 rookAttacks = get_rook_attacks(0ULL, i);
 		while (rookAttacks) {
-			const U64 isolated = get_ls1b(rookAttacks);
+			const U64 isolated = get_ls1b_consteval(rookAttacks);
 			const int square = bitscan(isolated);
 			U64 tmpAttacks = get_rook_attacks(1ULL << square, i);
-			const U64 other = get_rook_attacks(1ULL<<i, square);
+			const U64 other = get_rook_attacks(1ULL << i, square);
 			ret[i][square] = (other | isolated) & tmpAttacks;
-			rookAttacks = pop_ls1b(rookAttacks);
+			rookAttacks = pop_ls1b_consteval(rookAttacks);
 		}
 		U64 bishopAttacks = get_bishop_attacks(0ULL, i);
 		while (bishopAttacks) {
-			const U64 isolated = get_ls1b(bishopAttacks);
+			const U64 isolated = get_ls1b_consteval(bishopAttacks);
 			const int square = bitscan(isolated);
 			U64 tmpAttacks = get_bishop_attacks(1ULL << square, i);
-			const U64 other = get_bishop_attacks(1ULL<<i, square);
+			const U64 other = get_bishop_attacks(1ULL << i, square);
 			ret[i][square] = (other | isolated) & tmpAttacks;
-			bishopAttacks = pop_ls1b(bishopAttacks);
+			bishopAttacks = pop_ls1b_consteval(bishopAttacks);
 		}
 	}
 	return ret;
-}
-static const array<array<U64, 64>, 64> checkingRays = init_checkingRays(array<array<U64, 64>, 64>{});
-static constexpr array<array<U64, 64>, 64> init_connectionRays(array<array<U64, 64>, 64>ret) {
+}()};
+static constexpr array<array<U64, 64>, 64> connectionRays{ []() consteval {
+	array<array<U64, 64>, 64> ret{};
 	for (int i = 0; i < 64; i++) {
 		for (int j = 0; j < 64; j++) {
 			ret[i][j] = 0;
@@ -147,23 +149,22 @@ static constexpr array<array<U64, 64>, 64> init_connectionRays(array<array<U64, 
 		const U64 sq = 1ULL << i;
 		U64 rookAttacks = get_rook_attacks(0ULL, i);
 		while (rookAttacks) {
-			const U64 isolated = get_ls1b(rookAttacks);
+			const U64 isolated = get_ls1b_consteval(rookAttacks);
 			const int square = bitscan(isolated);
 			U64 tmpAttacks = get_rook_attacks(1ULL << square, i);
-			const U64 other = get_rook_attacks(1ULL<<i, square);
+			const U64 other = get_rook_attacks(1ULL << i, square);
 			ret[i][square] = (other | isolated) & (tmpAttacks | sq);
-			rookAttacks = pop_ls1b(rookAttacks);
+			rookAttacks = pop_ls1b_consteval(rookAttacks);
 		}
 		U64 bishopAttacks = get_bishop_attacks(0ULL, i);
 		while (bishopAttacks) {
-			const U64 isolated = get_ls1b(bishopAttacks);
+			const U64 isolated = get_ls1b_consteval(bishopAttacks);
 			const int square = bitscan(isolated);
 			U64 tmpAttacks = get_bishop_attacks(1ULL << square, i);
-			const U64 other = get_bishop_attacks(1ULL<<i, square);
+			const U64 other = get_bishop_attacks(1ULL << i, square);
 			ret[i][square] = (other | isolated) & (tmpAttacks | sq);
-			bishopAttacks = pop_ls1b(bishopAttacks);
+			bishopAttacks = pop_ls1b_consteval(bishopAttacks);
 		}
 	}
 	return ret;
-}
-static const array<array<U64, 64>, 64> connectionRays = init_connectionRays(array<array<U64, 64>, 64>{});
+}()};

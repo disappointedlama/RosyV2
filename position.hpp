@@ -51,10 +51,10 @@ static constexpr int char_pieces(const char piece) {
 	default:return -1;
 	}
 };
-static inline U64 get_queen_attacks(const U64 occ, const int sq) {
+static constexpr U64 get_queen_attacks(const U64 occ, const int sq) {
 	return get_bishop_attacks(occ, sq) | get_rook_attacks(occ, sq);
 };
-static const string start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+static const string start_position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
 struct Position_Error : std::exception {
 	string msg;
 	Position_Error(string msg) {
@@ -69,10 +69,10 @@ struct Position_Error : std::exception {
 class Position {
 	inline bool is_attacked_by_side(const int sq, const bool color);
 	inline U64 get_attacks_by(const U64 color);
-	inline int get_piece_type_on(const int sq)const {
+	constexpr int get_piece_type_on(const int sq)const {
 		return square_board[sq];
 	}
-	inline int get_piece_type_or_enpassant_on(const int sq) {
+	constexpr int get_piece_type_or_enpassant_on(const int sq) {
 		if (sq == enpassant_square && sq != a8) return ~sideMask & p;
 		return square_board[sq];
 	};

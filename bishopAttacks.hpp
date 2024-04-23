@@ -673,9 +673,9 @@ static constexpr array<U64,5040> bishop_attacks = {
 ,18049651735265280ULL,18014398509481984ULL,18049651735265280ULL,18014398509481984ULL,18049582881570816ULL,18014398509481984ULL,18049582881570816ULL,18014398509481984ULL
 ,18049651601047552ULL,18014398509481984ULL,18049651601047552ULL,18014398509481984ULL,18049582881570816ULL,18014398509481984ULL,18049582881570816ULL,18014398509481984ULL
 };
-static inline U64 get_bishop_attacks(U64 occ, const int square) {
+static constexpr U64 get_bishop_attacks(U64 occ, const int square) {
     occ &= bishop_masks[square];
     occ *= bishop_magics[square];
     occ >>= 64ULL - bishopShifts[square];
-    return bishop_attacks[bishop_offsets[square]+occ];
+    return bishop_attacks[bishop_offsets[square] + occ];
 }

@@ -2,14 +2,14 @@
 #include <iostream>
 #include <string>
 #include <bit>
-using std::string;
+#include <array>
+using std::string, std::array;
 #define U64 unsigned long long
 #define get_bit(bitboard, square) ((bitboard) & (1ULL << (square)))
 #define set_bit(bitboard, square) ((bitboard) |= (1ULL << (square)))
 #define pop_bit(bitboard, square) ((bitboard) &= ~(1ULL << (square)))
 #define ones_decrement(bitboard) ((U64)bitboard - 1)
 #define twos_complement(bitboard) ((~(U64)bitboard) + 1)
-#define bitscan(bitboard) (index64[(((U64)bitboard & twos_complement((U64)bitboard)) * debruijn64) >> 58])
 #if defined(_WIN64)
 #include "intrin.h"
 #define get_ls1b(bitboard) (_blsi_u64(bitboard))
@@ -60,13 +60,13 @@ constexpr int count_bits (U64 x) {
 #endif
 
 
-constexpr U64 falseMask = 0ULL;
-constexpr U64 trueMask = ~falseMask;
+constexpr static U64 falseMask = 0ULL;
+constexpr static U64 trueMask = ~falseMask;
 #define U32 uint32_t
-constexpr U32 falseMask32 = 0;
-constexpr U32 trueMask32 = ~0;
-constexpr U64 debruijn64 = 0x07EDD5E59A4E28C2;
-constexpr int index64[64] = {
+constexpr static U32 falseMask32 = 0;
+constexpr static U32 trueMask32 = ~0;
+constexpr static U64 debruijn64 = 0x07EDD5E59A4E28C2;
+constexpr static array<int,64> index64 {
    63,  0, 58,  1, 59, 47, 53,  2,
    60, 39, 48, 27, 54, 33, 42,  3,
    61, 51, 37, 40, 49, 18, 28, 20,
@@ -76,6 +76,7 @@ constexpr int index64[64] = {
    56, 45, 25, 31, 35, 16,  9, 12,
    44, 24, 15,  8, 23,  7,  6,  5
 };
+constexpr int bitscan(U64 bitboard) { return (index64[((bitboard & twos_complement(bitboard)) * debruijn64) >> 58]); }
 
 void print_bitboard(const U64 bitboard);
 const string square_coordinates[64] = {
@@ -88,3 +89,9 @@ const string square_coordinates[64] = {
 "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
 "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1"
 };
+consteval U64 get_ls1b_consteval(const U64 bitboard) {
+    return bitboard & (0 - bitboard);
+}
+consteval U64 pop_ls1b_consteval(const U64 bitboard) {
+    return bitboard & (bitboard-1);
+}
