@@ -51,7 +51,7 @@ static constexpr int char_pieces(const char piece) {
 	default:return -1;
 	}
 };
-static inline U64 get_queen_attacks(U64 occ, const int sq) {
+static inline U64 get_queen_attacks(const U64 occ, const int sq) {
 	return get_bishop_attacks(occ, sq) | get_rook_attacks(occ, sq);
 };
 static const string start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
