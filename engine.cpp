@@ -672,6 +672,8 @@ void Engine::perft() {
 	U64 totalTime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 	cout << "Total Nodes: " << total_nodes << "\n";
 	cout << "Time: " << totalTime/1000000000.0 << "s (" << 1000.0 * total_nodes / totalTime << " MHz)\n";
+	reset_position();
+	run = false;
 }
 void Engine::perft_traversal(array<array<unsigned int, 128>, 40>& moves, int move_index, const int depth) {
 	if (depth == 0) {
@@ -798,7 +800,7 @@ void Engine::uci_loop(){
 						workers.erase(workers.begin() + i);
 					}
 				}
-				pos = Position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
+				reset_position();
 			}
 		}
 		else if (strncmp(input, "uci", 3) == 0) {

@@ -32,7 +32,7 @@ enum { wk = 1, wq = 2, bk = 4, bq = 8 };
 //pieces
 enum { P, N, B, R, Q, K, p, n, b, r, q, k };
 //ASCII pieces
-constexpr char ascii_pieces[] = "PNBRQKpnbrqk";
+static constexpr char ascii_pieces[] = "PNBRQKpnbrqk";
 //convert ascii char pieces to encoded constants
 static constexpr int char_pieces(const char piece) {
 	switch (piece) {

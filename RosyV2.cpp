@@ -189,7 +189,7 @@ void position_test() {
         cout << "Not all Tests passed" << endl;
     }
 }
-#define testingMoveGen true
+#define testingMoveGen false
 int main()
 {
     //generateMagicsBishops();

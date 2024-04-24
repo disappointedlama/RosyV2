@@ -55,7 +55,8 @@ static constexpr U64 passed_pawn_masks[2][64] = {
 	0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL}
 };
 static constexpr U64 neighbour_pawn_masks[8] = { 565157600297472ULL,1412894000743680ULL,2825788001487360ULL,5651576002974720ULL,11303152005949440ULL,22606304011898880ULL,45212608023797760ULL,18085043209519104ULL };
-static constexpr array<U64, 64> init_doubled_pawn_masks(array<U64, 64> ret) {
+static constexpr array<U64, 64> init_doubled_pawn_masks() {
+	array<U64, 64>ret{};
 	for (int i = 8; i < 56; i++) {
 		U64 isolated = 1ULL << i;
 		U64 span = isolated << 8;
@@ -68,8 +69,9 @@ static constexpr array<U64, 64> init_doubled_pawn_masks(array<U64, 64> ret) {
 	}
 	return ret;
 }
-static constexpr array<U64, 64> doubled_pawn_masks{ init_doubled_pawn_masks(array<U64, 64>{}) };
-static constexpr array<U64, 64> init_doubled_pawn_reset_masks(array<U64, 64> ret) {
+static constexpr array<U64, 64> doubled_pawn_masks{ init_doubled_pawn_masks() };
+static constexpr array<U64, 64> init_doubled_pawn_reset_masks() {
+	array<U64, 64>ret{};
 	for (int i = 8; i < 56; i++) {
 		U64 isolated = 1ULL << i;
 		U64 span = isolated;
@@ -83,8 +85,9 @@ static constexpr array<U64, 64> init_doubled_pawn_reset_masks(array<U64, 64> ret
 	}
 	return ret;
 }
-static constexpr array<U64, 64> doubled_pawn_reset_masks{ init_doubled_pawn_reset_masks(array<U64, 64>{}) };
-static constexpr array<array<U64, 64>, 2> init_front_pawn_attack_spans(array<array<U64, 64>, 2> ret) {
+static constexpr array<U64, 64> doubled_pawn_reset_masks{ init_doubled_pawn_reset_masks() };
+static constexpr array<array<U64, 64>, 2> init_front_pawn_attack_spans() {
+	array<array<U64, 64>, 2>ret{};
 	for (int i = 8; i < 64; i++) {
 		U64 isolated = 1ULL << i;
 		U64 span = ((isolated << 7) & notHFile) | ((isolated << 9) & notAFile);
@@ -107,7 +110,7 @@ static constexpr array<array<U64, 64>, 2> init_front_pawn_attack_spans(array<arr
 	}
 	return ret;
 }
-static constexpr array<array<U64, 64>, 2> front_pawn_attack_spans{ init_front_pawn_attack_spans(array<array<U64, 64>, 2>{}) };
+static constexpr array<array<U64, 64>, 2> front_pawn_attack_spans{ init_front_pawn_attack_spans() };
 static constexpr array<array<U64, 64>, 64> checkingRays{ []()consteval {
 
 	array<array<U64, 64>, 64>ret{};
