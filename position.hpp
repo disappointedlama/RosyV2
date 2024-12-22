@@ -682,7 +682,7 @@ public:
 			set_captured_type(move, get_piece_type_on(sq));
 			set_capture_flag(move, true);
 			const int offset = 6 & color;
-			U64 pot_pawns = pawn_attacks[1 & color][sq] & bitboards[offset];
+			U64 pot_pawns = pawn_attacks[1 ^ color][sq] & bitboards[offset];
 			if (pot_pawns) {
 				set_piece_type(move, P + offset);
 				set_from_square(move, bitscan(pot_pawns));

@@ -1,28 +1,54 @@
 #include "RosyV2.hpp"
 #include "betterMagics.hpp"
-U64 lookedAt = 0ULL;
-U64 mates = 0ULL;
-U64 captures = 0ULL;
-U64 en_passant = 0ULL;
-U64 castles = 0ULL;
-U64 promotions = 0ULL;
-void printTimingInfo(Position& pos) {
-#if timingPosition
-    cout << "Time spend:\nPawn generation: " << ((double)pos.pawnGeneration / pos.totalTime) * 100.0 << "%\n";
-    cout << "Sliding generation: " << ((double)pos.slidingGeneration / pos.totalTime) * 100.0 << "%\n";
-    cout << "Pinned generation: " << ((double)pos.PinnedGeneration / pos.totalTime) * 100.0 << "%\n";
-    cout << "Move making: " << ((double)pos.moveMaking / pos.totalTime) * 100.0 << "%\n";
-    cout << "Move unmaking: " << ((double)pos.moveUnmaking / pos.totalTime) * 100.0 << "%\n";
-#endif
-}
-void tree(array<array<unsigned int, 128>, 40>& moves, int move_index, Position& pos, const int depth, const int ind, vector<unsigned long long>* nodes_ptr) {
-    const int number_of_moves = pos.get_legal_moves(moves[move_index]); 
-    if (depth == 0) {
-        (nodes_ptr->at(ind)) += 1;
-        mates += (number_of_moves == 0);
+#define testingMoveGen false
+#if testingMoveGen
+struct Tests {
+    U64 lookedAt = 0ULL;
+    U64 mates = 0ULL;
+    U64 captures = 0ULL;
+    U64 en_passant = 0ULL;
+    U64 castles = 0ULL;
+    U64 promotions = 0ULL;
+    void printTimingInfo(Position& pos) {
+    #if timingPosition
+        cout << "Time spend:\nPawn generation: " << ((double)pos.pawnGeneration / pos.totalTime) * 100.0 << "%\n";
+        cout << "Sliding generation: " << ((double)pos.slidingGeneration / pos.totalTime) * 100.0 << "%\n";
+        cout << "Pinned generation: " << ((double)pos.PinnedGeneration / pos.totalTime) * 100.0 << "%\n";
+        cout << "Move making: " << ((double)pos.moveMaking / pos.totalTime) * 100.0 << "%\n";
+        cout << "Move unmaking: " << ((double)pos.moveUnmaking / pos.totalTime) * 100.0 << "%\n";
+    #endif
     }
-    if (depth > 0) {
+    void tree(array<array<unsigned int, 128>, 40>& moves, int move_index, Position& pos, const int depth, const int ind, vector<unsigned long long>* nodes_ptr) {
+        const int number_of_moves = pos.get_legal_moves(moves[move_index]); 
+        if (depth == 0) {
+            (nodes_ptr->at(ind)) += 1;
+            mates += (number_of_moves == 0);
+        }
+        if (depth > 0) {
+            for (int i = 0; i < number_of_moves; i++) {
+                if (depth == 1) {
+                    if (get_capture_flag(moves[move_index][i])) {
+                        captures++;
+                        if (get_enpassant_flag(moves[move_index][i])) en_passant++;
+                    }
+                    else if (get_castling_flag(moves[move_index][i])) castles++;
+                    if (get_promotion_type(moves[move_index][i]) != 15) promotions++;
+                }
+                pos.make_move(moves[move_index][i]);
+                tree(moves, move_index +1, pos, depth - 1, ind, nodes_ptr);
+                pos.unmake_move();
+            }
+        }
+    }
+    void perf(array<array<unsigned int, 128>, 40>& moves, int move_index, Position& pos, const int depth) {
+        pos.print();
+        cout << "\tNodes from different branches:\n";
+        vector<unsigned long long> nodes_from_branches{};
+        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+        const int number_of_moves = pos.get_legal_moves(moves[move_index]);
+        unsigned long long total_nodes = 0ULL;
         for (int i = 0; i < number_of_moves; i++) {
+            nodes_from_branches.push_back(0ULL);
             if (depth == 1) {
                 if (get_capture_flag(moves[move_index][i])) {
                     captures++;
@@ -32,75 +58,52 @@ void tree(array<array<unsigned int, 128>, 40>& moves, int move_index, Position& 
                 if (get_promotion_type(moves[move_index][i]) != 15) promotions++;
             }
             pos.make_move(moves[move_index][i]);
-            tree(moves, move_index +1, pos, depth - 1, ind, nodes_ptr);
+            tree(moves, move_index +1, pos, depth - 1, i, &nodes_from_branches);
             pos.unmake_move();
+            total_nodes += nodes_from_branches[i];
+            cout << "\t\t" << uci(moves[move_index][i]) << ": " << nodes_from_branches[i] << " Nodes\n";
         }
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        U64 totalTime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+        cout << "\tTotal Nodes: " << total_nodes << "\n";
+        cout << "\tTime: " << totalTime / 1000000000.0 << "s (" << 1000.0 * total_nodes / totalTime << " MHz)\n";
+        lookedAt = total_nodes;
     }
-}
-void perf(array<array<unsigned int, 128>, 40>& moves, int move_index, Position& pos, const int depth) {
-    pos.print();
-    cout << "\tNodes from different branches:\n";
-    vector<unsigned long long> nodes_from_branches{};
-    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-    const int number_of_moves = pos.get_legal_moves(moves[move_index]);
-    unsigned long long total_nodes = 0ULL;
-    for (int i = 0; i < number_of_moves; i++) {
-        nodes_from_branches.push_back(0ULL);
-        if (depth == 1) {
-            if (get_capture_flag(moves[move_index][i])) {
-                captures++;
-                if (get_enpassant_flag(moves[move_index][i])) en_passant++;
-            }
-            else if (get_castling_flag(moves[move_index][i])) castles++;
-            if (get_promotion_type(moves[move_index][i]) != 15) promotions++;
-        }
-        pos.make_move(moves[move_index][i]);
-        tree(moves, move_index +1, pos, depth - 1, i, &nodes_from_branches);
-        pos.unmake_move();
-        total_nodes += nodes_from_branches[i];
-        cout << "\t\t" << uci(moves[move_index][i]) << ": " << nodes_from_branches[i] << " Nodes\n";
+    void reset_test_parameters() {
+        lookedAt = 0;
+        mates = 0;
+        captures = 0ULL;
+        en_passant = 0ULL;
+        castles = 0ULL;
+        promotions = 0ULL;
     }
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    U64 totalTime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-    cout << "\tTotal Nodes: " << total_nodes << "\n";
-    cout << "\tTime: " << totalTime / 1000000000.0 << "s (" << 1000.0 * total_nodes / totalTime << " MHz)\n";
-    lookedAt = total_nodes;
-}
-void reset_test_parameters() {
-    lookedAt = 0;
-    mates = 0;
-    captures = 0ULL;
-    en_passant = 0ULL;
-    castles = 0ULL;
-    promotions = 0ULL;
-}
-void test() {
-    Position pos;
-    pos = Position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
-    array<array<unsigned int, 128>, 40> moves{};
-    perf(moves, 0, pos, 3);
-    cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
-    printTimingInfo(pos);
-    lookedAt = 0;
-    mates = 0;
-    pos = Position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
-    perf(moves, 0, pos, 4);
-    cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
-    printTimingInfo(pos);
-    lookedAt = 0;
-    mates = 0;
-    pos = Position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
-    perf(moves, 0, pos, 5);
-    cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
-    printTimingInfo(pos);
-    lookedAt = 0;
-    mates = 0;
-    pos = Position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
-    perf(moves, 0, pos, 6);
-    cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
-    printTimingInfo(pos);
-}
-void position_test() {
+    void test() {
+        Position pos;
+        pos = Position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
+        array<array<unsigned int, 128>, 40> moves{};
+        perf(moves, 0, pos, 3);
+        cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
+        printTimingInfo(pos);
+        lookedAt = 0;
+        mates = 0;
+        pos = Position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
+        perf(moves, 0, pos, 4);
+        cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
+        printTimingInfo(pos);
+        lookedAt = 0;
+        mates = 0;
+        pos = Position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
+        perf(moves, 0, pos, 5);
+        cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
+        printTimingInfo(pos);
+        lookedAt = 0;
+        mates = 0;
+        pos = Position{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
+        perf(moves, 0, pos, 6);
+        cout << "Positions: " << lookedAt << "\nMates: " << mates << "\n";
+        printTimingInfo(pos);
+    }
+    void position_test() {
     bool passedAllTests = true;
     Position pos{ "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0" };
     array<array<unsigned int, 128>, 40> moves{};
@@ -189,15 +192,16 @@ void position_test() {
         cout << "Not all Tests passed" << endl;
     }
 }
-#define testingMoveGen false
+};
+#endif
 int main()
 {
     //generateMagicsBishops();
     //generateMagicsRooks();
     try {
 #if testingMoveGen
-    //test();
-    position_test();
+    //Tests{}.test();
+    Tests{}.position_test();
 #endif
         Engine rosy{false};
         rosy.uci_loop();
