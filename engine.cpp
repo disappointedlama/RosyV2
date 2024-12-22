@@ -809,13 +809,13 @@ void Engine::uci_loop(){
 			cout << "uciok\n";
 		}
 		else if (strncmp(input, "debug", 5) == 0) {
-			if (strncmp(input + 6, "true", 4) == 0) {
+			if (strncmp(input + 6, "on", 2) == 0) {
 				debug = true;
 			}
-			else if (strncmp(input +6 , "false", 5) == 0) {
+			else if (strncmp(input +6 , "off", 3) == 0) {
 				debug = false;
 			}
-			cout << "Debug is set to " << ((debug) ? ("true") : ("false")) << endl;
+			//cout << "Debug is set to " << ((debug) ? ("true") : ("false")) << endl;
 		}
 	}
 }
