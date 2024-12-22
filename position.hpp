@@ -674,15 +674,15 @@ public:
 		const bool is_enpassant = (sq == enpassant_square);
 		return no_piece * (!(found_piece || is_enpassant)) + (found_piece)*piece_type;
 	}
-	inline int get_smallest_attack(const int sq, const U64 color) {
+	inline int get_smallest_attack(const int sq, const bool color) {
 		if (get_bit(occupancies[both], sq)) {
 			unsigned int move = 0;
 			set_promotion_type(move, no_piece);
 			set_to_square(move, sq);
 			set_captured_type(move, get_piece_type_on(sq));
 			set_capture_flag(move, true);
-			const int offset = 6 & color;
-			U64 pot_pawns = pawn_attacks[1 ^ color][sq] & bitboards[offset];
+			const int offset = 6 * color;
+			U64 pot_pawns = pawn_attacks[(!color)][sq] & bitboards[offset];
 			if (pot_pawns) {
 				set_piece_type(move, P + offset);
 				set_from_square(move, bitscan(pot_pawns));
@@ -719,7 +719,7 @@ public:
 	}
 	inline int see(const int square) {
 		int value = 0;
-		unsigned int move = get_smallest_attack(square, sideMask);
+		unsigned int move = get_smallest_attack(square, side);
 		/* skip if the square isn't attacked anymore by this side */
 		if (move) {
 			make_move(move);
