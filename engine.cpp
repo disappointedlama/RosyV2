@@ -707,14 +707,11 @@ void Engine::print_info(const short depth, const int eval, const U64 time) {
 }
 void Engine::track_time(const U64 max_time) {
 	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-	while (run) {
-		end = std::chrono::steady_clock::now();
-		if ((U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() >= max_time) {
-			run = false;
-			if(debug)cout << "stopping execution" << endl;
-		}
+	while (run && (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - begin).count() < max_time) {
+		std::this_thread::sleep_for(std::chrono::nanoseconds{ max_time / 50 });
+		if (debug)cout << "stopping execution" << endl;
 	}
+	run = false;
 }
 void Engine::uci_loop(){
 
@@ -742,6 +739,7 @@ void Engine::uci_loop(){
 		if (input[0] == '\n') {
 			continue;
 		}
+		log.log(input);
 		if (strncmp(input, "isready", 7) == 0) {
 			cout << "readyok\n";
 		}
@@ -755,12 +753,23 @@ void Engine::uci_loop(){
 			if(debug) cout << "Done with cleanup\n";
 		}
 		else if (strncmp(input, "go", 2) == 0) {
+			using namespace std::literals::chrono_literals;
+			log.log((run) ? "run: true" : "run: false");
 			if (!run) {
 				run = true;
+				std::this_thread::sleep_for(500us);
+				if (!workers.empty()) {
+					log << "joining threads, not all threads were cleared before starting new go";
+					for (int i = 0; i < workers.size(); i++) {
+						if (workers[i].joinable()) {
+							workers[i].join();
+							workers.erase(workers.begin() + i);
+						}
+					}
+				}
 				workers.push_back(std::thread(&Engine::parse_go, this, input));
 			}
 
-			using namespace std::literals::chrono_literals;
 			std::this_thread::sleep_for(500us);
 		}
 		else if (strncmp(input, "quit", 4) == 0) {
