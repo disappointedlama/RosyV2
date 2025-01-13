@@ -1235,7 +1235,8 @@ inline U64 Position::get_moves_for_pinned_pieces(array<unsigned int,128>& ret, c
 			U64 attacks = pawn_attacks[(side)][from];
 			if (attacks & pinner) {
 				unsigned int move = encode_move(from, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
-				if ((rank7 << (a2 & sideMask)) & isolated) {
+				const std::array<U64, 2> masks{ rank7, rank2 };
+				if (masks[side] & isolated) {
 					set_promotion_type(move, N + piece_offset);
 					ret[ind++]=move;
 					set_promotion_type(move, B + piece_offset);
@@ -1266,7 +1267,8 @@ inline U64 Position::get_moves_for_pinned_pieces(array<unsigned int,128>& ret, c
 			const int double_push_target = from + 16 * sign;
 			if (get_bit(valid_targets, push_target)) {
 				unsigned int move = encode_move(from, push_target, type, no_piece, no_piece, false, false, false, false);
-				if ((rank7 << (a2 & sideMask)) & isolated) {
+				const std::array<U64, 2> masks{ rank7,rank2 };
+				if (masks[side] & isolated) {
 					set_promotion_type(move, N + piece_offset);
 					ret[ind++]=move;
 					set_promotion_type(move, B + piece_offset);
@@ -1538,7 +1540,8 @@ inline U64 Position::get_captures_for_pinned_pieces(array<unsigned int,128>& ret
 			U64 attacks = pawn_attacks[(side)][from];
 			if (attacks & pinner) {
 				unsigned int move = encode_move(from, to, type, get_piece_type_on(to), no_piece, true, false, false, false);
-				if ((rank7 << (a2 & sideMask)) & isolated) {
+				const std::array<U64, 2> masks{ rank7,rank2 };
+				if (masks[side] & isolated) {
 					set_promotion_type(move, N + piece_offset);
 					ret[ind++]=move;
 					set_promotion_type(move, B + piece_offset);
