@@ -109,6 +109,47 @@ class Engine {
 		if (((bool)(entry.get_move())) && (std::find(moves.begin(), moves.end(), entry.get_move()) != moves.end())&&entry.get_move()!=0) {
 			hash_move = entry.get_move();
 		}
+		constexpr int hash_score{ 100000000 };
+		constexpr int killer_score{ 8000 };
+		constexpr array<int, 5> promotion_scores{ 0, 300, 350, 500, 9000 };
+		array<int, 128> scores{};
+		for (int i = 0; i < number_of_moves; ++i) {
+			if (moves[i] == hash_move) {
+				scores[i] = hash_score;
+				continue;
+			}
+			const int promotion_type{ get_promotion_type(moves[i]) };
+			if(promotion_type!=pos.no_piece){
+				scores[i] += promotion_scores[promotion_type];
+			}
+			if (get_capture_flag(moves[i])) {
+				scores[i] += pos.seeByMove(moves[i]);
+			}
+			if (killer_table.find(moves[i], pos.get_ply())) {
+				scores[i] += killer_score;
+			}
+		}
+		//selection sort
+		for (int i = 0; i < number_of_moves - 1; i++){
+			int jMin = i;
+			U64 j_min_history = history[(size_t)(get_piece_type(moves[i]))][(size_t)(get_to_square(moves[i]))];
+			for (int j = i + 1; j < number_of_moves; j++){
+				if (scores[j] > scores[jMin]){
+					jMin = j;
+					j_min_history = history[(size_t)(get_piece_type(moves[jMin]))][(size_t)(get_to_square(moves[jMin]))];
+				}
+				else if (scores[j] == scores[j] && scores[j] == -1) {
+					if (j_min_history > history[(size_t)(get_piece_type(moves[j]))][(size_t)(get_to_square(moves[j]))]) {
+						jMin = j;
+						j_min_history = history[(size_t)(get_piece_type(moves[jMin]))][(size_t)(get_to_square(moves[jMin]))];
+					}
+				}
+			}
+			if (jMin != i){
+				std::swap(moves[i], moves[jMin]);
+			}
+		}
+		/*
 		std::sort(moves.begin(), (array<unsigned int, 128>::iterator)(moves.begin() + number_of_moves), [&](const int& lhs, const int& rhs)
 			{
 				if (lhs == hash_move) { return true; }
@@ -149,6 +190,8 @@ class Engine {
 				[[assume(get_to_square(rhs) > -1)]];
 				return (history[(size_t)(lhs_piece)][(size_t)(get_to_square(lhs))] > history[(size_t)(rhs_piece)][(size_t)(get_to_square(rhs))]);
 			});
+		cout << "second sort: " << comparisons << " comparisons\n";
+		*/
 #if timingEngine
 		auto end = std::chrono::steady_clock::now();
 		moveOrderingTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
@@ -158,10 +201,27 @@ class Engine {
 #if timingEngine
 		auto start = std::chrono::steady_clock::now();
 #endif
-		std::sort(moves.begin(), (array<unsigned int,128>::iterator)(moves.begin()+number_of_moves), [&](const int& lhs, const int& rhs)
-			{
-				return pos.seeByMove(lhs)>pos.seeByMove(rhs);
-			});
+		//calculate scores
+		array<int, 128> scores{};
+		for (int i = 0; i < number_of_moves; ++i) {
+			scores[i] = pos.seeByMove(moves[i]);
+		}
+		//selection sort
+		for (int i = 0; i < number_of_moves - 1; i++) {
+			int jMin = i;
+			for (int j = i + 1; j < number_of_moves; j++) {
+				if (scores[j] > scores[jMin]) {
+					jMin = j;
+				}
+			}
+			if (jMin != i) {
+				std::swap(moves[i], moves[jMin]);
+			}
+		}
+		//std::sort(moves.begin(), (array<unsigned int,128>::iterator)(moves.begin()+number_of_moves), [&](const int& lhs, const int& rhs)
+		//	{
+		//		return pos.seeByMove(lhs)>pos.seeByMove(rhs);
+		//	});
 #if timingEngine
 		auto end = std::chrono::steady_clock::now();
 		captureOrderingTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
