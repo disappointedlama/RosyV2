@@ -676,7 +676,7 @@ public:
 	}
 	inline int get_smallest_attack(const int sq, const bool color) {
 		if (get_bit(occupancies[both], sq)) {
-			unsigned int move = 0;
+			int move = 0;
 			set_promotion_type(move, no_piece);
 			set_to_square(move, sq);
 			set_captured_type(move, get_piece_type_on(sq));
@@ -686,6 +686,10 @@ public:
 			if (pot_pawns) {
 				set_piece_type(move, P + offset);
 				set_from_square(move, bitscan(pot_pawns));
+				const array<U64, 2> masks{ rank7,rank2 };
+				if (masks[side] & pot_pawns) {
+					set_promotion_type(move, Q + offset);
+				}
 				return move;
 			}
 			U64 pot_knights = knight_attacks[sq] & bitboards[N + offset];
@@ -714,26 +718,40 @@ public:
 				set_from_square(move, bitscan(pot_queens));
 				return move;
 			}
+			U64 pot_king = king_attacks[sq] & bitboards[K + offset];
+			if (pot_king && !is_attacked_by_side(sq, !side)) {
+				set_piece_type(move, K + offset);
+				set_from_square(move, bitscan(pot_king));
+				return move;
+			}
 		}
 		return 0;
 	}
 	inline int see(const int square) {
 		int value = 0;
-		unsigned int move = get_smallest_attack(square, side);
-		/* skip if the square isn't attacked anymore by this side */
+		int move = get_smallest_attack(square, side);
 		if (move) {
 			make_move(move);
-			/* Do not consider captures if they lose material, therefor max zero */
-			value = std::max(0, basePieceValue[basePiece[get_captured_type(move)]] - see(square));
+			if (get_promotion_type(move) != no_piece) {
+				value += basePieceValue[basePiece[get_promotion_type(move)]] - 100;
+			}
+			value += std::max(0, basePieceValue[basePiece[get_captured_type(move)]] - see(square));
 			unmake_move();
 		}
 		return value;
 	}
 	inline int seeByMove(const int move) {
-		int value;
+		int value{ 0 };
 		make_move(move);
-		/* Do not consider captures if they lose material, therefor max zero */
-		value = std::max(0, basePieceValue[basePiece[get_captured_type(move)]] - see(get_to_square(move)));
+		if (get_promotion_type(move) != no_piece) {
+			value += basePieceValue[basePiece[get_promotion_type(move)]] - 100;
+		}
+		if (get_captured_type(move) != no_piece) {
+			value += basePieceValue[basePiece[get_captured_type(move)]] - see(get_to_square(move));
+		}
+		else {
+			value -= see(get_to_square(move));
+		}
 		unmake_move();
 		return value;
 	}
