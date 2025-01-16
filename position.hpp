@@ -769,7 +769,7 @@ public:
 					else {
 						pot_rooks ^= isolated;
 					}
-					temp_pot_rooks = pop_ls1b(pot_rooks);
+					temp_pot_rooks = pop_ls1b(temp_pot_rooks);
 				}
 				if (pot_rooks) {
 					set_piece_type(move, R + offset);

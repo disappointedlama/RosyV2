@@ -166,7 +166,9 @@ int Engine::evaluate() {
 }
 inline void Engine::printBestMove(int move) {
 	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	log<< "bestmove " + uci(move);
+	string str{ uci(move) };
+	str += " ";
+	log<< "bestmove " + str;
 }
 MoveWEval Engine::pv_root_call(array<array<unsigned int, 128>, 40>& moves, int move_index, const short depth, short alpha, short beta) {
 	TableEntry entry = lookUp();
@@ -613,14 +615,20 @@ void Engine::parse_go(string str){
 		const int btime = stoi(time_str);
 		command = "winc ";
 		substr_pos = str.find(command);
-		str = str.substr(substr_pos + command.size(), str.size());
-		time_str = str.substr(0, str.find(" "));
-		const int winc = stoi(time_str);
+		int winc{ 0 };
+		if (substr_pos != string::npos) {
+			str = str.substr(substr_pos + command.size(), str.size());
+			time_str = str.substr(0, str.find(" "));
+			winc = stoi(time_str);
+		}
 		command = "binc ";
 		substr_pos = str.find(command);
-		str = str.substr(substr_pos + command.size(), str.size());
-		time_str = str.substr(0, str.find(" "));
-		const int binc = stoi(time_str);
+		int binc{ 0 };
+		if (substr_pos != string::npos) {
+			str = str.substr(substr_pos + command.size(), str.size());
+			time_str = str.substr(0, str.find(" "));
+			binc = stoi(time_str);
+		}
 
 		const int increment = ((pos.side) * binc) + (!(pos.side) * winc);
 		const int time = ((pos.side) * btime) + ((!pos.side) * wtime);
@@ -694,9 +702,24 @@ void Engine::print_info(const short depth, const int eval, const U64 time) {
 	for (int i = 0; i < depth; i++) {
 		TableEntry entry = lookUp();
 		if (!entry.get_move()) break;
-		j++;
-		stream << uci(entry.get_move()) << " ";
-		pos.make_move(entry.get_move());
+		++j;
+		array<unsigned int, 128> moves{};
+		int number_of_moves{ pos.get_legal_moves(moves) };
+		unsigned int move{ entry.get_move() };
+		bool valid_move{ false };
+		for (int k = 0; k < number_of_moves; ++k) {
+			if (move == moves[k]) {
+				valid_move = true;
+			}
+		}
+		if (valid_move) {
+			stream << uci(move) << " ";
+			pos.make_move(move);
+		}
+		else {
+			--j;
+			break;
+		}
 	}
 	for (int i = 0; i < j; i++) {
 		pos.unmake_move();
@@ -814,9 +837,8 @@ void Engine::uci_loop(){
 			}
 		}
 		else if (strncmp(input, "uci", 3) == 0) {
-			cout << "id name Rosy author disappointed_lama\n";
-			cout << "option name Move Overhead type spin default 100 min 0 max 20000\noption name Threads type spin default 2 min 2 max 2\noption name Hash type spin default 512 min 256" << endl;
-			cout << "uciok\n";
+			log<< "id name Rosy author disappointed_lama";
+			log << "uciok";
 		}
 		else if (strncmp(input, "debug", 5) == 0) {
 			if (strncmp(input + 6, "on", 2) == 0) {
