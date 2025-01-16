@@ -467,7 +467,7 @@ short Engine::quiescence(array<array<unsigned int, 128>, 40>& moves, int move_in
 	unsigned int current_best_move = 0;
 	short current_best_eval = -infinity - 1;
 	for (int i = 0; i < number_of_captures; i++) {
-		const int static_exchange_eval = pos.see(get_to_square(moves[move_index][i]));
+		const int static_exchange_eval = pos.seeByMove(moves[move_index][i]);
 		if (static_exchange_eval <= 0) break;
 		if (eval + 200 + static_exchange_eval < alpha) continue;
 		pos.make_move(moves[move_index][i]);

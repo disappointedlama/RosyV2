@@ -676,21 +676,47 @@ public:
 	}
 	inline int get_smallest_attack(const int sq, const bool color) {
 		if (get_bit(occupancies[both], sq)) {
+			const U64 to_bitboard{ 1ULL << sq };
+			const int offset = 6 * color;
+			const int enemy_offset{ 6 * (!color) };
+			const U64 king_board{ bitboards[K + offset] };
+			const int kingpos{ bitscan(king_board) };
 			int move = 0;
 			set_promotion_type(move, no_piece);
 			set_to_square(move, sq);
 			set_captured_type(move, get_piece_type_on(sq));
 			set_capture_flag(move, true);
-			const int offset = 6 * color;
+			const U64 bishop_attacks = get_bishop_attacks(occupancies[both], sq);
 			U64 pot_pawns = pawn_attacks[(!color)][sq] & bitboards[offset];
+			const U64 bishoplike_enemys{ bitboards[B + enemy_offset] | bitboards[Q + enemy_offset] };
+			const U64 already_present_bishoplike_attackers{ bishop_attacks & bishoplike_enemys };
+			const array<U64, 2> masks{ rank7,rank2 };
 			if (pot_pawns) {
-				set_piece_type(move, P + offset);
-				set_from_square(move, bitscan(pot_pawns));
-				const array<U64, 2> masks{ rank7,rank2 };
-				if (masks[side] & pot_pawns) {
-					set_promotion_type(move, Q + offset);
+				U64 temp_pot_pawns{ pot_pawns };
+				while (temp_pot_pawns) {
+					const U64 isolated{ get_ls1b(temp_pot_pawns) };
+					const int pawn_sq{ bitscan(isolated) };
+					const U64 without_pawn{ occupancies[both] ^ isolated };
+					if (!(get_bishop_attacks(without_pawn ^ to_bitboard, kingpos) & (bishoplike_enemys ^ to_bitboard))) {
+						const U64 new_attacks{ get_bishop_attacks(without_pawn, sq) };
+						const U64 new_attackers{ (new_attacks & bishoplike_enemys) ^ already_present_bishoplike_attackers };
+						if (!new_attackers) {
+							pot_pawns = isolated;
+							break;
+						}
+					}
+					else {
+						pot_pawns ^= isolated;
+					}
+					temp_pot_pawns = pop_ls1b(temp_pot_pawns);
 				}
-				return move;
+				if (pot_pawns) {
+					set_piece_type(move, P + offset);
+					set_from_square(move, bitscan(pot_pawns));
+					if (!(masks[color] & pot_pawns)) {
+						return move;
+					}
+				}
 			}
 			U64 pot_knights = knight_attacks[sq] & bitboards[N + offset];
 			if (pot_knights) {
@@ -698,31 +724,121 @@ public:
 				set_from_square(move, bitscan(pot_knights));
 				return move;
 			}
-			const U64 bishop_attacks = get_bishop_attacks(occupancies[both], sq);
 			U64 pot_bishops = bishop_attacks & bitboards[B + offset];
 			if (pot_bishops) {
-				set_piece_type(move, B + offset);
-				set_from_square(move, bitscan(pot_bishops));
-				return move;
+				U64 temp_pot_bishops{ pot_bishops };
+				while (temp_pot_bishops) {
+					const U64 isolated{ get_ls1b(temp_pot_bishops) };
+					const U64 without_bishop{ occupancies[both] ^ isolated };
+					if (!(get_bishop_attacks(without_bishop ^ to_bitboard, kingpos) & (bishoplike_enemys ^ to_bitboard))) {
+						const U64 new_attacks{ get_bishop_attacks(without_bishop, sq) };
+						const U64 new_attackers{ (new_attacks & bishoplike_enemys) ^ already_present_bishoplike_attackers };
+						if (!new_attackers) {
+							pot_bishops = isolated;
+							break;
+						}
+					}
+					else {
+						pot_bishops ^= isolated;
+					}
+					temp_pot_bishops = pop_ls1b(temp_pot_bishops);
+				}
+				if (pot_bishops) {
+					set_piece_type(move, B + offset);
+					set_from_square(move, bitscan(pot_bishops));
+					return move;
+				}
 			}
+			const U64 rooklike_enemys{ bitboards[R + enemy_offset] | bitboards[Q + enemy_offset] };
 			const U64 rook_attacks = get_rook_attacks(occupancies[both], sq);
+			const U64 already_present_rooklike_attackers{ rook_attacks & rooklike_enemys };
 			U64 pot_rooks = rook_attacks & bitboards[R + offset];
 			if (pot_rooks) {
-				set_piece_type(move, R + offset);
-				set_from_square(move, bitscan(pot_rooks));
-				return move;
+				U64 temp_pot_rooks{ pot_rooks };
+				while (temp_pot_rooks) {
+					const U64 isolated{ get_ls1b(temp_pot_rooks) };
+					const U64 without_rook{ occupancies[both] ^ isolated };
+					if (!(get_rook_attacks(without_rook ^ to_bitboard, kingpos) & (rooklike_enemys ^ to_bitboard))) {
+						const U64 new_attacks{ get_rook_attacks(without_rook, sq) };
+						const U64 new_attackers{ (new_attacks & rooklike_enemys) ^ already_present_rooklike_attackers };
+						if (!new_attackers) {
+							pot_rooks = isolated;
+							break;
+						}
+					}
+					else {
+						pot_rooks ^= isolated;
+					}
+					temp_pot_rooks = pop_ls1b(pot_rooks);
+				}
+				if (pot_rooks) {
+					set_piece_type(move, R + offset);
+					set_from_square(move, bitscan(pot_rooks));
+					return move;
+				}
 			}
 			U64 pot_queens = (rook_attacks | bishop_attacks) & bitboards[Q + offset];
 			if (pot_queens) {
-				set_piece_type(move, Q + offset);
-				set_from_square(move, bitscan(pot_queens));
-				return move;
+				U64 temp_pot_queens{ pot_queens };
+				// starting with rooks because enabling a rook xray is preferred over creating a bishop xray,
+				// since the piece the opponent might then loose is more valuable which increases the likelihood of them not capturing
+				while (temp_pot_queens) {
+					const U64 isolated{ get_ls1b(temp_pot_queens) };
+					const U64 without_queen{ occupancies[both] ^ isolated };
+					if (!(get_rook_attacks(without_queen ^ to_bitboard, kingpos) & (rooklike_enemys ^ to_bitboard))) {
+						const U64 new_attacks{ get_rook_attacks(without_queen, sq) };
+						const U64 new_attackers{ (new_attacks & rooklike_enemys) ^ already_present_rooklike_attackers };
+						if (!new_attackers) {
+							pot_queens = isolated;
+							break;
+						}
+					}
+					else {
+						pot_queens ^= isolated;
+					}
+					temp_pot_queens = pop_ls1b(temp_pot_queens);
+				}
+				if (count_bits(pot_queens) == 1) {
+					set_piece_type(move, Q + offset);
+					set_from_square(move, bitscan(pot_queens));
+					return move;
+				}
+				temp_pot_queens = pot_queens;
+				while (temp_pot_queens) {
+					const U64 isolated{ get_ls1b(temp_pot_queens) };
+					const U64 without_queen{ occupancies[both] ^ isolated };
+					if (!(get_bishop_attacks(without_queen ^ to_bitboard, kingpos) & (bishoplike_enemys ^ to_bitboard))) {
+						const U64 new_attacks{ get_bishop_attacks(without_queen, sq) };
+						const U64 new_attackers{ (new_attacks & bishoplike_enemys) ^ already_present_bishoplike_attackers };
+						if (!new_attackers) {
+							pot_queens = isolated;
+							break;
+						}
+					}
+					else {
+						pot_queens ^= isolated;
+					}
+					temp_pot_queens = pop_ls1b(temp_pot_queens);
+				}
+				if (pot_queens) {
+					set_piece_type(move, Q + offset);
+					set_from_square(move, bitscan(pot_queens));
+					return move;
+				}
 			}
 			U64 pot_king = king_attacks[sq] & bitboards[K + offset];
-			if (pot_king && !is_attacked_by_side(sq, !side)) {
+			if (pot_king && !is_attacked_by_side(sq, !color)) {
 				set_piece_type(move, K + offset);
 				set_from_square(move, bitscan(pot_king));
 				return move;
+			}
+			if (pot_pawns) {
+				set_piece_type(move, P + offset);
+				set_from_square(move, bitscan(pot_pawns));
+				if (masks[color] & pot_pawns) {
+					set_promotion_type(move, Q + offset);
+					return move;
+				}
 			}
 		}
 		return 0;
@@ -733,9 +849,9 @@ public:
 		if (move) {
 			make_move(move);
 			if (get_promotion_type(move) != no_piece) {
-				value += basePieceValue[basePiece[get_promotion_type(move)]] - 100;
+				value = basePieceValue[basePiece[get_promotion_type(move)]] - 100;
 			}
-			value += std::max(0, basePieceValue[basePiece[get_captured_type(move)]] - see(square));
+			value = std::max(0, value + basePieceValue[basePiece[get_captured_type(move)]] - see(square));
 			unmake_move();
 		}
 		return value;
@@ -747,7 +863,8 @@ public:
 			value += basePieceValue[basePiece[get_promotion_type(move)]] - 100;
 		}
 		if (get_captured_type(move) != no_piece) {
-			value += basePieceValue[basePiece[get_captured_type(move)]] - see(get_to_square(move));
+			const int see_score{ see(get_to_square(move)) };
+			value += basePieceValue[basePiece[get_captured_type(move)]] - see_score;
 		}
 		else {
 			value -= see(get_to_square(move));
