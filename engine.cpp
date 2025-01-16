@@ -709,8 +709,8 @@ void Engine::track_time(const U64 max_time) {
 	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 	while (run && (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - begin).count() < max_time) {
 		std::this_thread::sleep_for(std::chrono::nanoseconds{ max_time / 50 });
-		if (debug)cout << "stopping execution" << endl;
 	}
+	if (debug)cout << "stopping execution" << endl;
 	run = false;
 }
 void Engine::uci_loop(){
@@ -767,7 +767,8 @@ void Engine::uci_loop(){
 						}
 					}
 				}
-				workers.push_back(std::thread(&Engine::parse_go, this, input));
+				string input_copy{ input };
+				workers.push_back(std::thread(&Engine::parse_go, this, input_copy));
 			}
 
 			std::this_thread::sleep_for(500us);

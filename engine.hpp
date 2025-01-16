@@ -120,7 +120,7 @@ class Engine {
 			}
 			const int promotion_type{ get_promotion_type(moves[i]) };
 			if(promotion_type!=pos.no_piece){
-				scores[i] += promotion_scores[promotion_type];
+				scores[i] += promotion_scores[basePiece[promotion_type]];
 			}
 			if (get_capture_flag(moves[i])) {
 				scores[i] += pos.seeByMove(moves[i]);
