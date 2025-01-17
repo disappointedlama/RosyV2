@@ -1008,11 +1008,27 @@ inline int Position::in_check_legal_bpawn_captures(array<unsigned int,128>& ret,
 	const bool right_enpassant = (enpassant >> 9) & notHFile & (bitboards[p]);
 	if (left_enpassant) {
 		unsigned int move = encode_move(enpassant_square - 7, enpassant_square, p, P, no_piece, true, false, false, true);
-		try_out_move(ret, move, ind);
+		const int kingpos{ bitscan(bitboards[k]) };
+		const U64 occupancies_after_enpassant{ occupancies[both] ^ (1ULL << enpassant_square) ^ (1ULL << (enpassant_square - 7)) ^ (1ULL << (enpassant_square - 8)) };
+		U64 attacks = get_rook_attacks(occupancies_after_enpassant, kingpos) & (bitboards[R] | bitboards[Q]);
+		attacks |= get_bishop_attacks(occupancies_after_enpassant, kingpos) & (bitboards[B] | bitboards[Q]);
+		attacks |= (king_attacks[kingpos] & bitboards[K]) | (knight_attacks[kingpos] & bitboards[N]);
+		attacks |= (pawn_attacks[black][kingpos] & (bitboards[P] ^ (1ULL << (enpassant_square - 8))));
+		if (!attacks) {
+			ret[ind++] = move;
+		}
 	}
 	if (right_enpassant) {
 		unsigned int move = encode_move(enpassant_square - 9, enpassant_square, p, P, no_piece, true, false, false, true);
-		try_out_move(ret, move, ind);
+		const int kingpos{ bitscan(bitboards[k]) };
+		const U64 occupancies_after_enpassant{ occupancies[both] ^ (1ULL << enpassant_square) ^ (1ULL << (enpassant_square - 9)) ^ (1ULL << (enpassant_square - 8)) };
+		U64 attacks = get_rook_attacks(occupancies_after_enpassant, kingpos) & (bitboards[R] | bitboards[Q]);
+		attacks |= get_bishop_attacks(occupancies_after_enpassant, kingpos) & (bitboards[B] | bitboards[Q]);
+		attacks |= (king_attacks[kingpos] & bitboards[K]) | (knight_attacks[kingpos] & bitboards[N]);
+		attacks |= (pawn_attacks[black][kingpos] & (bitboards[P] ^ (1ULL << (enpassant_square - 8))));
+		if (!attacks) {
+			ret[ind++] = move;
+		}
 	}
 
 	while (captures) {
@@ -1074,11 +1090,27 @@ inline int Position::in_check_legal_wpawn_captures(array<unsigned int, 128>& ret
 	const bool right_enpassant = (enpassant << 9) & notAFile & bitboards[P];
 	if (left_enpassant) {
 		unsigned int move = encode_move(enpassant_square + 7, enpassant_square, P, p, no_piece, true, false, false, true);
-		try_out_move(ret, move, ind);
+		const int kingpos{ bitscan(bitboards[K]) };
+		const U64 occupancies_after_enpassant{ occupancies[both] ^ (1ULL << enpassant_square) ^ (1ULL << (enpassant_square + 7)) ^ (1ULL << (enpassant_square + 8)) };
+		U64 attacks = get_rook_attacks(occupancies_after_enpassant, kingpos) & (bitboards[r] | bitboards[q]);
+		attacks |= get_bishop_attacks(occupancies_after_enpassant, kingpos) & (bitboards[b] | bitboards[q]);
+		attacks |= (king_attacks[kingpos] & bitboards[k]) | (knight_attacks[kingpos] & bitboards[n]);
+		attacks |= (pawn_attacks[white][kingpos] & (bitboards[p] ^ (1ULL << (enpassant_square + 8))));
+		if (!attacks) {
+			ret[ind++] = move;
+		}
 	}
 	if (right_enpassant) {
 		unsigned int move = encode_move(enpassant_square + 9, enpassant_square, P, p, no_piece, true, false, false, true);
-		try_out_move(ret, move, ind);
+		const int kingpos{ bitscan(bitboards[K]) };
+		const U64 occupancies_after_enpassant{ occupancies[both] ^ (1ULL << enpassant_square) ^ (1ULL << (enpassant_square + 9)) ^ (1ULL << (enpassant_square + 8)) };
+		U64 attacks = get_rook_attacks(occupancies_after_enpassant, kingpos) & (bitboards[r] | bitboards[q]);
+		attacks |= get_bishop_attacks(occupancies_after_enpassant, kingpos) & (bitboards[b] | bitboards[q]);
+		attacks |= (king_attacks[kingpos] & bitboards[k]) | (knight_attacks[kingpos] & bitboards[n]);
+		attacks |= (pawn_attacks[white][kingpos] & (bitboards[p] ^ (1ULL << (enpassant_square + 8))));
+		if (!attacks) {
+			ret[ind++] = move;
+		}
 	}
 
 	while (captures) {

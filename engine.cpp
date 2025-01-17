@@ -463,13 +463,15 @@ short Engine::quiescence(array<array<unsigned int, 128>, 40>& moves, int move_in
 		}
 		alpha = eval;
 	}
-	quiescence_order(moves[move_index], number_of_captures);
+	array<int, 128> see_scores{};
+	array<short, 128> indexes{};
+	quiescence_order(moves[move_index], see_scores, indexes, number_of_captures);
 
 	//string before_moves = pos.fen();
 	unsigned int current_best_move = 0;
 	short current_best_eval = -infinity - 1;
 	for (int i = 0; i < number_of_captures; i++) {
-		const int static_exchange_eval = pos.seeByMove(moves[move_index][i]);
+		const int static_exchange_eval = see_scores[indexes[i]];
 		if (static_exchange_eval <= 0) break;
 		if (eval + 200 + static_exchange_eval < alpha) continue;
 		pos.make_move(moves[move_index][i]);
@@ -591,7 +593,12 @@ void Engine::parse_go(string str){
 	substr_pos = str.find(command);
 	if (substr_pos != string::npos) {
 		str = str.substr(substr_pos + command.size(), str.size());
-		std::thread time_tracker = std::thread(&Engine::track_time, this, stoull(str)*1000000ULL);
+		// str is in ms
+		// time is measured in ns
+		// ms to ns is a factor of 1_000_000
+		// subtract 100ms to ensure that no timeouts happen due to latency
+		U64 time_ns{ stoull(str) * 1000000ULL - 100 * 1000000ULL };
+		std::thread time_tracker = std::thread(&Engine::track_time, this, time_ns);
 		max_depth = infinity;
 		bestMove();
 		while (true) {

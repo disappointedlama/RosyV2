@@ -197,14 +197,14 @@ class Engine {
 		moveOrderingTime += (U64)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 #endif
 	}
-	inline void quiescence_order(array<unsigned int, 128>& moves, int number_of_moves) {
+	inline void quiescence_order(array<unsigned int, 128>& moves, array<int, 128>& scores, array<short, 128>& indexes, int number_of_moves) {
 #if timingEngine
 		auto start = std::chrono::steady_clock::now();
 #endif
 		//calculate scores
-		array<int, 128> scores{};
 		for (int i = 0; i < number_of_moves; ++i) {
 			scores[i] = pos.seeByMove(moves[i]);
+			indexes[i] = i;
 		}
 		//selection sort
 		for (int i = 0; i < number_of_moves - 1; i++) {
@@ -216,6 +216,7 @@ class Engine {
 			}
 			if (jMin != i) {
 				std::swap(moves[i], moves[jMin]);
+				std::swap(indexes[i], indexes[jMin]);
 			}
 		}
 		//std::sort(moves.begin(), (array<unsigned int,128>::iterator)(moves.begin()+number_of_moves), [&](const int& lhs, const int& rhs)

@@ -695,7 +695,6 @@ public:
 				U64 temp_pot_pawns{ pot_pawns };
 				while (temp_pot_pawns) {
 					const U64 isolated{ get_ls1b(temp_pot_pawns) };
-					const int pawn_sq{ bitscan(isolated) };
 					const U64 without_pawn{ occupancies[both] ^ isolated };
 					if (!(get_bishop_attacks(without_pawn ^ to_bitboard, kingpos) & (bishoplike_enemys ^ to_bitboard))) {
 						const U64 new_attacks{ get_bishop_attacks(without_pawn, sq) };
