@@ -188,4 +188,4 @@ static const std::unordered_map<short, short> pawn_shield = {
 	{21,15},{14,15},{46,15},
 	{35,10}
 };
-static constexpr array<short, 10> rooks_semi_open = { 5,15,15, 15, 15, 15, 15, 15, 15, 15 };
+static constexpr array<short, 10> rooks_semi_open = { 5, 15,15, 15, 15, 15, 15, 15, 15, 15 };

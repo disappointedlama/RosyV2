@@ -282,7 +282,16 @@ public:
 	int get_legal_moves(array<unsigned int,128>& ret);
 	int get_legal_captures(array<unsigned int,128>& ret);
 	inline bool is_draw_by_repetition() {
-		return (std::count(hash_history.begin(), hash_history.end(), current_hash)) >= 3;
+		int count{ 1 };
+		const int oldest{ std::max(0, ply - 2 - no_pawns_or_captures) };
+		for (int i = hash_history.size()-2; i > oldest;i-=2) {
+			if (hash_history[i] == current_hash) {
+				if (++count == 3) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 	constexpr bool is_draw_by_fifty_moves() {
 		return no_pawns_or_captures >= 50;

@@ -597,7 +597,8 @@ void Engine::parse_go(string str){
 		// time is measured in ns
 		// ms to ns is a factor of 1_000_000
 		// subtract 100ms to ensure that no timeouts happen due to latency
-		U64 time_ns{ stoull(str) * 1000000ULL - 100 * 1000000ULL };
+		const U64 movetime_ms{ stoull(str) };
+		U64 time_ns{ std::max(movetime_ms,120ull) * 1000000ULL - 100 * 1000000ULL };
 		std::thread time_tracker = std::thread(&Engine::track_time, this, time_ns);
 		max_depth = infinity;
 		bestMove();
